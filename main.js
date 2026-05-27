@@ -383,7 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // State
     let t = 0; // 0..1 overall cycle (4 seconds)
-    const CYCLE = 240; // frames per full cycle
+    const CYCLE = 600; // frames per full cycle (~10 seconds at 60fps)
     let frame = 0;
 
     // Core glow (center)
