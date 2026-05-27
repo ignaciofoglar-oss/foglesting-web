@@ -304,6 +304,76 @@
         </div>
     </section>
 
+    <!-- ========== FEEDBACK ========== -->
+    <section class="section feedback-section" id="feedback">
+        <div class="container">
+            <div class="feedback-inner">
+                <div class="feedback-copy reveal-left">
+                    <span class="section-label">💬 Tu opinión importa</span>
+                    <h2>¿Probaste Foglesting?<br><span class="gradient-text">Contanos qué pensás</span></h2>
+                    <p>Tu feedback nos ayuda a mejorar el software. Si encontraste un bug, tenés una idea, o simplemente querés comentar tu experiencia, este es el lugar.</p>
+                    <ul class="feedback-perks">
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Respondemos todos los mensajes
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Los bugs reportados tienen prioridad
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Las ideas pueden entrar en la próxima versión
+                        </li>
+                    </ul>
+                </div>
+
+                <form class="feedback-form reveal-right"
+                      action="https://formsubmit.co/ignacio_ggirard@hotmail.com"
+                      method="POST"
+                      id="feedback-form">
+
+                    <!-- Formsubmit config -->
+                    <input type="hidden" name="_subject" value="💬 Nuevo feedback en Foglesting">
+                    <input type="hidden" name="_captcha" value="false">
+                    <input type="hidden" name="_template" value="table">
+                    <input type="text"   name="_honey" style="display:none">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fb-name">Nombre</label>
+                            <input type="text" id="fb-name" name="nombre" placeholder="Tu nombre" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fb-email">Email (opcional)</label>
+                            <input type="email" id="fb-email" name="email" placeholder="Para que podamos responderte">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fb-type">Tipo de mensaje</label>
+                        <select id="fb-type" name="tipo">
+                            <option value="Feedback general">💬 Feedback general</option>
+                            <option value="Reporte de bug">🐛 Reporte de bug</option>
+                            <option value="Sugerencia de función">💡 Sugerencia de función</option>
+                            <option value="Pregunta técnica">🔧 Pregunta técnica</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fb-msg">Mensaje</label>
+                        <textarea id="fb-msg" name="mensaje" rows="4" placeholder="Contanos tu experiencia con el software..." required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-feedback" id="btn-send-feedback">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        Enviar Feedback
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
     <!-- ========== FOOTER ========== -->
     <footer class="footer">
         <div class="container">
