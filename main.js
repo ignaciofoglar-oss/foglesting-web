@@ -1,3 +1,21 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, increment, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// Firebase Configuration from User
+const firebaseConfig = {
+  apiKey: "AIzaSyC-hdDg1NAcTli4Pck0IwYomPpMF-tLO9s",
+  authDomain: "foglesting.firebaseapp.com",
+  projectId: "foglesting",
+  storageBucket: "foglesting.firebasestorage.app",
+  messagingSenderId: "340614706642",
+  appId: "1:340614706642:web:0886f5fc03d6fb5b5e440b",
+  measurementId: "G-BTQBKQV6ML"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 // =============================================
 // Foglar Landing Page — Interactions & Animations
 // =============================================
@@ -160,12 +178,109 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 16);
     }
 
+    // Helper para obtener fecha en formato YYYY-MM-DD local
+    function getTodayString() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
     // --- Download button click tracking ---
     const downloadBtn = document.getElementById('download-btn');
     if (downloadBtn) {
-        downloadBtn.addEventListener('click', () => {
-            console.log('Download button clicked — Foglesting v1.0');
-            // Can add analytics here later
+        downloadBtn.addEventListener('click', async () => {
+            console.log('Download button clicked');
+            try {
+                const today = getTodayString();
+                const metricsRef = doc(db, 'metrics', today);
+                const docSnap = await getDoc(metricsRef);
+                if (docSnap.exists()) {
+                    await updateDoc(metricsRef, { downloads: increment(1) });
+                } else {
+                    await setDoc(metricsRef, { page_views: 0, downloads: 1, time_spent: 0, date: today });
+                }
+            } catch(e) { console.error(e); }
+        });
+    }
+
+    // --- Page View Tracking ---
+    async function trackPageView() {
+        if (!sessionStorage.getItem('page_viewed')) {
+            try {
+                const today = getTodayString();
+                const metricsRef = doc(db, 'metrics', today);
+                const docSnap = await getDoc(metricsRef);
+                if (docSnap.exists()) {
+                    await updateDoc(metricsRef, { page_views: increment(1) });
+                } else {
+                    await setDoc(metricsRef, { page_views: 1, downloads: 0, time_spent: 0, date: today });
+                }
+                sessionStorage.setItem('page_viewed', 'true');
+            } catch(e) { console.error(e); }
+        }
+    }
+    trackPageView();
+
+    // --- Time Spent Tracking ---
+    const sessionStartTime = Date.now();
+    let timeLogged = false;
+
+    // Cuando el usuario sale de la pestaña o cierra
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden' && !timeLogged) {
+            const timeSpentSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+            if (timeSpentSeconds > 5) { // solo registramos si estuvo más de 5 segundos
+                const today = getTodayString();
+                const metricsRef = doc(db, 'metrics', today);
+                // Fire and forget, no await because page is closing
+                getDoc(metricsRef).then(docSnap => {
+                    if (docSnap.exists()) {
+                        updateDoc(metricsRef, { time_spent: increment(timeSpentSeconds) });
+                    } else {
+                        setDoc(metricsRef, { page_views: 1, downloads: 0, time_spent: timeSpentSeconds, date: today });
+                    }
+                });
+            }
+            // timeLogged = true; // Si vuelve, queremos contar el nuevo tiempo? Mejor dejarlo acumular.
+        }
+    });
+
+    // --- Feedback Form Handling ---
+    const feedbackForm = document.getElementById('feedback-form');
+    const feedbackStatus = document.getElementById('feedback-status');
+    const btnSendFeedback = document.getElementById('btn-send-feedback');
+
+    if (feedbackForm) {
+        feedbackForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            btnSendFeedback.disabled = true;
+            btnSendFeedback.innerHTML = 'Enviando...';
+            feedbackStatus.style.color = 'var(--cream)';
+            feedbackStatus.textContent = '';
+
+            const name = document.getElementById('fb-name').value;
+            const email = document.getElementById('fb-email').value;
+            const type = document.getElementById('fb-type').value;
+            const msg = document.getElementById('fb-msg').value;
+
+            try {
+                await addDoc(collection(db, 'messages'), {
+                    name: name,
+                    email: email || 'No especificado',
+                    type: type,
+                    message: msg,
+                    timestamp: serverTimestamp()
+                });
+                feedbackForm.reset();
+                feedbackStatus.style.color = '#50c878';
+                feedbackStatus.textContent = '¡Mensaje enviado con éxito! Gracias por tu feedback.';
+            } catch(error) {
+                console.error("Error submitting form", error);
+                feedbackStatus.style.color = '#dc3545';
+                feedbackStatus.textContent = 'Error al enviar el mensaje. Intenta nuevamente más tarde.';
+            } finally {
+                btnSendFeedback.disabled = false;
+                btnSendFeedback.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Enviar Feedback';
+            }
         });
     }
 

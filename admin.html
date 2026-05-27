@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración | Foglesting</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK (ES Modules loaded via importmap or module script) -->
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen active">
+        <div class="login-card">
+            <img src="assets/nuevo_logo_beige.png" alt="Foglesting Logo" class="login-logo">
+            <h2>Panel de Administración</h2>
+            <form id="login-form">
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="input-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="btn-primary">Entrar</button>
+                <p id="login-error" class="error-msg"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div id="dashboard-screen" class="screen">
+        <aside class="sidebar">
+            <img src="assets/nuevo_logo_beige.png" alt="Foglesting Logo" class="sidebar-logo">
+            <nav>
+                <a href="#" class="nav-item active" data-target="metrics">Métricas</a>
+                <a href="#" class="nav-item" data-target="messages">Mensajes</a>
+                <a href="#" class="nav-item" data-target="licenses">Licencias</a>
+            </nav>
+            <button id="logout-btn" class="btn-secondary">Cerrar Sesión</button>
+        </aside>
+        
+        <main class="content">
+            <!-- Metrics View -->
+            <section id="view-metrics" class="view active">
+                <header>
+                    <h1>Métricas Generales</h1>
+                </header>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Visitas a la Web</h3>
+                        <div class="stat-value" id="stat-views">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Descargas Totales</h3>
+                        <div class="stat-value" id="stat-downloads">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Tiempo Total Jugado/Visto</h3>
+                        <div class="stat-value" id="stat-time">0m</div>
+                    </div>
+                </div>
+
+                <div class="charts-container" style="margin-top: 40px;">
+                    <div class="chart-card" style="background: var(--bg-panel); padding: 20px; border-radius: 12px;">
+                        <h3 style="margin-bottom: 20px; font-weight: 500;">Rendimiento de los últimos 30 días</h3>
+                        <div style="position: relative; height: 300px; width: 100%;">
+                            <canvas id="metricsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Messages View -->
+            <section id="view-messages" class="view">
+                <header>
+                    <h1>Mensajes de Contacto</h1>
+                </header>
+                <div class="messages-list" id="messages-container">
+                    <p class="loading">Cargando mensajes...</p>
+                    <!-- Messages will be populated here -->
+                </div>
+            </section>
+
+            <!-- Licenses View -->
+            <section id="view-licenses" class="view">
+                <header>
+                    <h1>Generador de Licencias</h1>
+                </header>
+                <div class="license-generator">
+                    <div class="input-group">
+                        <label>Nombre del Cliente</label>
+                        <input type="text" id="license-client" placeholder="Ej. Metalúrgica San José">
+                    </div>
+                    <button id="generate-license-btn" class="btn-primary">Generar Nueva Clave</button>
+                </div>
+                
+                <h3 style="margin-top: 30px;">Licencias Activas</h3>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Clave</th>
+                                <th>Cliente</th>
+                                <th>Fecha Creada</th>
+                                <th>Estado</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="licenses-container">
+                            <tr><td colspan="5" class="loading">Cargando licencias...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="admin.js"></script>
+</body>
+</html>
