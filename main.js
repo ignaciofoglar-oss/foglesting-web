@@ -332,275 +332,322 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // =============================================
-// Nesting Algorithm Mini-Animation (standalone)
+// Genetic Algorithm Population Animation
 // =============================================
-(function() {
+(function () {
     const cv = document.getElementById('nesting-anim');
     if (!cv) return;
     const cx = cv.getContext('2d');
-    const W = 560, H = 180;
+    const W = 700, H = 220;
     cv.width = W; cv.height = H;
 
-    const FIRE  = '#e85b2e';
-    const CREAM = 'rgba(255,223,184,';
-    const DIM   = 'rgba(255,223,184,0.06)';
+    const FIRE      = '#e85b2e';
+    const FIRE_RGBA = (a) => `rgba(232,91,46,${a})`;
+    const CREAM     = (a) => `rgba(255,223,184,${a})`;
+    const GREEN     = (a) => `rgba(80,200,120,${a})`;
+    const RED       = (a) => `rgba(220,60,60,${a})`;
 
-    // --- DXF shapes definition (left side) ---
+    // --- Tiny shapes to draw inside each candidate node ---
     const SHAPES = [
-        // L-shape
-        (x,y,s,a)=>{ cx.beginPath(); cx.moveTo(x,y); cx.lineTo(x+s,y); cx.lineTo(x+s,y+s*0.4); cx.lineTo(x+s*0.4,y+s*0.4); cx.lineTo(x+s*0.4,y+s); cx.lineTo(x,y+s); cx.closePath(); },
-        // Rectangle
-        (x,y,s,a)=>{ cx.beginPath(); cx.rect(x,y,s,s*0.55); },
-        // Triangle
-        (x,y,s,a)=>{ cx.beginPath(); cx.moveTo(x+s/2,y); cx.lineTo(x+s,y+s); cx.lineTo(x,y+s); cx.closePath(); },
-        // Diamond
-        (x,y,s,a)=>{ cx.beginPath(); cx.moveTo(x+s/2,y); cx.lineTo(x+s,y+s/2); cx.lineTo(x+s/2,y+s); cx.lineTo(x,y+s/2); cx.closePath(); },
-        // Pentagon
-        (x,y,s,a)=>{ cx.beginPath(); for(let i=0;i<5;i++){const ang=-Math.PI/2+i*2*Math.PI/5; cx.lineTo(x+s/2+s/2*Math.cos(ang),y+s/2+s/2*Math.sin(ang));} cx.closePath(); },
+        (x,y,s) => { cx.beginPath(); cx.rect(x,y,s,s*0.6); },
+        (x,y,s) => { cx.beginPath(); cx.moveTo(x,y); cx.lineTo(x+s,y); cx.lineTo(x+s,y+s*0.45); cx.lineTo(x+s*0.45,y+s*0.45); cx.lineTo(x+s*0.45,y+s); cx.lineTo(x,y+s); cx.closePath(); },
+        (x,y,s) => { cx.beginPath(); cx.moveTo(x+s/2,y); cx.lineTo(x+s,y+s); cx.lineTo(x,y+s); cx.closePath(); },
+        (x,y,s) => { cx.beginPath(); cx.moveTo(x+s/2,y); cx.lineTo(x+s,y+s/2); cx.lineTo(x+s/2,y+s); cx.lineTo(x,y+s/2); cx.closePath(); },
+        (x,y,s) => { cx.beginPath(); cx.arc(x+s/2,y+s/2,s/2,0,Math.PI*2); },
     ];
 
-    // --- Layout for output (right side): pre-packed grid ---
-    const outputLayout = [
-        {shape:0,x:0,  y:0,  s:26},
-        {shape:1,x:30, y:0,  s:26},
-        {shape:2,x:60, y:0,  s:26},
-        {shape:0,x:0,  y:30, s:26},
-        {shape:3,x:30, y:30, s:26},
-        {shape:4,x:60, y:30, s:26},
-        {shape:1,x:0,  y:58, s:26},
-        {shape:2,x:30, y:58, s:26},
-        {shape:0,x:60, y:58, s:26},
+    // Candidate solutions: each has a fitness and a random arrangement of tiny pieces
+    const candidates = [
+        { cx: 90,  cy: 60,  fitness: 0.61, label: '61%', color: RED,   pieces: [{s:0,x:2,y:2,sz:14},{s:2,x:18,y:3,sz:10},{s:1,x:5,y:18,sz:12},{s:3,x:22,y:17,sz:10}] },
+        { cx: 90,  cy: 155, fitness: 0.74, label: '74%', color: CREAM,  pieces: [{s:1,x:2,y:3,sz:13},{s:0,x:17,y:2,sz:12},{s:4,x:3,y:18,sz:10},{s:2,x:18,y:18,sz:12}] },
+        { cx: 230, cy: 45,  fitness: 0.68, label: '68%', color: RED,    pieces: [{s:3,x:3,y:3,sz:11},{s:0,x:16,y:2,sz:14},{s:2,x:2,y:17,sz:11},{s:1,x:18,y:18,sz:11}] },
+        { cx: 230, cy: 110, fitness: 0.89, label: '89%', color: GREEN,  pieces: [{s:0,x:2,y:2,sz:13},{s:1,x:16,y:2,sz:12},{s:1,x:2,y:17,sz:13},{s:0,x:16,y:17,sz:12}] },
+        { cx: 230, cy: 175, fitness: 0.77, label: '77%', color: CREAM,  pieces: [{s:2,x:3,y:2,sz:12},{s:3,x:16,y:3,sz:11},{s:4,x:4,y:18,sz:10},{s:1,x:18,y:17,sz:12}] },
+        { cx: 90,  cy: 110, fitness: 0.53, label: '53%', color: RED,    pieces: [{s:4,x:4,y:4,sz:12},{s:2,x:18,y:4,sz:10},{s:3,x:3,y:19,sz:13},{s:4,x:20,y:18,sz:10}] },
     ];
 
-    // Input pieces (scattered, left zone)
-    const inputPieces = [
-        {shape:0,x:28,y:20,s:26}, {shape:1,x:10,y:60,s:26},
-        {shape:2,x:40,y:100,s:26},{shape:3,x:5, y:140,s:26},
-        {shape:4,x:50,y:52,s:26}, {shape:1,x:20,y:130,s:26},
-        {shape:0,x:55,y:88,s:22}, {shape:2,x:8, y:88,s:22},
-        {shape:3,x:45,y:148,s:20},
-    ];
+    // Best two (green) → crossover → winner
+    const bestA = candidates[3]; // 89%
+    const bestB = candidates[4]; // 77%
 
-    // State
-    let t = 0; // 0..1 overall cycle (4 seconds)
-    const CYCLE = 600; // frames per full cycle (~10 seconds at 60fps)
+    // Winner node (right side, the output)
+    const winner = {
+        cx: W - 80, cy: H / 2, fitness: 0.94, label: '94%',
+        pieces: [
+            {s:0,x:2, y:2, sz:14}, {s:1,x:17,y:2, sz:13},
+            {s:1,x:2, y:17,sz:13}, {s:0,x:17,y:17,sz:14},
+        ]
+    };
+
+    // Crossover node (center-right)
+    const crossNode = { cx: W * 0.63, cy: H / 2 };
+
     let frame = 0;
+    const CYCLE = 600;
 
-    // Core glow (center)
-    const CX = W / 2, CY = H / 2;
+    function easeInOut(t) { return t<0.5 ? 2*t*t : -1+(4-2*t)*t; }
+    function lerp(a,b,t)  { return a+(b-a)*t; }
+    function clamp(v,a,b) { return Math.max(a,Math.min(b,v)); }
 
-    function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
-    function lerp(a,b,t) { return a + (b-a)*t; }
+    function drawNodeBox(node, alpha, glowColor, labelAlpha) {
+        const bw = 36, bh = 36;
+        const bx = node.cx - bw/2, by = node.cy - bh/2;
 
-    function drawShape(shapeFn, x, y, s, alpha, glow, filled) {
+        // Glow
+        if (glowColor) {
+            cx.shadowColor = glowColor;
+            cx.shadowBlur = 18;
+        }
+
+        // Box border
+        cx.strokeStyle = glowColor ? glowColor.replace(/[\d.]+\)$/, `${alpha})`) : CREAM(alpha * 0.4);
+        cx.lineWidth = 1.2;
+        cx.strokeRect(bx, by, bw, bh);
+        cx.shadowBlur = 0;
+
+        // Fill
+        cx.fillStyle = glowColor
+            ? glowColor.replace(/[\d.]+\)$/, `${alpha * 0.12})`)
+            : `rgba(255,255,255,${alpha * 0.03})`;
+        cx.fillRect(bx, by, bw, bh);
+
+        // Tiny pieces inside
+        if (node.pieces) {
+            node.pieces.forEach(p => {
+                cx.save();
+                cx.globalAlpha = alpha * 0.85;
+                SHAPES[p.s](bx + p.x, by + p.y, p.sz);
+                cx.fillStyle = glowColor
+                    ? glowColor.replace(/[\d.]+\)$/, '0.25)')
+                    : CREAM(0.12);
+                cx.fill();
+                cx.strokeStyle = glowColor
+                    ? glowColor.replace(/[\d.]+\)$/, '0.7)')
+                    : CREAM(0.4);
+                cx.lineWidth = 0.8;
+                cx.stroke();
+                cx.restore();
+            });
+        }
+
+        // Label above box
+        if (labelAlpha > 0) {
+            cx.save();
+            cx.globalAlpha = labelAlpha;
+            cx.font = `700 9px "DM Sans", sans-serif`;
+            cx.textAlign = 'center';
+            cx.fillStyle = glowColor
+                ? glowColor.replace(/[\d.]+\)$/, '0.9)')
+                : CREAM(0.55);
+            cx.fillText(node.label, node.cx, by - 5);
+            cx.restore();
+        }
+    }
+
+    function drawLine(x1,y1,x2,y2, alpha, dashed, color) {
         cx.save();
-        shapeFn(x - s/2, y - s/2, s);
-        if (glow) {
-            cx.shadowColor = FIRE;
-            cx.shadowBlur = 12;
-        }
-        if (filled) {
-            cx.fillStyle = `rgba(232,91,46,${alpha * 0.35})`;
-            cx.fill();
-        }
-        cx.strokeStyle = `rgba(232,91,46,${alpha})`;
-        cx.lineWidth = 1.5;
+        cx.globalAlpha = alpha;
+        cx.strokeStyle = color || CREAM(0.25);
+        cx.lineWidth = 0.8;
+        if (dashed) cx.setLineDash([3,4]);
+        cx.beginPath(); cx.moveTo(x1,y1); cx.lineTo(x2,y2); cx.stroke();
+        cx.setLineDash([]);
+        cx.restore();
+    }
+
+    // Animated particle along a line
+    function drawParticle(x1,y1,x2,y2, progress, color) {
+        const px = lerp(x1,x2,progress);
+        const py = lerp(y1,y2,progress);
+        cx.beginPath(); cx.arc(px,py,2.5,0,Math.PI*2);
+        cx.fillStyle = color || FIRE;
+        cx.shadowColor = color || FIRE;
+        cx.shadowBlur = 8;
+        cx.fill();
+        cx.shadowBlur = 0;
+    }
+
+    function drawLabel(text, x, y, alpha, size=8) {
+        cx.save();
+        cx.globalAlpha = alpha;
+        cx.fillStyle = CREAM(0.3);
+        cx.font = `500 ${size}px "DM Sans", sans-serif`;
+        cx.textAlign = 'center';
+        cx.letterSpacing = '0.08em';
+        cx.fillText(text.toUpperCase(), x, y);
+        cx.restore();
+    }
+
+    // Eliminated X mark
+    function drawX(node, alpha) {
+        const r = 8;
+        cx.save();
+        cx.globalAlpha = alpha;
+        cx.strokeStyle = RED(0.9);
+        cx.lineWidth = 1.8;
+        cx.beginPath();
+        cx.moveTo(node.cx - r, node.cy - r); cx.lineTo(node.cx + r, node.cy + r);
+        cx.moveTo(node.cx + r, node.cy - r); cx.lineTo(node.cx - r, node.cy + r);
         cx.stroke();
         cx.restore();
     }
 
-    function drawZoneLabel(text, x, y) {
-        cx.fillStyle = CREAM + '0.22)';
-        cx.font = '500 9px DM Sans, sans-serif';
-        cx.letterSpacing = '0.1em';
-        cx.textAlign = 'center';
-        cx.fillText(text.toUpperCase(), x, y);
-    }
-
     function render() {
         cx.clearRect(0, 0, W, H);
-
         frame++;
-        t = (frame % CYCLE) / CYCLE;
+        const t = (frame % CYCLE) / CYCLE;
 
-        // --- Background zones ---
-        // Left zone
-        cx.fillStyle = 'rgba(255,223,184,0.02)';
-        cx.beginPath(); cx.rect(0, 0, W*0.3, H); cx.fill();
-        cx.strokeStyle = DIM;
+        // Phase definitions
+        // 0.00-0.20 → population appears
+        // 0.20-0.42 → fitness lines + evaluation sparks
+        // 0.42-0.58 → weaker ones eliminated, best two highlighted
+        // 0.58-0.75 → crossover lines + particle flow to center node
+        // 0.75-0.92 → winner emerges on right
+        // 0.92-1.00 → fade out
+
+        const fadeOut = t > 0.92 ? 1 - (t - 0.92) / 0.08 : 1;
+        const masterAlpha = t < 0.06 ? t / 0.06 : fadeOut;
+
+        // ── ZONE LABELS ──
+        drawLabel('Población inicial', 90, H - 6, masterAlpha * 0.5);
+        drawLabel('Evaluación', 255, H - 6, masterAlpha * 0.5);
+        drawLabel('Crossover', W * 0.63, H - 6, clamp((t - 0.55) / 0.08, 0, 1) * masterAlpha * 0.5);
+        drawLabel('Mejor solución', W - 80, H - 6, clamp((t - 0.72) / 0.08, 0, 1) * masterAlpha * 0.5);
+
+        // ── SEPARATOR LINES ──
+        const sepAlpha = masterAlpha * 0.06;
+        cx.strokeStyle = CREAM(sepAlpha);
         cx.lineWidth = 1;
-        cx.beginPath(); cx.moveTo(W*0.3, 0); cx.lineTo(W*0.3, H); cx.stroke();
+        [[165,0,165,H],[W*0.52,0,W*0.52,H],[W*0.74,0,W*0.74,H]].forEach(([x1,y1,x2,y2])=>{
+            cx.beginPath(); cx.moveTo(x1,y1); cx.lineTo(x2,y2); cx.stroke();
+        });
 
-        // Right zone
-        cx.fillStyle = 'rgba(232,91,46,0.03)';
-        cx.beginPath(); cx.rect(W*0.7, 0, W*0.3, H); cx.fill();
-        cx.strokeStyle = DIM;
-        cx.beginPath(); cx.moveTo(W*0.7, 0); cx.lineTo(W*0.7, H); cx.stroke();
+        // ── PHASE 0: POPULATION APPEARS ──
+        const popAlpha = clamp(t / 0.18, 0, 1) * masterAlpha;
 
-        drawZoneLabel('Piezas DXF', W*0.15, H-8);
-        drawZoneLabel('Algoritmo Genético', W*0.5, H-8);
-        drawZoneLabel('Acomodo óptimo', W*0.85, H-8);
+        // weak nodes (red border)
+        const weakNodes = [candidates[0], candidates[2], candidates[5]];
+        const strongNodes = [candidates[1], candidates[3], candidates[4]];
 
-        // --- Core glow (center brain) ---
-        const coreGlow = 0.6 + 0.4 * Math.sin(frame * 0.08);
-        const coreR = 28 + coreGlow * 6;
+        // Eliminated after phase 0.42
+        const elimT = clamp((t - 0.42) / 0.10, 0, 1);
+        const weakAlpha = popAlpha * (1 - elimT);
 
-        // Outer halo
-        const halo = cx.createRadialGradient(CX, CY, 0, CX, CY, coreR * 2.5);
-        halo.addColorStop(0, `rgba(232,91,46,${0.18 * coreGlow})`);
-        halo.addColorStop(1, 'rgba(232,91,46,0)');
-        cx.beginPath(); cx.arc(CX, CY, coreR * 2.5, 0, Math.PI*2);
-        cx.fillStyle = halo; cx.fill();
+        weakNodes.forEach(n => {
+            drawNodeBox(n, weakAlpha, RED(0.6), weakAlpha * 0.9);
+            if (elimT > 0.3) drawX(n, elimT * masterAlpha);
+        });
 
-        // Core ring
-        cx.beginPath(); cx.arc(CX, CY, coreR, 0, Math.PI*2);
-        cx.strokeStyle = `rgba(232,91,46,${0.5 + 0.5*coreGlow})`;
-        cx.lineWidth = 1.5;
-        cx.shadowColor = FIRE; cx.shadowBlur = 16;
-        cx.stroke(); cx.shadowBlur = 0;
+        // Strong nodes stay
+        const bestHighlight = clamp((t - 0.38) / 0.10, 0, 1);
+        strongNodes.forEach(n => {
+            const isTop = n === bestA || n === bestB;
+            const glow = isTop ? GREEN(bestHighlight) : null;
+            const a = popAlpha;
+            drawNodeBox(n, a, glow, a * 0.9);
+        });
 
-        // Inner DNA icon (🧬 substitute: rotating dot pattern)
-        for (let i = 0; i < 6; i++) {
-            const ang = frame * 0.04 + i * Math.PI / 3;
-            const r = 10;
-            const nx = CX + r * Math.cos(ang);
-            const ny = CY + r * Math.sin(ang);
-            cx.beginPath(); cx.arc(nx, ny, 2, 0, Math.PI*2);
-            cx.fillStyle = `rgba(232,91,46,${0.7 + 0.3*Math.sin(frame*0.1 + i)})`;
-            cx.shadowColor = FIRE; cx.shadowBlur = 8;
-            cx.fill(); cx.shadowBlur = 0;
-        }
-
-        // --- Phase breakdown ---
-        // Phase 0..0.35: pieces fly from left to center
-        // Phase 0.35..0.55: processing (pieces spin inside core)
-        // Phase 0.55..0.9: packed result flies to right
-        // Phase 0.9..1: fade & reset
-
-        const phase = t;
-
-        // --- INPUT PIECES (left zone → core) ---
-        if (phase < 0.55) {
-            const flyT = Math.min(phase / 0.35, 1);
-            inputPieces.forEach((p, i) => {
-                const delay = i / inputPieces.length * 0.6;
-                const localT = Math.max(0, Math.min((phase - delay*0.35) / 0.35, 1));
-                const ease = easeInOut(localT);
-
-                const startX = W*0.07 + p.x;
-                const startY = p.y + 10;
-                const endX = CX;
-                const endY = CY;
-
-                const px = lerp(startX, endX, ease);
-                const py = lerp(startY, endY, ease);
-                const alpha = localT < 1 ? (0.7 - ease*0.4) : 0;
-                const sc = lerp(p.s, p.s * 0.3, ease);
-
-                if (ease < 1) drawShape(SHAPES[p.shape], px, py, sc, alpha, ease > 0.7, ease > 0.5);
+        // ── PHASE 1: EVALUATION LINES (population → center zone) ──
+        if (t > 0.15 && t < 0.65) {
+            const evalA = clamp((t - 0.15) / 0.12, 0, 1) * masterAlpha;
+            candidates.forEach(n => {
+                // line from each node toward center fitness bar
+                drawLine(n.cx + 18, n.cy, 168, n.cy, evalA * 0.4, true);
             });
+
+            // Fitness spark particles flowing right
+            if (t > 0.20 && t < 0.55) {
+                const prog = ((t - 0.20) / 0.35) % 1;
+                candidates.forEach((n, i) => {
+                    const p = (prog + i * 0.17) % 1;
+                    drawParticle(n.cx + 18, n.cy, 230, n.cy, p,
+                        n.fitness > 0.75 ? GREEN(0.9) : RED(0.8));
+                });
+            }
         }
 
-        // --- PROCESSING SPARKS (center, during phase 0.3..0.65) ---
-        if (phase > 0.28 && phase < 0.68) {
-            const prog = (phase - 0.28) / 0.4;
-            for (let i = 0; i < 8; i++) {
-                const ang = frame * 0.12 + i * Math.PI / 4;
-                const r = 18 + i * 2.5;
-                const sx = CX + r * Math.cos(ang);
-                const sy = CY + r * Math.sin(ang);
-                const a = Math.sin(prog * Math.PI) * (0.5 + 0.5*Math.sin(frame*0.15+i));
-                cx.beginPath(); cx.arc(sx, sy, 1.5, 0, Math.PI*2);
-                cx.fillStyle = `rgba(255,160,60,${a})`;
-                cx.shadowColor = '#ffa03c'; cx.shadowBlur = 6;
-                cx.fill(); cx.shadowBlur = 0;
+        // ── PHASE 2: CROSSOVER ──
+        if (t > 0.55) {
+            const crossA = clamp((t - 0.55) / 0.10, 0, 1) * masterAlpha;
+            // Lines from best two to crossover node
+            drawLine(bestA.cx + 18, bestA.cy, crossNode.cx, crossNode.cy, crossA * 0.7, false, GREEN(0.6));
+            drawLine(bestB.cx + 18, bestB.cy, crossNode.cx, crossNode.cy, crossA * 0.7, false, GREEN(0.6));
+
+            // Particles flowing into crossover node
+            if (t > 0.58 && t < 0.78) {
+                const p = ((t - 0.58) / 0.20) % 1;
+                drawParticle(bestA.cx+18, bestA.cy, crossNode.cx, crossNode.cy, p, GREEN(0.9));
+                drawParticle(bestB.cx+18, bestB.cy, crossNode.cx, crossNode.cy, (p+0.5)%1, FIRE_RGBA(0.9));
             }
 
-            // Flying labels inside core
+            // Crossover node (spinning indicator)
+            const spin = frame * 0.05;
+            const cR = 18 + 2 * Math.sin(frame * 0.1);
             cx.save();
-            cx.globalAlpha = Math.sin(prog * Math.PI) * 0.6;
-            cx.fillStyle = CREAM+'0.8)';
+            cx.globalAlpha = crossA;
+            cx.strokeStyle = GREEN(0.6);
+            cx.lineWidth = 1.5;
+            cx.shadowColor = '#50c878'; cx.shadowBlur = 12;
+            cx.beginPath(); cx.arc(crossNode.cx, crossNode.cy, cR, 0, Math.PI*2);
+            cx.stroke(); cx.shadowBlur = 0;
+            // Rotating dots inside
+            for (let i = 0; i < 4; i++) {
+                const a = spin + i * Math.PI/2;
+                const dx = crossNode.cx + 8 * Math.cos(a);
+                const dy = crossNode.cy + 8 * Math.sin(a);
+                cx.beginPath(); cx.arc(dx, dy, 2, 0, Math.PI*2);
+                cx.fillStyle = i % 2 === 0 ? GREEN(0.9) : FIRE_RGBA(0.9);
+                cx.fill();
+            }
+            cx.fillStyle = CREAM(0.25);
+            cx.font = '600 7px DM Sans, sans-serif';
+            cx.textAlign = 'center';
+            cx.fillText('CROSSOVER', crossNode.cx, crossNode.cy + cR + 10);
+            cx.restore();
+        }
+
+        // ── PHASE 3: WINNER APPEARS ──
+        if (t > 0.72) {
+            const winA = clamp((t - 0.72) / 0.12, 0, 1) * masterAlpha;
+
+            // Line from crossover to winner
+            drawLine(crossNode.cx + 20, crossNode.cy, winner.cx - 18, winner.cy, winA * 0.8, false, GREEN(0.7));
+
+            // Particle flowing to winner
+            if (t > 0.74 && t < 0.90) {
+                const p = ((t - 0.74) / 0.16) % 1;
+                drawParticle(crossNode.cx+20, crossNode.cy, winner.cx-18, winner.cy, p, GREEN(0.9));
+            }
+
+            // Draw winner node (bigger, golden glow)
+            const bw = 44, bh = 44;
+            const bx = winner.cx - bw/2, by = winner.cy - bh/2;
+            cx.save();
+            cx.globalAlpha = winA;
+            cx.shadowColor = FIRE; cx.shadowBlur = 24;
+            cx.strokeStyle = FIRE_RGBA(0.9);
+            cx.lineWidth = 1.8;
+            cx.strokeRect(bx, by, bw, bh);
+            cx.shadowBlur = 0;
+            cx.fillStyle = FIRE_RGBA(0.08);
+            cx.fillRect(bx, by, bw, bh);
+            winner.pieces.forEach(p => {
+                SHAPES[p.s](bx + p.x, by + p.y, p.sz);
+                cx.fillStyle = FIRE_RGBA(0.28);
+                cx.fill();
+                cx.strokeStyle = FIRE_RGBA(0.85);
+                cx.lineWidth = 1;
+                cx.stroke();
+            });
+            // Badge
+            cx.fillStyle = FIRE;
+            cx.beginPath();
+            cx.roundRect(winner.cx - 20, by - 18, 40, 14, 7);
+            cx.fill();
+            cx.fillStyle = '#fff';
             cx.font = 'bold 8px DM Sans, sans-serif';
             cx.textAlign = 'center';
-            cx.fillText('evaluando...', CX, CY - coreR - 8);
-            cx.restore();
-        }
-
-        // --- OUTPUT: packed layout flies to right (phase 0.55..0.9) ---
-        if (phase > 0.52) {
-            const outT = Math.min((phase - 0.52) / 0.38, 1);
-            const ease = easeInOut(outT);
-
-            // Sheet border (bounding box of output)
-            const sheetX = lerp(CX, W*0.715, ease);
-            const sheetY = H/2 - 50;
-            const sheetW = 92, sheetH = 90;
-
-            cx.save();
-            cx.globalAlpha = ease;
-            cx.strokeStyle = `rgba(232,91,46,0.5)`;
-            cx.lineWidth = 1;
-            cx.setLineDash([3, 3]);
-            cx.strokeRect(sheetX - 4, sheetY - 4, sheetW + 8, sheetH + 8);
-            cx.setLineDash([]);
-
-            // Pack pieces inside sheet
-            outputLayout.forEach((p, i) => {
-                const pDelay = i / outputLayout.length * 0.4;
-                const localE = easeInOut(Math.max(0, Math.min((outT - pDelay) / 0.6, 1)));
-                const px = sheetX + p.x + p.s/2;
-                const py = sheetY + p.y + p.s/2;
-                cx.globalAlpha = ease * localE;
-                drawShape(SHAPES[p.shape], px, py, p.s, 0.85, false, true);
-            });
-
-            // "Ahorro 18%" badge
-            if (outT > 0.7) {
-                const badgeAlpha = (outT - 0.7) / 0.3;
-                cx.globalAlpha = badgeAlpha;
-                cx.fillStyle = FIRE;
-                cx.beginPath();
-                const bx = sheetX + sheetW - 2, by = sheetY - 12;
-                cx.roundRect(bx - 38, by - 10, 42, 16, 8);
-                cx.fill();
-                cx.fillStyle = '#fff';
-                cx.font = 'bold 8px DM Sans, sans-serif';
-                cx.textAlign = 'center';
-                cx.fillText('Ahorro 18%', bx - 17, by + 2);
-            }
-
-            cx.restore();
-        }
-
-        // --- Arrow indicators ---
-        // Left arrow: input → core
-        if (phase < 0.55) {
-            const a = phase < 0.1 ? phase/0.1 : (phase > 0.45 ? (0.55-phase)/0.1 : 1);
-            cx.save();
-            cx.globalAlpha = a * 0.35;
-            cx.strokeStyle = FIRE;
-            cx.lineWidth = 1;
-            cx.setLineDash([4, 4]);
-            cx.beginPath();
-            cx.moveTo(W*0.3, CY);
-            cx.lineTo(CX - 35, CY);
-            cx.stroke();
-            cx.setLineDash([]);
-            cx.restore();
-        }
-        // Right arrow: core → output
-        if (phase > 0.5) {
-            const a = Math.min((phase - 0.5)/0.1, 1) * (phase > 0.88 ? (1-(phase-0.88)/0.12) : 1);
-            cx.save();
-            cx.globalAlpha = a * 0.35;
-            cx.strokeStyle = FIRE;
-            cx.lineWidth = 1;
-            cx.setLineDash([4, 4]);
-            cx.beginPath();
-            cx.moveTo(CX + 35, CY);
-            cx.lineTo(W*0.7, CY);
-            cx.stroke();
-            cx.setLineDash([]);
+            cx.fillText('94% efic.', winner.cx, by - 8);
             cx.restore();
         }
 
@@ -609,4 +656,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     render();
 })();
+
 
