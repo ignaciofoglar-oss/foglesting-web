@@ -170,4 +170,163 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     console.log('🔥 Foglar Landing Page loaded successfully');
+
+    // =============================================
+    // Neural-Fire Canvas Animation
+    // =============================================
+    const canvas = document.getElementById('neural-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const FIRE_COLORS = [
+        'rgba(232, 91, 46, ',   // #e85b2e
+        'rgba(255, 160, 60, ',  // warm orange
+        'rgba(255, 220, 100, ', // ember yellow
+        'rgba(200, 50, 20, ',   // deep red-fire
+    ];
+
+    let W, H, nodes, edges, particles;
+
+    function resize() {
+        W = canvas.width  = canvas.offsetWidth;
+        H = canvas.height = canvas.offsetHeight;
+        init();
+    }
+
+    function randomFire(alpha) {
+        const c = FIRE_COLORS[Math.floor(Math.random() * FIRE_COLORS.length)];
+        return c + alpha + ')';
+    }
+
+    function init() {
+        const count = Math.min(Math.floor((W * H) / 18000), 55);
+        nodes = Array.from({ length: count }, () => ({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            r: 2 + Math.random() * 3,
+            vx: (Math.random() - 0.5) * 0.35,
+            vy: (Math.random() - 0.5) * 0.35,
+            pulse: Math.random() * Math.PI * 2,
+            pulseSpeed: 0.02 + Math.random() * 0.025,
+            colorIdx: Math.floor(Math.random() * FIRE_COLORS.length),
+        }));
+
+        edges = [];
+        const maxDist = Math.min(W, H) * 0.28;
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                const dx = nodes[i].x - nodes[j].x;
+                const dy = nodes[i].y - nodes[j].y;
+                if (Math.sqrt(dx * dx + dy * dy) < maxDist) {
+                    edges.push([i, j]);
+                }
+            }
+        }
+
+        particles = [];
+    }
+
+    function spawnParticle(x, y) {
+        particles.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 1.2,
+            vy: -0.5 - Math.random() * 1.5,
+            life: 1,
+            decay: 0.012 + Math.random() * 0.018,
+            r: 1 + Math.random() * 2,
+            colorIdx: Math.floor(Math.random() * FIRE_COLORS.length),
+        });
+    }
+
+    let frame = 0;
+
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+        frame++;
+
+        // Rebuild edges dynamically
+        const maxDist = Math.min(W, H) * 0.28;
+        edges = [];
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                const dx = nodes[i].x - nodes[j].x;
+                const dy = nodes[i].y - nodes[j].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < maxDist) edges.push([i, j, dist, maxDist]);
+            }
+        }
+
+        // Draw edges
+        for (const [i, j, dist, maxD] of edges) {
+            const a = nodes[i], b = nodes[j];
+            const alpha = (1 - dist / maxD) * 0.22;
+            const grad = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+            grad.addColorStop(0, FIRE_COLORS[a.colorIdx] + alpha + ')');
+            grad.addColorStop(1, FIRE_COLORS[b.colorIdx] + alpha + ')');
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = 0.7;
+            ctx.stroke();
+
+            // Occasionally spawn an ember along the edge
+            if (frame % 6 === 0 && Math.random() < 0.04) {
+                const t = Math.random();
+                spawnParticle(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
+            }
+        }
+
+        // Draw nodes
+        for (const n of nodes) {
+            n.pulse += n.pulseSpeed;
+            const glow = 0.5 + 0.5 * Math.sin(n.pulse);
+            const r = n.r + glow * 2;
+
+            // Outer glow
+            const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r * 4);
+            g.addColorStop(0, FIRE_COLORS[n.colorIdx] + (0.35 * glow) + ')');
+            g.addColorStop(1, FIRE_COLORS[n.colorIdx] + '0)');
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, r * 4, 0, Math.PI * 2);
+            ctx.fillStyle = g;
+            ctx.fill();
+
+            // Core dot
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+            ctx.fillStyle = FIRE_COLORS[n.colorIdx] + (0.7 + 0.3 * glow) + ')';
+            ctx.fill();
+
+            // Move
+            n.x += n.vx;
+            n.y += n.vy;
+            if (n.x < 0 || n.x > W) n.vx *= -1;
+            if (n.y < 0 || n.y > H) n.vy *= -1;
+
+            // Spawn ember from hot nodes occasionally
+            if (Math.random() < 0.003) spawnParticle(n.x, n.y);
+        }
+
+        // Draw & update particles (embers)
+        for (let p = particles.length - 1; p >= 0; p--) {
+            const pt = particles[p];
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, pt.r * pt.life, 0, Math.PI * 2);
+            ctx.fillStyle = FIRE_COLORS[pt.colorIdx] + pt.life + ')';
+            ctx.fill();
+            pt.x += pt.vx;
+            pt.y += pt.vy;
+            pt.vy -= 0.03; // float up
+            pt.life -= pt.decay;
+            if (pt.life <= 0) particles.splice(p, 1);
+        }
+
+        requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    draw();
+
 });
