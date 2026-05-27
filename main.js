@@ -330,3 +330,283 @@ document.addEventListener('DOMContentLoaded', () => {
     draw();
 
 });
+
+// =============================================
+// Nesting Algorithm Mini-Animation (standalone)
+// =============================================
+(function() {
+    const cv = document.getElementById('nesting-anim');
+    if (!cv) return;
+    const cx = cv.getContext('2d');
+    const W = 560, H = 180;
+    cv.width = W; cv.height = H;
+
+    const FIRE  = '#e85b2e';
+    const CREAM = 'rgba(255,223,184,';
+    const DIM   = 'rgba(255,223,184,0.06)';
+
+    // --- DXF shapes definition (left side) ---
+    const SHAPES = [
+        // L-shape
+        (x,y,s,a)=>{ cx.beginPath(); cx.moveTo(x,y); cx.lineTo(x+s,y); cx.lineTo(x+s,y+s*0.4); cx.lineTo(x+s*0.4,y+s*0.4); cx.lineTo(x+s*0.4,y+s); cx.lineTo(x,y+s); cx.closePath(); },
+        // Rectangle
+        (x,y,s,a)=>{ cx.beginPath(); cx.rect(x,y,s,s*0.55); },
+        // Triangle
+        (x,y,s,a)=>{ cx.beginPath(); cx.moveTo(x+s/2,y); cx.lineTo(x+s,y+s); cx.lineTo(x,y+s); cx.closePath(); },
+        // Diamond
+        (x,y,s,a)=>{ cx.beginPath(); cx.moveTo(x+s/2,y); cx.lineTo(x+s,y+s/2); cx.lineTo(x+s/2,y+s); cx.lineTo(x,y+s/2); cx.closePath(); },
+        // Pentagon
+        (x,y,s,a)=>{ cx.beginPath(); for(let i=0;i<5;i++){const ang=-Math.PI/2+i*2*Math.PI/5; cx.lineTo(x+s/2+s/2*Math.cos(ang),y+s/2+s/2*Math.sin(ang));} cx.closePath(); },
+    ];
+
+    // --- Layout for output (right side): pre-packed grid ---
+    const outputLayout = [
+        {shape:0,x:0,  y:0,  s:26},
+        {shape:1,x:30, y:0,  s:26},
+        {shape:2,x:60, y:0,  s:26},
+        {shape:0,x:0,  y:30, s:26},
+        {shape:3,x:30, y:30, s:26},
+        {shape:4,x:60, y:30, s:26},
+        {shape:1,x:0,  y:58, s:26},
+        {shape:2,x:30, y:58, s:26},
+        {shape:0,x:60, y:58, s:26},
+    ];
+
+    // Input pieces (scattered, left zone)
+    const inputPieces = [
+        {shape:0,x:28,y:20,s:26}, {shape:1,x:10,y:60,s:26},
+        {shape:2,x:40,y:100,s:26},{shape:3,x:5, y:140,s:26},
+        {shape:4,x:50,y:52,s:26}, {shape:1,x:20,y:130,s:26},
+        {shape:0,x:55,y:88,s:22}, {shape:2,x:8, y:88,s:22},
+        {shape:3,x:45,y:148,s:20},
+    ];
+
+    // State
+    let t = 0; // 0..1 overall cycle (4 seconds)
+    const CYCLE = 240; // frames per full cycle
+    let frame = 0;
+
+    // Core glow (center)
+    const CX = W / 2, CY = H / 2;
+
+    function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+    function lerp(a,b,t) { return a + (b-a)*t; }
+
+    function drawShape(shapeFn, x, y, s, alpha, glow, filled) {
+        cx.save();
+        shapeFn(x - s/2, y - s/2, s);
+        if (glow) {
+            cx.shadowColor = FIRE;
+            cx.shadowBlur = 12;
+        }
+        if (filled) {
+            cx.fillStyle = `rgba(232,91,46,${alpha * 0.35})`;
+            cx.fill();
+        }
+        cx.strokeStyle = `rgba(232,91,46,${alpha})`;
+        cx.lineWidth = 1.5;
+        cx.stroke();
+        cx.restore();
+    }
+
+    function drawZoneLabel(text, x, y) {
+        cx.fillStyle = CREAM + '0.22)';
+        cx.font = '500 9px DM Sans, sans-serif';
+        cx.letterSpacing = '0.1em';
+        cx.textAlign = 'center';
+        cx.fillText(text.toUpperCase(), x, y);
+    }
+
+    function render() {
+        cx.clearRect(0, 0, W, H);
+
+        frame++;
+        t = (frame % CYCLE) / CYCLE;
+
+        // --- Background zones ---
+        // Left zone
+        cx.fillStyle = 'rgba(255,223,184,0.02)';
+        cx.beginPath(); cx.rect(0, 0, W*0.3, H); cx.fill();
+        cx.strokeStyle = DIM;
+        cx.lineWidth = 1;
+        cx.beginPath(); cx.moveTo(W*0.3, 0); cx.lineTo(W*0.3, H); cx.stroke();
+
+        // Right zone
+        cx.fillStyle = 'rgba(232,91,46,0.03)';
+        cx.beginPath(); cx.rect(W*0.7, 0, W*0.3, H); cx.fill();
+        cx.strokeStyle = DIM;
+        cx.beginPath(); cx.moveTo(W*0.7, 0); cx.lineTo(W*0.7, H); cx.stroke();
+
+        drawZoneLabel('Piezas DXF', W*0.15, H-8);
+        drawZoneLabel('Algoritmo Genético', W*0.5, H-8);
+        drawZoneLabel('Acomodo óptimo', W*0.85, H-8);
+
+        // --- Core glow (center brain) ---
+        const coreGlow = 0.6 + 0.4 * Math.sin(frame * 0.08);
+        const coreR = 28 + coreGlow * 6;
+
+        // Outer halo
+        const halo = cx.createRadialGradient(CX, CY, 0, CX, CY, coreR * 2.5);
+        halo.addColorStop(0, `rgba(232,91,46,${0.18 * coreGlow})`);
+        halo.addColorStop(1, 'rgba(232,91,46,0)');
+        cx.beginPath(); cx.arc(CX, CY, coreR * 2.5, 0, Math.PI*2);
+        cx.fillStyle = halo; cx.fill();
+
+        // Core ring
+        cx.beginPath(); cx.arc(CX, CY, coreR, 0, Math.PI*2);
+        cx.strokeStyle = `rgba(232,91,46,${0.5 + 0.5*coreGlow})`;
+        cx.lineWidth = 1.5;
+        cx.shadowColor = FIRE; cx.shadowBlur = 16;
+        cx.stroke(); cx.shadowBlur = 0;
+
+        // Inner DNA icon (🧬 substitute: rotating dot pattern)
+        for (let i = 0; i < 6; i++) {
+            const ang = frame * 0.04 + i * Math.PI / 3;
+            const r = 10;
+            const nx = CX + r * Math.cos(ang);
+            const ny = CY + r * Math.sin(ang);
+            cx.beginPath(); cx.arc(nx, ny, 2, 0, Math.PI*2);
+            cx.fillStyle = `rgba(232,91,46,${0.7 + 0.3*Math.sin(frame*0.1 + i)})`;
+            cx.shadowColor = FIRE; cx.shadowBlur = 8;
+            cx.fill(); cx.shadowBlur = 0;
+        }
+
+        // --- Phase breakdown ---
+        // Phase 0..0.35: pieces fly from left to center
+        // Phase 0.35..0.55: processing (pieces spin inside core)
+        // Phase 0.55..0.9: packed result flies to right
+        // Phase 0.9..1: fade & reset
+
+        const phase = t;
+
+        // --- INPUT PIECES (left zone → core) ---
+        if (phase < 0.55) {
+            const flyT = Math.min(phase / 0.35, 1);
+            inputPieces.forEach((p, i) => {
+                const delay = i / inputPieces.length * 0.6;
+                const localT = Math.max(0, Math.min((phase - delay*0.35) / 0.35, 1));
+                const ease = easeInOut(localT);
+
+                const startX = W*0.07 + p.x;
+                const startY = p.y + 10;
+                const endX = CX;
+                const endY = CY;
+
+                const px = lerp(startX, endX, ease);
+                const py = lerp(startY, endY, ease);
+                const alpha = localT < 1 ? (0.7 - ease*0.4) : 0;
+                const sc = lerp(p.s, p.s * 0.3, ease);
+
+                if (ease < 1) drawShape(SHAPES[p.shape], px, py, sc, alpha, ease > 0.7, ease > 0.5);
+            });
+        }
+
+        // --- PROCESSING SPARKS (center, during phase 0.3..0.65) ---
+        if (phase > 0.28 && phase < 0.68) {
+            const prog = (phase - 0.28) / 0.4;
+            for (let i = 0; i < 8; i++) {
+                const ang = frame * 0.12 + i * Math.PI / 4;
+                const r = 18 + i * 2.5;
+                const sx = CX + r * Math.cos(ang);
+                const sy = CY + r * Math.sin(ang);
+                const a = Math.sin(prog * Math.PI) * (0.5 + 0.5*Math.sin(frame*0.15+i));
+                cx.beginPath(); cx.arc(sx, sy, 1.5, 0, Math.PI*2);
+                cx.fillStyle = `rgba(255,160,60,${a})`;
+                cx.shadowColor = '#ffa03c'; cx.shadowBlur = 6;
+                cx.fill(); cx.shadowBlur = 0;
+            }
+
+            // Flying labels inside core
+            cx.save();
+            cx.globalAlpha = Math.sin(prog * Math.PI) * 0.6;
+            cx.fillStyle = CREAM+'0.8)';
+            cx.font = 'bold 8px DM Sans, sans-serif';
+            cx.textAlign = 'center';
+            cx.fillText('evaluando...', CX, CY - coreR - 8);
+            cx.restore();
+        }
+
+        // --- OUTPUT: packed layout flies to right (phase 0.55..0.9) ---
+        if (phase > 0.52) {
+            const outT = Math.min((phase - 0.52) / 0.38, 1);
+            const ease = easeInOut(outT);
+
+            // Sheet border (bounding box of output)
+            const sheetX = lerp(CX, W*0.715, ease);
+            const sheetY = H/2 - 50;
+            const sheetW = 92, sheetH = 90;
+
+            cx.save();
+            cx.globalAlpha = ease;
+            cx.strokeStyle = `rgba(232,91,46,0.5)`;
+            cx.lineWidth = 1;
+            cx.setLineDash([3, 3]);
+            cx.strokeRect(sheetX - 4, sheetY - 4, sheetW + 8, sheetH + 8);
+            cx.setLineDash([]);
+
+            // Pack pieces inside sheet
+            outputLayout.forEach((p, i) => {
+                const pDelay = i / outputLayout.length * 0.4;
+                const localE = easeInOut(Math.max(0, Math.min((outT - pDelay) / 0.6, 1)));
+                const px = sheetX + p.x + p.s/2;
+                const py = sheetY + p.y + p.s/2;
+                cx.globalAlpha = ease * localE;
+                drawShape(SHAPES[p.shape], px, py, p.s, 0.85, false, true);
+            });
+
+            // "Ahorro 18%" badge
+            if (outT > 0.7) {
+                const badgeAlpha = (outT - 0.7) / 0.3;
+                cx.globalAlpha = badgeAlpha;
+                cx.fillStyle = FIRE;
+                cx.beginPath();
+                const bx = sheetX + sheetW - 2, by = sheetY - 12;
+                cx.roundRect(bx - 38, by - 10, 42, 16, 8);
+                cx.fill();
+                cx.fillStyle = '#fff';
+                cx.font = 'bold 8px DM Sans, sans-serif';
+                cx.textAlign = 'center';
+                cx.fillText('Ahorro 18%', bx - 17, by + 2);
+            }
+
+            cx.restore();
+        }
+
+        // --- Arrow indicators ---
+        // Left arrow: input → core
+        if (phase < 0.55) {
+            const a = phase < 0.1 ? phase/0.1 : (phase > 0.45 ? (0.55-phase)/0.1 : 1);
+            cx.save();
+            cx.globalAlpha = a * 0.35;
+            cx.strokeStyle = FIRE;
+            cx.lineWidth = 1;
+            cx.setLineDash([4, 4]);
+            cx.beginPath();
+            cx.moveTo(W*0.3, CY);
+            cx.lineTo(CX - 35, CY);
+            cx.stroke();
+            cx.setLineDash([]);
+            cx.restore();
+        }
+        // Right arrow: core → output
+        if (phase > 0.5) {
+            const a = Math.min((phase - 0.5)/0.1, 1) * (phase > 0.88 ? (1-(phase-0.88)/0.12) : 1);
+            cx.save();
+            cx.globalAlpha = a * 0.35;
+            cx.strokeStyle = FIRE;
+            cx.lineWidth = 1;
+            cx.setLineDash([4, 4]);
+            cx.beginPath();
+            cx.moveTo(CX + 35, CY);
+            cx.lineTo(W*0.7, CY);
+            cx.stroke();
+            cx.setLineDash([]);
+            cx.restore();
+        }
+
+        requestAnimationFrame(render);
+    }
+
+    render();
+})();
+

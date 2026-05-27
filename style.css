@@ -187,6 +187,94 @@ img { max-width: 100%; height: auto; display: block; }
     width: auto;
 }
 
+.nav-logo-name {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--cream);
+    letter-spacing: 0.04em;
+}
+
+/* Powered by Foglar badge */
+.powered-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1px solid rgba(232,91,46,0.25);
+    border-radius: 100px;
+    background: rgba(232,91,46,0.07);
+    color: rgba(255,223,184,0.7);
+    font-size: 0.78rem;
+    transition: all var(--transition);
+    text-decoration: none;
+    white-space: nowrap;
+}
+.powered-badge span { font-weight: 400; }
+.powered-badge strong {
+    color: var(--fire-light);
+    font-weight: 700;
+}
+.powered-badge svg {
+    width: 12px; height: 12px;
+    color: var(--fire);
+    opacity: 0.7;
+    transition: transform var(--transition);
+}
+.powered-badge:hover {
+    background: rgba(232,91,46,0.14);
+    border-color: rgba(232,91,46,0.5);
+    color: var(--cream);
+    transform: translateY(-1px);
+}
+.powered-badge:hover svg { transform: translate(2px, -2px); opacity: 1; }
+
+/* Footer branding */
+.footer-product {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    color: var(--cream);
+    letter-spacing: 0.04em;
+}
+.footer-powered {
+    display: block;
+    font-size: 0.8rem;
+    color: rgba(255,223,184,0.35);
+    margin-top: 2px;
+}
+.footer-powered a {
+    color: var(--fire-light);
+    font-weight: 600;
+    transition: color var(--transition);
+}
+.footer-powered a:hover { color: var(--cream); }
+
+/* Nesting algorithm animation */
+.nesting-anim-wrap {
+    margin-top: 36px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid rgba(232,91,46,0.15);
+    background: rgba(0,0,0,0.35);
+    position: relative;
+}
+#nesting-anim {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 180px;
+}
+.nesting-anim-caption {
+    text-align: center;
+    font-size: 0.72rem;
+    color: rgba(255,223,184,0.25);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 0;
+    border-top: 1px solid rgba(255,223,184,0.05);
+    margin: 0;
+}
+
 .nav-links {
     display: flex;
     align-items: center;
