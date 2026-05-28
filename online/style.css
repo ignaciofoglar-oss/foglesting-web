@@ -84,10 +84,10 @@ header h1 {
     line-height: 1.1;
 }
 .fire-text {
-    color: var(--fire);
-}
-.forest-text {
-    color: var(--forest-light);
+    background: linear-gradient(135deg, var(--fire), var(--fire-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 .accent { color: var(--forest-light); }
 .subtitle { color: rgba(255,223,184,0.45); font-size: 0.9rem; margin-top: 4px; }
