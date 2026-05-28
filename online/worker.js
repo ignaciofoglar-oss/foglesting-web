@@ -18,11 +18,22 @@ onmessage = function(e) {
     if (e.data.type === 'run') {
         try {
             const { files, spacing, iterations, population, rotations, sheetWidth, sheetHeight } = e.data;
+
+            try {
+                if (nestingModule.FS.analyzePath('output.dxf').exists) {
+                    nestingModule.FS.unlink('output.dxf');
+                }
+            } catch (ex) {}
             
             let quantities = [];
             for (let i = 0; i < files.length; i++) {
                 const qty = files[i].quantity || 1;
                 quantities.push(qty);
+                try {
+                    if (nestingModule.FS.analyzePath(`input_${i}.dxf`).exists) {
+                        nestingModule.FS.unlink(`input_${i}.dxf`);
+                    }
+                } catch (ex) {}
                 nestingModule.FS.writeFile(`input_${i}.dxf`, files[i].buffer);
             }
             const quantities_str = quantities.join(',');
@@ -45,7 +56,8 @@ onmessage = function(e) {
             let output_dxf_buffer = null;
             try {
                 if (nestingModule.FS.analyzePath('output.dxf').exists) {
-                    output_dxf_buffer = nestingModule.FS.readFile('output.dxf', { encoding: 'binary' });
+                    const dxf_data = nestingModule.FS.readFile('output.dxf');
+                    output_dxf_buffer = new Uint8Array(dxf_data);
                 }
             } catch (ex) {}
 
@@ -53,7 +65,7 @@ onmessage = function(e) {
                 type: 'done', 
                 data: result_json,
                 dxf_buffer: output_dxf_buffer 
-            });
+            }, output_dxf_buffer ? [output_dxf_buffer.buffer] : []);
 
         } catch (err) {
             postMessage({ type: 'error', data: err.toString() });

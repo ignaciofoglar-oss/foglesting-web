@@ -194,6 +194,9 @@ runBtn.addEventListener('click', async () => {
     if (!nestingWorker || dxfFiles.length === 0) return;
 
     solverRunning = true;
+    lastResult = null;
+    lastDxfBuffer = null;
+    downloadBtn.disabled = true;
     runBtn.style.display = 'none';
     stopBtn.style.display = 'block';
     loader.style.display = 'block';
@@ -288,8 +291,9 @@ function handleWorkerDone(msg) {
     }
 
     lastResult = stats;
-    lastDxfBuffer = msg.dxf_buffer;
+    lastDxfBuffer = msg.dxf_buffer && msg.dxf_buffer.byteLength > 0 ? msg.dxf_buffer : null;
     activeSheet = 0;
+    downloadBtn.disabled = !(lastDxfBuffer || (stats.placements && stats.placements.length > 0));
 
     // Firebase: update with best_solution_time
     if (currentRunDocRef) {
