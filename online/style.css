@@ -73,6 +73,39 @@ body {
 }
 
 /* ---- Header ---- */
+header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+.back-home {
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(232,91,46,0.75);
+    border-radius: 999px;
+    color: var(--fire);
+    background: rgba(232,91,46,0.08);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    flex: 0 0 auto;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+.back-home svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.back-home:hover {
+    background: var(--fire);
+    color: var(--dark-deep);
+    transform: translateX(-2px);
+}
 .logo-row { display: flex; align-items: center; gap: 18px; }
 .header-logo { height: 56px; filter: drop-shadow(0 2px 8px rgba(232,91,46,0.3)); }
 
