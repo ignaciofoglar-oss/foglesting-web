@@ -72,24 +72,62 @@ body {
     gap: 1.5rem;
 }
 
-/* ---- Header ---- */
-.logo-row { display: flex; align-items: center; gap: 18px; }
-.header-logo { height: 56px; filter: drop-shadow(0 2px 8px rgba(232,91,46,0.3)); }
+header {
+    position: relative;
+    text-align: center;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.back-btn {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    text-decoration: none;
+    color: var(--fire);
+    border: 2px solid var(--fire);
+    border-radius: 50%;
+    background: rgba(232,91,46,0.1);
+    transition: all 0.2s;
+}
+.back-btn:hover {
+    background: var(--fire);
+    color: #0a0a0a;
+    transform: translateY(-50%) scale(1.05);
+}
+
+.logo-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-logo { height: 65px; filter: drop-shadow(0 2px 8px rgba(232,91,46,0.3)); object-fit: contain; }
 
 header h1 {
     font-family: var(--font-display);
-    font-size: 2.6rem;
+    font-size: 3rem;
     color: var(--cream);
     letter-spacing: 1px;
     line-height: 1.1;
+    margin: 0;
 }
 .fire-text {
-    background: linear-gradient(135deg, var(--fire), var(--fire-light));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--fire);
 }
-.accent { color: var(--forest-light); }
+.forest-text {
+    color: var(--forest-light);
+}
+.accent { color: rgba(255,223,184,0.8); font-size: 0.6em; vertical-align: middle; }
 .subtitle { color: rgba(255,223,184,0.45); font-size: 0.9rem; margin-top: 4px; }
 
 /* ---- Glass Panels ---- */
