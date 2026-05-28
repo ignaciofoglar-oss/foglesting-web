@@ -153,6 +153,38 @@ async function loadMetrics() {
         const minutes = Math.floor((totalTimeSpent % 3600) / 60);
         document.getElementById('stat-time').textContent = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 
+        // Load Solver Metrics
+        const solverSnapshot = await getDocs(query(collection(db, 'solver_runs')));
+        let totalSolverUses = 0;
+        let totalDxfs = 0;
+        let bestTimeSum = 0;
+        let bestTimeCount = 0;
+        let saveTimeSum = 0;
+        let saveTimeCount = 0;
+
+        solverSnapshot.forEach(doc => {
+            const data = doc.data();
+            totalSolverUses++;
+            totalDxfs += (data.dxf_count || 0);
+            if (data.best_solution_time_sec > 0) {
+                bestTimeSum += data.best_solution_time_sec;
+                bestTimeCount++;
+            }
+            if (data.saved && data.total_time_to_save_sec > 0) {
+                saveTimeSum += data.total_time_to_save_sec;
+                saveTimeCount++;
+            }
+        });
+
+        document.getElementById('stat-solver-uses').textContent = totalSolverUses;
+        document.getElementById('stat-solver-dxfs').textContent = totalDxfs;
+        
+        const avgBestTime = bestTimeCount > 0 ? (bestTimeSum / bestTimeCount).toFixed(1) : 0;
+        const avgSaveTime = saveTimeCount > 0 ? (saveTimeSum / saveTimeCount).toFixed(1) : 0;
+        
+        document.getElementById('stat-solver-best-time').textContent = `${avgBestTime}s`;
+        document.getElementById('stat-solver-save-time').textContent = `${avgSaveTime}s`;
+
         // Render Chart
         const ctx = document.getElementById('metricsChart').getContext('2d');
         if(metricsChartInstance) metricsChartInstance.destroy(); // clear previous

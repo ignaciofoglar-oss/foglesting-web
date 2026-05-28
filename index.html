@@ -13,13 +13,117 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- ========== SPLASH SCREEN ========== -->
+    <div id="splash-screen">
+        <div class="splash-neural-sphere">
+            <div class="splash-core"></div>
+            <!-- 3D Neural Particle Sphere -->
+            <canvas id="splashCanvas" width="400" height="400" style="position: absolute; top: 0; left: 0; z-index: 1; pointer-events: none;"></canvas>
+        </div>
+        <div class="splash-logo-container">
+            <h1 class="splash-logo"><span class="fire-text">Fogl</span><span class="forest-text">esting</span></h1>
+            <div class="splash-powered">powered by <span>foglar</span></div>
+        </div>
+    </div>
+    <script>
+        // Draw 3D Neural Network Sphere
+        (function() {
+            const canvas = document.getElementById('splashCanvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let w = 400, h = 400;
+                let points = [];
+                let numPoints = 160;
+                let goldenRatio = (1 + Math.sqrt(5)) / 2;
+                // Generate points using Fibonacci sphere algorithm for perfectly uniform distribution (no empty spots)
+                for(let i=0; i<numPoints; i++) {
+                    let theta = 2 * Math.PI * i / goldenRatio;
+                    let phi = Math.acos(1 - 2 * (i + 0.5) / numPoints);
+                    points.push({
+                        x: Math.sin(phi) * Math.cos(theta),
+                        y: Math.sin(phi) * Math.sin(theta),
+                        z: Math.cos(phi)
+                    });
+                }
+                let frame;
+                let angleY = 0;
+                let angleX = 0;
+                function draw() {
+                    ctx.clearRect(0, 0, w, h);
+                    angleY += 0.005;
+                    angleX += 0.002;
+                    let p2d = [];
+                    let r = 180; // Radius of the sphere in canvas pixels
+                    let cosY = Math.cos(angleY), sinY = Math.sin(angleY);
+                    let cosX = Math.cos(angleX), sinX = Math.sin(angleX);
+                    
+                    for(let p of points) {
+                        let x1 = p.x * cosY - p.z * sinY;
+                        let z1 = p.z * cosY + p.x * sinY;
+                        let y2 = p.y * cosX - z1 * sinX;
+                        let z2 = z1 * cosX + p.y * sinX;
+                        p2d.push({
+                            x: w/2 + x1 * r,
+                            y: h/2 + y2 * r,
+                            z: z2,
+                            alpha: (z2 + 1) / 2 // 0 (back) to 1 (front)
+                        });
+                    }
+                    
+                    // Draw connecting lines for nearest neighbors
+                    ctx.lineWidth = 1;
+                    for(let i=0; i<p2d.length; i++) {
+                        for(let j=i+1; j<p2d.length; j++) {
+                            let dx = p2d[i].x - p2d[j].x;
+                            let dy = p2d[i].y - p2d[j].y;
+                            let dz = p2d[i].z - p2d[j].z;
+                            let distSq = dx*dx + dy*dy + dz*dz;
+                            if(distSq < 8000) { // Connection distance threshold
+                                let avgAlpha = (p2d[i].alpha + p2d[j].alpha) / 2;
+                                ctx.strokeStyle = `rgba(255, 223, 184, ${avgAlpha * 0.35})`;
+                                ctx.beginPath();
+                                ctx.moveTo(p2d[i].x, p2d[i].y);
+                                ctx.lineTo(p2d[j].x, p2d[j].y);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                    // Draw glowing nodes
+                    for(let p of p2d) {
+                        let size = 1.5 + p.alpha * 3.5;
+                        ctx.fillStyle = `rgba(232, 91, 46, ${0.4 + p.alpha * 0.6})`;
+                        ctx.shadowColor = '#e85b2e';
+                        ctx.shadowBlur = 12 * p.alpha;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, size, 0, 2*Math.PI);
+                        ctx.fill();
+                        
+                        // Inner bright core
+                        ctx.fillStyle = `rgba(255, 223, 184, ${0.8 + p.alpha * 0.2})`;
+                        ctx.shadowBlur = 0;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, size * 0.4, 0, 2*Math.PI);
+                        ctx.fill();
+                    }
+                    frame = requestAnimationFrame(draw);
+                }
+                draw();
+                // Stop animation when splash screen is hidden
+                setTimeout(() => cancelAnimationFrame(frame), 5000);
+            }
+        })();
 
+        // Remove splash screen from DOM after animation completes to avoid blocking interactions
+        setTimeout(() => {
+            const splash = document.getElementById('splash-screen');
+            if (splash) splash.remove();
+        }, 5000);
+    </script>
     <!-- ========== NAVBAR ========== -->
     <nav class="navbar" id="navbar">
         <div class="container">
             <a href="#inicio" class="nav-logo" aria-label="Foglesting - Inicio">
                 <img src="assets/nuevo_logo_beige.png" alt="Foglar">
-                <span class="nav-logo-name">Foglesting</span>
             </a>
             <a href="https://foglar.com.ar" target="_blank" rel="noopener" class="powered-badge" aria-label="Powered by Foglar">
                 <span>Powered by</span>
@@ -32,6 +136,7 @@
                 <li><a href="#algoritmo">El Algoritmo</a></li>
                 <li><a href="#features">Características</a></li>
                 <li><a href="#como-funciona">Cómo Funciona</a></li>
+                <li><a href="#online" class="fire-text" style="font-weight: 600;">Nesting Online</a></li>
                 <li><a href="#descargar" class="nav-cta">Descargar</a></li>
             </ul>
 
@@ -55,7 +160,7 @@
                 <img src="assets/nuevo_logo_beige.png" alt="Foglar isotipo">
             </div>
             <span class="hero-label">🚀 Optimización de Corte para Chapa Metálica</span>
-            <h1><span class="fire-text">Foglesting</span></h1>
+            <h1><span class="fire-text">Fogl</span><span class="forest-text">esting</span></h1>
             <p class="hero-sub">Software gratuito para talleres metalúrgicos</p>
             <p class="hero-tagline">Usamos un <strong>Algoritmo Genético</strong> para calcular el mejor ordenamiento de tus piezas. Cargá tus DXF y obtené el acomodo óptimo que minimiza el desperdicio de chapa.</p>
             <div class="hero-buttons">
@@ -268,12 +373,158 @@
         </div>
     </section>
 
+    <!-- ========== ONLINE SOLVER ========== -->
+    <section class="section algorithm" id="online" style="background: rgba(10, 10, 10, 0.4);">
+        <div class="container">
+            <div class="algo-grid" style="align-items: center;">
+                <div class="algo-text reveal-right">
+                    <span class="section-label" style="background:rgba(232,91,46,0.1);border-color:rgba(232,91,46,0.2);color:var(--fire);">Nuevo motor en la nube</span>
+                    <h2 style="font-size: 2.5rem; margin-bottom: 1.5rem;">Nesting Online</h2>
+                    <p>Experimentá una demostración rápida de nuestro algoritmo <strong>directamente desde tu navegador</strong>. Ideal para ver cómo trabaja la inteligencia artificial antes de descargar la versión completa de escritorio.</p>
+                    <ul class="features-list">
+                        <li>Sube tus archivos DXF directamente.</li>
+                        <li>Configura el tamaño de tu chapa y la rotación.</li>
+                        <li>Observa cómo la red neuronal evoluciona en vivo.</li>
+                        <li>Descarga el DXF optimizado al instante.</li>
+                    </ul>
+                    <a href="online/index.html" class="btn btn-primary" style="margin-top: 2rem;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polygon points="10 8 16 12 10 16 10 8"></polygon>
+                        </svg>
+                        Probar Solver Online (Gratis)
+                    </a>
+                </div>
+                
+                <div class="cloud-demo reveal-left" style="position: relative; height: 350px; width: 100%; display: flex; align-items: center; justify-content: center; overflow: visible;">
+                    <style>
+                        @keyframes packP1 {
+                            0%, 5% { transform: translate(150px, -200px) rotate(90deg) scale(0.8); opacity: 0; }
+                            15%, 90% { transform: translate(10px, 10px) rotate(0deg) scale(1); opacity: 1; }
+                            100% { transform: translate(10px, 10px) rotate(0deg); opacity: 0; }
+                        }
+                        @keyframes packP2 {
+                            0%, 20% { transform: translate(-200px, 0px) rotate(-45deg) scale(0.8); opacity: 0; }
+                            35%, 90% { transform: translate(110px, 10px) rotate(0deg) scale(1); opacity: 1; }
+                            100% { transform: translate(110px, 10px) rotate(0deg); opacity: 0; }
+                        }
+                        @keyframes packP3 {
+                            0%, 40% { transform: translate(50px, 250px) rotate(180deg) scale(0.8); opacity: 0; }
+                            55%, 90% { transform: translate(10px, 110px) rotate(0deg) scale(1); opacity: 1; }
+                            100% { transform: translate(10px, 110px) rotate(0deg); opacity: 0; }
+                        }
+                        @keyframes packP4 {
+                            0%, 60% { transform: translate(300px, 150px) rotate(120deg) scale(0.8); opacity: 0; }
+                            75%, 90% { transform: translate(140px, 80px) rotate(0deg) scale(1); opacity: 1; }
+                            100% { transform: translate(140px, 80px) rotate(0deg); opacity: 0; }
+                        }
+                        @keyframes gridScroll {
+                            0% { background-position: 0 0; }
+                            100% { background-position: 0 40px; }
+                        }
+                        
+                        /* The cloud shape using an inline SVG mask */
+                        .cyber-cloud {
+                            position: absolute;
+                            top: 50%; left: 50%; transform: translate(-50%, -50%);
+                            width: 580px; 
+                            height: 380px;
+                            background: rgba(12,12,12,0.95);
+                            -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='2 4 20 16'><path d='M 6.5,19 L 17.5,19 C 20,19 22,17 22,14.5 C 22,12 20,10 17.5,10 C 17,7 14.5,5 12,5 C 9.5,5 7,7 6.5,10 C 4,10 2,12 2,14.5 C 2,17 4,19 6.5,19 Z'/></svg>");
+                            -webkit-mask-size: 100% 100%;
+                            -webkit-mask-repeat: no-repeat;
+                            mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='2 4 20 16'><path d='M 6.5,19 L 17.5,19 C 20,19 22,17 22,14.5 C 22,12 20,10 17.5,10 C 17,7 14.5,5 12,5 C 9.5,5 7,7 6.5,10 C 4,10 2,12 2,14.5 C 2,17 4,19 6.5,19 Z'/></svg>");
+                            mask-size: 100% 100%;
+                            mask-repeat: no-repeat;
+                            box-shadow: 0 0 30px rgba(232,91,46,0.15); /* Cloud glow */
+                        }
+
+                        /* Glowing border effect under the cloud */
+                        .cyber-cloud-glow {
+                            position: absolute;
+                            top: 50%; left: 50%; transform: translate(-50%, -50%);
+                            width: 586px;
+                            height: 386px;
+                            background: linear-gradient(135deg, var(--fire), var(--forest), var(--fire));
+                            -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='2 4 20 16'><path d='M 6.5,19 L 17.5,19 C 20,19 22,17 22,14.5 C 22,12 20,10 17.5,10 C 17,7 14.5,5 12,5 C 9.5,5 7,7 6.5,10 C 4,10 2,12 2,14.5 C 2,17 4,19 6.5,19 Z'/></svg>");
+                            -webkit-mask-size: 100% 100%;
+                            mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='2 4 20 16'><path d='M 6.5,19 L 17.5,19 C 20,19 22,17 22,14.5 C 22,12 20,10 17.5,10 C 17,7 14.5,5 12,5 C 9.5,5 7,7 6.5,10 C 4,10 2,12 2,14.5 C 2,17 4,19 6.5,19 Z'/></svg>");
+                            mask-size: 100% 100%;
+                            opacity: 0.5;
+                            z-index: 0;
+                        }
+
+                        .cyber-grid {
+                            position: absolute;
+                            top: 0; left: 0; right: 0; bottom: 0;
+                            background-image: 
+                                linear-gradient(rgba(232,91,46,0.15) 1px, transparent 1px),
+                                linear-gradient(90deg, rgba(232,91,46,0.1) 1px, transparent 1px);
+                            background-size: 30px 30px;
+                            animation: gridScroll 2s linear infinite;
+                        }
+
+                        .sheet-bg {
+                            width: 260px; height: 180px;
+                            position: absolute;
+                            top: 50%; left: 50%; 
+                            /* Shift down slightly so pieces sit in the fat bottom part of the cloud */
+                            transform: translate(-50%, -40%); 
+                            z-index: 10;
+                        }
+
+                        .nest-part {
+                            position: absolute;
+                            top: 0; left: 0;
+                            fill: rgba(232,91,46,0.85);
+                            stroke: var(--cream);
+                            stroke-width: 2;
+                            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+                        }
+                    </style>
+
+                    <!-- Glowing outline -->
+                    <div class="cyber-cloud-glow"></div>
+
+                    <!-- Cloud background with grid -->
+                    <div class="cyber-cloud">
+                        <div class="cyber-grid"></div>
+                    </div>
+
+                    <!-- The sheet where pieces land (over the cloud) -->
+                    <div class="sheet-bg">
+                        <!-- Piece 1: Large L-Shape -->
+                        <svg class="nest-part" width="90" height="90" style="animation: packP1 6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;">
+                            <path d="M 0,0 L 90,0 L 90,40 L 40,40 L 40,90 L 0,90 Z" />
+                        </svg>
+
+                        <!-- Piece 2: Rectangle with hole -->
+                        <svg class="nest-part" width="130" height="60" style="animation: packP2 6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;">
+                            <rect x="0" y="0" width="130" height="60" rx="4" />
+                            <circle cx="20" cy="30" r="10" fill="#141414" stroke="none" />
+                        </svg>
+
+                        <!-- Piece 3: T-Shape -->
+                        <svg class="nest-part" width="120" height="60" style="animation: packP3 6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;">
+                            <path d="M 0,0 L 120,0 L 120,30 L 80,30 L 80,60 L 40,60 L 40,30 L 0,30 Z" />
+                        </svg>
+
+                        <!-- Piece 4: Small Circle -->
+                        <svg class="nest-part" width="40" height="40" style="animation: packP4 6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;">
+                            <circle cx="20" cy="20" r="18" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- ========== DOWNLOAD CTA ========== -->
     <section class="section download-cta" id="descargar">
         <div class="container">
             <div class="download-content reveal">
                 <span class="section-label" style="background:rgba(255,223,184,0.1);border-color:rgba(255,223,184,0.15);color:var(--cream);">Descarga Gratuita</span>
-                <h2>Descargá Foglesting</h2>
+                <h2>Descargá <span class="fire-text">Fogl</span><span class="forest-text">esting</span></h2>
                 <p class="dl-desc">Optimización genética para tu corte de chapa. Sin licencias, sin límites, sin instalador.</p>
 
                 <a href="downloads/foglesting_windows_v3.zip" target="_blank" rel="noopener" class="btn btn-download-big" id="download-btn">
@@ -282,14 +533,13 @@
                         <polyline points="7 10 12 15 17 10"/>
                         <line x1="12" y1="15" x2="12" y2="3"/>
                     </svg>
-                    Descargar Foglesting V3
+                    Descargar <span class="fire-text">Fogl</span><span class="forest-text">esting</span> V3
                 </a>
                 <a href="downloads/foglesting_windows_v2.zip" target="_blank" rel="noopener" class="btn btn-outline" style="margin-top:14px;">
-                    Descargar Foglesting V2
+                    Descargar <span class="fire-text">Fogl</span><span class="forest-text">esting</span> V2
                 </a>
                 <a href="downloads/foglesting_windows.zip" target="_blank" rel="noopener" class="btn btn-outline" style="margin-top:14px;">
-                    Descargar Foglesting V1
-
+                    Descargar <span class="fire-text">Fogl</span><span class="forest-text">esting</span> V1
                 </a>
 
                 <div class="download-info">
@@ -316,7 +566,7 @@
             <div class="feedback-inner">
                 <div class="feedback-copy reveal-left">
                     <span class="section-label">💬 Tu opinión importa</span>
-                    <h2>¿Probaste Foglesting?<br><span class="gradient-text">Contanos qué pensás</span></h2>
+                    <h2>¿Probaste <span class="fire-text">Fogl</span><span class="forest-text">esting</span>?<br><span class="gradient-text">Contanos qué pensás</span></h2>
                     <p>Tu feedback nos ayuda a mejorar el software. Si encontraste un bug, tenés una idea, o simplemente querés comentar tu experiencia, este es el lugar.</p>
                     <ul class="feedback-perks">
                         <li>
@@ -379,7 +629,7 @@
                 <div class="footer-brand">
                     <img src="assets/nuevo_logo_beige.png" alt="Foglesting">
                     <div>
-                        <span class="footer-product">Foglesting</span>
+                        <span class="footer-product"><span class="fire-text">Fogl</span><span class="forest-text">esting</span></span>
                         <span class="footer-powered">Powered by <a href="https://foglar.com.ar" target="_blank" rel="noopener">Foglar</a> &mdash; 2025</span>
                     </div>
                 </div>

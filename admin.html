@@ -12,11 +12,148 @@
     <!-- Firebase SDK (ES Modules loaded via importmap or module script) -->
 </head>
 <body>
+    <!-- ========== SPLASH SCREEN ========== -->
+    <style>
+        #splash-screen {
+            position: fixed; inset: 0; z-index: 9999;
+            background: #111111;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            animation: splashHide 5s ease-in-out forwards;
+        }
+        @keyframes splashHide {
+            0%, 85% { opacity: 1; visibility: visible; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+        .splash-neural-sphere {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px; height: 400px;
+            animation: sphereScaleDown 1s cubic-bezier(0.4, 0, 0.2, 1) 2.5s forwards;
+            display: flex; align-items: center; justify-content: center;
+        }
+        @keyframes sphereScaleDown {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+        }
+        .splash-core {
+            width: 60px; height: 60px;
+            background: radial-gradient(circle, #ffdfb8 0%, #e85b2e 50%, transparent 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 40px #e85b2e;
+            animation: pulseCore 2s ease-in-out infinite;
+            z-index: 2;
+        }
+        @keyframes pulseCore {
+            0%, 100% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 30px #e85b2e; }
+            50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 60px #e85b2e; }
+        }
+        .splash-logo-container {
+            text-align: center; position: relative; z-index: 3;
+        }
+        .splash-logo {
+            font-family: 'Boucherie Block', Georgia, serif;
+            font-size: clamp(4rem, 10vw, 6.5rem); color: #ffdfb8;
+            opacity: 0; transform: translateY(30px);
+            animation: splashLogoReveal 1s cubic-bezier(0.2, 1, 0.3, 1) 2.8s forwards;
+            text-shadow: 0 4px 30px rgba(0,0,0,0.6); margin-bottom: 0;
+        }
+        .splash-logo .fire-text { color: #e85b2e; }
+        .splash-logo .forest-text { color: #3d8760; }
+        .splash-powered {
+            font-family: 'DM Sans', sans-serif; font-size: 1.4rem;
+            color: rgba(255,223,184,0.6); opacity: 0; transform: translateY(15px);
+            animation: splashPoweredReveal 1s cubic-bezier(0.2, 1, 0.3, 1) 3.2s forwards;
+            letter-spacing: 0.18em; text-transform: uppercase; margin-top: 5px;
+        }
+        .splash-powered span { font-weight: 700; color: #ffdfb8; }
+        @keyframes splashLogoReveal { 100% { opacity: 1; transform: translateY(0); } }
+        @keyframes splashPoweredReveal { 100% { opacity: 1; transform: translateY(0); } }
+    </style>
+    <div id="splash-screen">
+        <div class="splash-neural-sphere">
+            <div class="splash-core"></div>
+            <canvas id="splashCanvas" width="400" height="400" style="position: absolute; top: 0; left: 0; z-index: 1; pointer-events: none;"></canvas>
+        </div>
+        <div class="splash-logo-container">
+            <h1 class="splash-logo"><span class="fire-text">Fogl</span><span class="forest-text">esting</span></h1>
+            <div class="splash-powered">powered by <span>foglar</span></div>
+        </div>
+    </div>
+    <script>
+        (function() {
+            const canvas = document.getElementById('splashCanvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let w = 400, h = 400;
+                let points = [];
+                let numPoints = 160;
+                let goldenRatio = (1 + Math.sqrt(5)) / 2;
+                for(let i=0; i<numPoints; i++) {
+                    let theta = 2 * Math.PI * i / goldenRatio;
+                    let phi = Math.acos(1 - 2 * (i + 0.5) / numPoints);
+                    points.push({
+                        x: Math.sin(phi) * Math.cos(theta),
+                        y: Math.sin(phi) * Math.sin(theta),
+                        z: Math.cos(phi)
+                    });
+                }
+                let frame;
+                let angleY = 0, angleX = 0;
+                function draw() {
+                    ctx.clearRect(0, 0, w, h);
+                    angleY += 0.005; angleX += 0.002;
+                    let p2d = [];
+                    let r = 180;
+                    let cosY = Math.cos(angleY), sinY = Math.sin(angleY);
+                    let cosX = Math.cos(angleX), sinX = Math.sin(angleX);
+                    for(let p of points) {
+                        let x1 = p.x * cosY - p.z * sinY;
+                        let z1 = p.z * cosY + p.x * sinY;
+                        let y2 = p.y * cosX - z1 * sinX;
+                        let z2 = z1 * cosX + p.y * sinX;
+                        p2d.push({
+                            x: w/2 + x1 * r, y: h/2 + y2 * r, z: z2, alpha: (z2 + 1) / 2
+                        });
+                    }
+                    ctx.lineWidth = 1;
+                    for(let i=0; i<p2d.length; i++) {
+                        for(let j=i+1; j<p2d.length; j++) {
+                            let dx = p2d[i].x - p2d[j].x, dy = p2d[i].y - p2d[j].y, dz = p2d[i].z - p2d[j].z;
+                            if((dx*dx + dy*dy + dz*dz) < 8000) {
+                                let avgAlpha = (p2d[i].alpha + p2d[j].alpha) / 2;
+                                ctx.strokeStyle = `rgba(255, 223, 184, ${avgAlpha * 0.35})`;
+                                ctx.beginPath(); ctx.moveTo(p2d[i].x, p2d[i].y); ctx.lineTo(p2d[j].x, p2d[j].y); ctx.stroke();
+                            }
+                        }
+                    }
+                    for(let p of p2d) {
+                        let size = 1.5 + p.alpha * 3.5;
+                        ctx.fillStyle = `rgba(232, 91, 46, ${0.4 + p.alpha * 0.6})`;
+                        ctx.shadowColor = '#e85b2e'; ctx.shadowBlur = 12 * p.alpha;
+                        ctx.beginPath(); ctx.arc(p.x, p.y, size, 0, 2*Math.PI); ctx.fill();
+                        ctx.fillStyle = `rgba(255, 223, 184, ${0.8 + p.alpha * 0.2})`;
+                        ctx.shadowBlur = 0;
+                        ctx.beginPath(); ctx.arc(p.x, p.y, size * 0.4, 0, 2*Math.PI); ctx.fill();
+                    }
+                    frame = requestAnimationFrame(draw);
+                }
+                draw();
+                setTimeout(() => cancelAnimationFrame(frame), 5000);
+            }
+        })();
+        setTimeout(() => {
+            const splash = document.getElementById('splash-screen');
+            if (splash) splash.remove();
+        }, 5000);
+    </script>
     <div class="admin-bg"></div>
     <!-- Login Screen -->
     <div id="login-screen" class="screen active">
         <div class="login-card">
-            <img src="assets/nuevo_logo_beige.png" alt="Foglesting Logo" class="login-logo">
+            <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:20px;">
+                <img src="assets/nuevo_logo_beige.png" alt="Foglesting Logo" class="login-logo" style="margin-bottom:0;">
+                <h1 style="font-family:'Boucherie Block',serif; font-size:2.8rem; margin:0;"><span style="color:#e85b2e;">Fogl</span><span style="color:#3d8760;">esting</span></h1>
+            </div>
             <h2>Panel de Administración</h2>
             <form id="login-form">
                 <div class="input-group">
@@ -36,7 +173,10 @@
     <!-- Dashboard Screen -->
     <div id="dashboard-screen" class="screen">
         <aside class="sidebar">
-            <img src="assets/nuevo_logo_beige.png" alt="Foglesting Logo" class="sidebar-logo">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:40px;">
+                <img src="assets/nuevo_logo_beige.png" alt="Foglesting Logo" class="sidebar-logo" style="margin-bottom:0;">
+                <span style="font-family:'Boucherie Block',serif; font-size:1.8rem; letter-spacing:1px;"><span style="color:#e85b2e;">Fogl</span><span style="color:#3d8760;">esting</span></span>
+            </div>
             <nav>
                 <a href="#" class="nav-item active" data-target="metrics">Métricas</a>
                 <a href="#" class="nav-item" data-target="messages">Mensajes</a>
@@ -63,6 +203,28 @@
                     <div class="stat-card">
                         <h3>Tiempo Total Jugado/Visto</h3>
                         <div class="stat-value" id="stat-time">0m</div>
+                    </div>
+                </div>
+
+                <header style="margin-top: 40px;">
+                    <h2>Métricas de Uso del Solver Online</h2>
+                </header>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Usos del Solver</h3>
+                        <div class="stat-value" id="stat-solver-uses">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total DXFs Cargados</h3>
+                        <div class="stat-value" id="stat-solver-dxfs">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Promedio Mejor Solución</h3>
+                        <div class="stat-value" id="stat-solver-best-time">0s</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Promedio hasta Guardar</h3>
+                        <div class="stat-value" id="stat-solver-save-time">0s</div>
                     </div>
                 </div>
 
