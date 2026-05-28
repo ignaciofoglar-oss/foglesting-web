@@ -125,19 +125,18 @@ function initSettingsHelp() {
     const help = document.getElementById('settings-help');
     if (!help) return;
     const defaultText = help.textContent.trim() || 'Ayuda de configuración.';
-    document.querySelectorAll('.info-tip').forEach(tip => {
-        const show = () => {
-            help.textContent = tip.dataset.tip || defaultText;
+    document.body.addEventListener('mouseover', (e) => {
+        if (e.target.classList && e.target.classList.contains('info-tip')) {
+            help.textContent = e.target.dataset.tip || defaultText;
             help.classList.add('active');
-        };
-        const hide = () => {
+        }
+    });
+
+    document.body.addEventListener('mouseout', (e) => {
+        if (e.target.classList && e.target.classList.contains('info-tip')) {
             help.textContent = defaultText;
             help.classList.remove('active');
-        };
-        tip.addEventListener('mouseenter', show);
-        tip.addEventListener('focus', show);
-        tip.addEventListener('mouseleave', hide);
-        tip.addEventListener('blur', hide);
+        }
     });
 }
 initSettingsHelp();
