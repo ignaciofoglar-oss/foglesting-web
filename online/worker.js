@@ -3,7 +3,7 @@
 // Runs nesting in background, yields previews
 // ====================================================
 
-importScripts('nesting.js?v=fast-init-v1');
+importScripts('nesting.js?v=stats-20260528');
 
 let nestingModule = null;
 

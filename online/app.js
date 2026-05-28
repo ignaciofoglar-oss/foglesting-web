@@ -49,7 +49,7 @@ const inputPreviewPanel = document.getElementById('input-preview-panel');
 // ---- Web Worker Init ----
 function initWorker() {
     if (nestingWorker) nestingWorker.terminate();
-    nestingWorker = new Worker('worker.js?v=fast-init-v1');
+    nestingWorker = new Worker('worker.js?v=stats-20260528');
     
     nestingWorker.onmessage = function(e) {
         const msg = e.data;

@@ -72,59 +72,16 @@ body {
     gap: 1.5rem;
 }
 
-header {
-    position: relative;
-    margin-bottom: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.back-btn {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    text-decoration: none;
-    color: var(--fire);
-    border: 2px solid var(--fire);
-    border-radius: 50%;
-    background: rgba(232,91,46,0.1);
-    transition: all 0.2s;
-}
-.back-btn:hover {
-    background: var(--fire);
-    color: #0a0a0a;
-    transform: translateY(-50%) scale(1.05);
-}
-
-.logo-row {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.header-logo { 
-    height: 44px; 
-    width: auto;
-    filter: drop-shadow(0 2px 8px rgba(232,91,46,0.3)); 
-}
+/* ---- Header ---- */
+.logo-row { display: flex; align-items: center; gap: 18px; }
+.header-logo { height: 56px; filter: drop-shadow(0 2px 8px rgba(232,91,46,0.3)); }
 
 header h1 {
     font-family: var(--font-display);
-    font-size: 2.2rem;
+    font-size: 2.6rem;
     color: var(--cream);
-    letter-spacing: 0.5px;
-    line-height: 1;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    letter-spacing: 1px;
+    line-height: 1.1;
 }
 .fire-text {
     color: var(--fire);
@@ -132,17 +89,7 @@ header h1 {
 .forest-text {
     color: var(--forest-light);
 }
-.accent { 
-    color: rgba(255,223,184,0.6); 
-    font-size: 0.45em; 
-    font-family: var(--font-body);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    border: 1px solid rgba(255,223,184,0.2);
-    padding: 3px 8px;
-    border-radius: 4px;
-    background: rgba(255,223,184,0.05);
-}
+.accent { color: var(--forest-light); }
 .subtitle { color: rgba(255,223,184,0.45); font-size: 0.9rem; margin-top: 4px; }
 
 /* ---- Glass Panels ---- */
