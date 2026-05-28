@@ -1,12 +1,23 @@
+/* Admin CSS */
 :root {
-    --bg-dark: #151616;
-    --bg-panel: #1f2523;
-    --text-main: #ffdfb8;
+    --bg-dark: #111111;
+    --bg-panel: #1a1a1a;
+    --text-main: #fafaf9;
     --text-muted: #848f8a;
     --accent-orange: #e85b2e;
-    --accent-hover: #c44720;
+    --accent-hover: #c44a1f;
     --danger: #e85b2e;
     --success: #2e6547;
+    --font-display: 'Boucherie Block', Georgia, serif;
+    --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+@font-face {
+    font-family: 'Boucherie Block';
+    src: url('assets/BoucherieBlock.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
 }
 
 * {
@@ -16,14 +27,33 @@
 }
 
 body {
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--font-body);
     background-color: var(--bg-dark);
     color: var(--text-main);
     display: flex;
     min-height: 100vh;
+    position: relative;
 }
 
-/* Screens */
+.admin-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    opacity: 0.15;
+    background-image: url('assets/hero_bg.png');
+    background-size: cover;
+    background-position: center;
+}
+
+h1, h2, h3 {
+    font-family: var(--font-display);
+    color: #ffdfb8;
+    letter-spacing: 1px;
+}
+
 .screen {
     display: none;
     width: 100%;
@@ -34,20 +64,21 @@ body {
     display: flex;
 }
 
-/* Login Screen */
 #login-screen {
     justify-content: center;
     align-items: center;
 }
 
 .login-card {
-    background-color: var(--bg-panel);
+    background-color: rgba(26, 26, 26, 0.8);
     padding: 40px;
-    border-radius: 12px;
+    border-radius: 16px;
     width: 100%;
     max-width: 400px;
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    border: 1px solid #333;
+    backdrop-filter: blur(10px);
 }
 
 .login-logo {
@@ -57,7 +88,8 @@ body {
 
 .login-card h2 {
     margin-bottom: 30px;
-    font-weight: 500;
+    font-weight: 400;
+    font-size: 2rem;
 }
 
 .input-group {
@@ -70,16 +102,17 @@ body {
     margin-bottom: 8px;
     color: var(--text-muted);
     font-size: 14px;
+    font-family: var(--font-body);
 }
 
 .input-group input {
     width: 100%;
     padding: 12px;
     border: 1px solid #444;
-    background-color: #1a1e1c;
+    background-color: #111111;
     color: white;
-    border-radius: 6px;
-    font-family: inherit;
+    border-radius: 8px;
+    font-family: var(--font-body);
 }
 
 .input-group input:focus {
@@ -89,15 +122,16 @@ body {
 
 .btn-primary {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     background-color: var(--accent-orange);
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 16px;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.2s;
+    font-family: var(--font-body);
 }
 
 .btn-primary:hover {
@@ -106,28 +140,30 @@ body {
 
 .btn-secondary {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     background: transparent;
     color: var(--text-muted);
     border: 1px solid #444;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s;
+    font-family: var(--font-body);
 }
 
 .btn-secondary:hover {
     color: white;
-    border-color: white;
+    border-color: var(--accent-orange);
 }
 
 .btn-danger {
-    padding: 6px 12px;
-    background-color: rgba(220, 53, 69, 0.1);
+    padding: 8px 16px;
+    background-color: rgba(232, 91, 46, 0.1);
     color: var(--danger);
     border: 1px solid var(--danger);
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 14px;
+    font-family: var(--font-body);
 }
 
 .btn-danger:hover {
@@ -142,14 +178,16 @@ body {
     min-height: 20px;
 }
 
-/* Dashboard Sidebar */
 .sidebar {
     width: 260px;
-    background-color: var(--bg-panel);
+    background-color: rgba(26, 26, 26, 0.9);
     padding: 30px 20px;
     display: flex;
     flex-direction: column;
     border-right: 1px solid #333;
+    box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+    z-index: 10;
+    backdrop-filter: blur(10px);
 }
 
 .sidebar-logo {
@@ -168,12 +206,13 @@ body {
 }
 
 .nav-item {
-    padding: 12px 16px;
+    padding: 14px 16px;
     color: var(--text-muted);
     text-decoration: none;
     border-radius: 8px;
     font-weight: 500;
     transition: all 0.2s;
+    font-family: var(--font-body);
 }
 
 .nav-item:hover, .nav-item.active {
@@ -181,11 +220,12 @@ body {
     color: var(--accent-orange);
 }
 
-/* Dashboard Content */
 .content {
     flex-grow: 1;
     padding: 40px;
     overflow-y: auto;
+    position: relative;
+    z-index: 5;
 }
 
 .view {
@@ -197,18 +237,11 @@ body {
     animation: fadeIn 0.3s ease-in-out;
 }
 
-header {
-    margin-bottom: 40px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #333;
-}
-
 header h1 {
-    font-size: 28px;
-    font-weight: 500;
+    font-size: 2.5rem;
+    margin-bottom: 30px;
 }
 
-/* Metrics */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -216,26 +249,27 @@ header h1 {
 }
 
 .stat-card {
-    background-color: var(--bg-panel);
-    padding: 30px;
-    border-radius: 12px;
-    text-align: center;
+    background-color: rgba(26, 26, 26, 0.8);
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid #333;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    backdrop-filter: blur(10px);
 }
 
 .stat-card h3 {
     color: var(--text-muted);
     font-size: 16px;
-    font-weight: 400;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
+    font-family: var(--font-body);
 }
 
 .stat-value {
-    font-size: 48px;
+    font-size: 36px;
     font-weight: 700;
     color: var(--accent-orange);
 }
 
-/* Messages */
 .messages-list {
     display: flex;
     flex-direction: column;
@@ -243,61 +277,46 @@ header h1 {
 }
 
 .message-card {
-    background-color: var(--bg-panel);
+    background-color: rgba(26, 26, 26, 0.8);
     padding: 20px;
     border-radius: 12px;
-    border-left: 4px solid var(--accent-orange);
+    border: 1px solid #333;
+    backdrop-filter: blur(10px);
 }
 
 .message-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 10px;
-    font-size: 14px;
+    margin-bottom: 15px;
     color: var(--text-muted);
+    font-size: 14px;
 }
 
-.message-name {
-    font-weight: 700;
-    color: var(--text-main);
+.message-header strong {
+    color: #ffdfb8;
     font-size: 16px;
 }
 
 .message-body {
+    color: var(--text-main);
     line-height: 1.6;
-    color: #ddd;
 }
 
-.loading {
-    color: var(--text-muted);
-    text-align: center;
-    font-style: italic;
-}
-
-/* Licenses */
 .license-generator {
-    background-color: var(--bg-panel);
-    padding: 25px;
-    border-radius: 12px;
-    display: flex;
-    gap: 20px;
-    align-items: flex-end;
-}
-
-.license-generator .input-group {
-    margin-bottom: 0;
-    flex-grow: 1;
-}
-
-.license-generator .btn-primary {
-    width: auto;
-    padding: 12px 30px;
+    background-color: rgba(26, 26, 26, 0.8);
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid #333;
+    margin-bottom: 30px;
+    backdrop-filter: blur(10px);
 }
 
 .table-container {
-    background-color: var(--bg-panel);
-    border-radius: 12px;
+    background-color: rgba(26, 26, 26, 0.8);
+    border-radius: 16px;
+    border: 1px solid #333;
     overflow: hidden;
+    backdrop-filter: blur(10px);
 }
 
 .data-table {
@@ -306,43 +325,29 @@ header h1 {
 }
 
 .data-table th, .data-table td {
-    padding: 15px 20px;
+    padding: 16px;
     text-align: left;
     border-bottom: 1px solid #333;
 }
 
 .data-table th {
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(0,0,0,0.2);
     color: var(--text-muted);
     font-weight: 500;
-    font-size: 14px;
 }
 
 .data-table tr:last-child td {
     border-bottom: none;
 }
 
-.status-badge {
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 700;
-}
-
 .status-active {
-    background-color: rgba(40, 167, 69, 0.2);
     color: var(--success);
+    font-weight: 600;
 }
 
 .status-revoked {
-    background-color: rgba(220, 53, 69, 0.2);
     color: var(--danger);
-}
-
-.mono {
-    font-family: monospace;
-    color: var(--accent-orange);
-    letter-spacing: 1px;
+    font-weight: 600;
 }
 
 @keyframes fadeIn {
