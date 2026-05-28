@@ -49,7 +49,7 @@ const inputPreviewPanel = document.getElementById('input-preview-panel');
 // ---- Web Worker Init ----
 function initWorker() {
     if (nestingWorker) nestingWorker.terminate();
-    nestingWorker = new Worker('worker.js?v=download-fix-20260528');
+    nestingWorker = new Worker('worker.js?v=download-preview-fix-20260528');
     
     nestingWorker.onmessage = function(e) {
         const msg = e.data;
@@ -93,7 +93,18 @@ function initWorker() {
             if (state.placements && state.placements.length > 0) {
                 // Show only best-layout previews. The worker sends geometry
                 // when there is a real improvement or a periodic checkpoint.
-                const dummyStats = { sheet_width: parseFloat(document.getElementById('sheet-width').value), sheet_height: parseFloat(document.getElementById('sheet-height').value), placements: state.placements };
+                const dummyStats = {
+                    sheet_width: parseFloat(document.getElementById('sheet-width').value),
+                    sheet_height: parseFloat(document.getElementById('sheet-height').value),
+                    placements: state.placements,
+                    placed: state.placed,
+                    unplaced: state.unplaced,
+                    sheets: state.sheets,
+                    utilization: state.utilization
+                };
+                lastResult = dummyStats;
+                lastDxfBuffer = null;
+                downloadBtn.disabled = false;
                 drawNestingResult(dummyStats, 0);
                 resultsPanel.style.display = 'block';
             }
@@ -245,11 +256,14 @@ runBtn.addEventListener('click', async () => {
 
 stopBtn.addEventListener('click', () => {
     solverRunning = false;
-    loaderText.textContent = 'Motor detenido. Descarga DXF no disponible.';
+    loaderText.textContent = lastResult
+        ? 'Motor detenido. Podés descargar el mejor acomodo disponible.'
+        : 'Motor detenido. Descarga DXF no disponible.';
     loader.style.display = 'none';
     stopBtn.style.display = 'none';
     runBtn.style.display = 'block';
     runBtn.disabled = false;
+    downloadBtn.disabled = !lastResult;
     
     // Kill the worker instantly
     if (nestingWorker) {
@@ -686,10 +700,11 @@ downloadBtn.addEventListener('click', () => {
     const a = document.createElement('a');
     a.href = url;
     a.download = 'nesting_optimizado.dxf';
+    a.target = '_self';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
 });
 
 // ---- Neural Network & Fire Dynamic Background ----
