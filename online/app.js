@@ -49,7 +49,7 @@ const inputPreviewPanel = document.getElementById('input-preview-panel');
 // ---- Web Worker Init ----
 function initWorker() {
     if (nestingWorker) nestingWorker.terminate();
-    nestingWorker = new Worker('worker.js?v=stats-20260528');
+    nestingWorker = new Worker('worker.js?v=download-fix-20260528');
     
     nestingWorker.onmessage = function(e) {
         const msg = e.data;
@@ -558,8 +558,113 @@ function drawSinglePart(canvas, part) {
 }
 
 // ---- DXF Download ----
+function dxfValue(value) {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return '0';
+    return Number(num.toFixed(6)).toString();
+}
+
+function pushGroup(lines, code, value) {
+    lines.push(String(code), String(value));
+}
+
+function pushPolyline(lines, points, layer, xOffset = 0) {
+    if (!points || points.length < 2) return;
+    pushGroup(lines, 0, 'POLYLINE');
+    pushGroup(lines, 8, layer);
+    pushGroup(lines, 66, 1);
+    pushGroup(lines, 70, 1);
+    pushGroup(lines, 10, 0);
+    pushGroup(lines, 20, 0);
+    pushGroup(lines, 30, 0);
+    points.forEach(pt => {
+        pushGroup(lines, 0, 'VERTEX');
+        pushGroup(lines, 8, layer);
+        pushGroup(lines, 10, dxfValue((pt[0] || 0) + xOffset));
+        pushGroup(lines, 20, dxfValue(pt[1] || 0));
+        pushGroup(lines, 30, 0);
+    });
+    pushGroup(lines, 0, 'SEQEND');
+    pushGroup(lines, 8, layer);
+}
+
+function buildFallbackDxf(result) {
+    if (!result || !result.placements || result.placements.length === 0) return null;
+
+    const sheetW = Number(result.sheet_width || document.getElementById('sheet-width').value || 0);
+    const sheetH = Number(result.sheet_height || document.getElementById('sheet-height').value || 0);
+    if (!Number.isFinite(sheetW) || !Number.isFinite(sheetH) || sheetW <= 0 || sheetH <= 0) return null;
+
+    const sheetCount = Number(result.sheets || countSheets(result.placements) || 1);
+    const sheetGap = 250;
+    const lines = [];
+
+    pushGroup(lines, 999, 'Created by FOGLESTING Online');
+    pushGroup(lines, 0, 'SECTION');
+    pushGroup(lines, 2, 'HEADER');
+    pushGroup(lines, 9, '$ACADVER');
+    pushGroup(lines, 1, 'AC1009');
+    pushGroup(lines, 9, '$INSUNITS');
+    pushGroup(lines, 70, 4);
+    pushGroup(lines, 9, '$MEASUREMENT');
+    pushGroup(lines, 70, 1);
+    pushGroup(lines, 0, 'ENDSEC');
+
+    pushGroup(lines, 0, 'SECTION');
+    pushGroup(lines, 2, 'TABLES');
+    pushGroup(lines, 0, 'TABLE');
+    pushGroup(lines, 2, 'LTYPE');
+    pushGroup(lines, 70, 1);
+    pushGroup(lines, 0, 'LTYPE');
+    pushGroup(lines, 2, 'Continuous');
+    pushGroup(lines, 70, 0);
+    pushGroup(lines, 3, 'Solid line');
+    pushGroup(lines, 72, 65);
+    pushGroup(lines, 73, 0);
+    pushGroup(lines, 40, 0);
+    pushGroup(lines, 0, 'ENDTAB');
+    pushGroup(lines, 0, 'TABLE');
+    pushGroup(lines, 2, 'LAYER');
+    pushGroup(lines, 70, 3);
+    ['SHEET', 'PARTS', 'HOLES'].forEach((layer, index) => {
+        pushGroup(lines, 0, 'LAYER');
+        pushGroup(lines, 2, layer);
+        pushGroup(lines, 70, 0);
+        pushGroup(lines, 62, index === 0 ? 8 : index === 1 ? 7 : 3);
+        pushGroup(lines, 6, 'Continuous');
+    });
+    pushGroup(lines, 0, 'ENDTAB');
+    pushGroup(lines, 0, 'ENDSEC');
+
+    pushGroup(lines, 0, 'SECTION');
+    pushGroup(lines, 2, 'BLOCKS');
+    pushGroup(lines, 0, 'ENDSEC');
+    pushGroup(lines, 0, 'SECTION');
+    pushGroup(lines, 2, 'ENTITIES');
+
+    for (let sheet = 0; sheet < sheetCount; sheet++) {
+        const x = sheet * (sheetW + sheetGap);
+        pushPolyline(lines, [[0, 0], [sheetW, 0], [sheetW, sheetH], [0, sheetH]], 'SHEET', x);
+    }
+
+    result.placements.forEach(part => {
+        const x = Number(part.sheet_index || 0) * (sheetW + sheetGap);
+        pushPolyline(lines, part.outer, 'PARTS', x);
+        if (part.holes) part.holes.forEach(hole => pushPolyline(lines, hole, 'HOLES', x));
+    });
+
+    pushGroup(lines, 0, 'ENDSEC');
+    pushGroup(lines, 0, 'EOF');
+
+    return new TextEncoder().encode(lines.join('\n') + '\n');
+}
+
 downloadBtn.addEventListener('click', () => {
-    if (!lastDxfBuffer) {
+    const dxfBuffer = lastDxfBuffer && lastDxfBuffer.byteLength > 0
+        ? lastDxfBuffer
+        : buildFallbackDxf(lastResult);
+
+    if (!dxfBuffer || dxfBuffer.byteLength === 0) {
         alert("El DXF de salida no está disponible.");
         return;
     }
@@ -576,7 +681,7 @@ downloadBtn.addEventListener('click', () => {
         currentRunDocRef = null; 
     }
 
-    const blob = new Blob([lastDxfBuffer], { type: 'application/dxf' });
+    const blob = new Blob([dxfBuffer], { type: 'application/dxf' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
