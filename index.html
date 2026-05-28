@@ -1,31 +1,32 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Foglesting — Software de Nesting con Algoritmo Genético | by Foglar</title>
-    <meta name="description" content="Foglesting: software de optimización de corte de chapa metálica con algoritmo genético de alto rendimiento. Motor C++ nativo, lee DXF, minimiza desperdicio. Descarga gratuita.">
-    <meta name="keywords" content="nesting software, algoritmo genético, corte chapa, optimización DXF, sheet metal nesting, CNC, corte láser, Foglar">
-    <link rel="icon" href="assets/favicon.png" type="image/png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Foglesting — Software de Nesting con Algoritmo Genético | by Foglar</title>
+<meta content="Foglesting: software de optimización de corte de chapa metálica con algoritmo genético de alto rendimiento. Motor C++ nativo, lee DXF, minimiza desperdicio. Descarga gratuita." name="description"/>
+<meta content="nesting software, algoritmo genético, corte chapa, optimización DXF, sheet metal nesting, CNC, corte láser, Foglar" name="keywords"/>
+<link href="assets/favicon.png" rel="icon" type="image/png"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&amp;display=swap" rel="stylesheet"/>
+<link href="style.css" rel="stylesheet"/>
 </head>
 <body>
-    <!-- ========== SPLASH SCREEN ========== -->
-    <div id="splash-screen">
-        <div class="splash-neural-sphere">
-            <div class="splash-core"></div>
-            <!-- 3D Neural Particle Sphere -->
-            <canvas id="splashCanvas" width="400" height="400" style="position: absolute; top: 0; left: 0; z-index: 1; pointer-events: none;"></canvas>
-        </div>
-        <div class="splash-logo-container">
-            <h1 class="splash-logo"><span class="fire-text">Fogl</span><span class="forest-text">esting</span></h1>
-            <div class="splash-powered">powered by <span>foglar</span></div>
-        </div>
-    </div>
-    <script>
+<!-- ========== SPLASH SCREEN ========== -->
+<div id="splash-screen">
+<div class="splash-neural-sphere">
+<div class="splash-core"></div>
+<!-- 3D Neural Particle Sphere -->
+<canvas height="400" id="splashCanvas" style="position: absolute; top: 0; left: 0; z-index: 1; pointer-events: none;" width="400"></canvas>
+</div>
+<div class="splash-logo-container">
+<h1 class="splash-logo" data-i18n="txt_1"><span class="fire-text">Fogl</span><span class="forest-text">esting</span></h1>
+<div class="splash-powered">powered by <span data-i18n="txt_2">foglar</span></div>
+</div>
+</div>
+<script>
         // Draw 3D Neural Network Sphere
         (function() {
             const canvas = document.getElementById('splashCanvas');
@@ -119,282 +120,263 @@
             if (splash) splash.remove();
         }, 5000);
     </script>
-    <!-- ========== NAVBAR ========== -->
-    <nav class="navbar" id="navbar">
-        <div class="container">
-            <a href="#inicio" class="nav-logo" aria-label="Foglesting - Inicio">
-                <img src="assets/nuevo_logo_beige.png" alt="Foglar">
-            </a>
-            <a href="https://foglar.com.ar" target="_blank" rel="noopener" class="powered-badge" aria-label="Powered by Foglar">
-                <span>Powered by</span>
-                <strong>Foglar</strong>
-                <svg viewBox="0 0 12 12" fill="none"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </a>
-
-            <ul class="nav-links" id="nav-links">
-                <li><a href="#inicio">Inicio</a></li>
-                <li><a href="#algoritmo">El Algoritmo</a></li>
-                <li><a href="#features">Características</a></li>
-                <li><a href="#como-funciona">Cómo Funciona</a></li>
-                <li><a href="#online" class="fire-text" style="font-weight: 600;">Nesting Online</a></li>
-                <li><a href="#descargar" class="nav-cta">Descargar</a></li>
-            </ul>
-
-            <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menú">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-        </div>
-    </nav>
-
-    <!-- ========== HERO ========== -->
-    <section class="hero" id="inicio">
-        <canvas id="neural-canvas"></canvas>
-        <div class="hero-dna"></div>
-        <div class="hero-content">
-            <div class="hero-isotipo">
-                <img src="assets/nuevo_logo_beige.png" alt="Foglar isotipo">
-            </div>
-            <span class="hero-label">🚀 Optimización de Corte para Chapa Metálica</span>
-            <h1><span class="fire-text">Fogl</span><span class="forest-text">esting</span></h1>
-            <p class="hero-sub">Software gratuito para talleres metalúrgicos</p>
-            <p class="hero-tagline">Usamos un <strong>Algoritmo Genético</strong> para calcular el mejor ordenamiento de tus piezas. Cargá tus DXF y obtené el acomodo óptimo que minimiza el desperdicio de chapa.</p>
-            <div class="hero-buttons">
-                <a href="#descargar" class="btn btn-primary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+<!-- ========== NAVBAR ========== -->
+<nav class="navbar" id="navbar">
+<div class="container">
+<a aria-label="Foglesting - Inicio" class="nav-logo" href="#inicio">
+<img alt="Foglar" src="assets/nuevo_logo_beige.png"/>
+</a>
+<a aria-label="Powered by Foglar" class="powered-badge" data-i18n="txt_3" href="https://foglar.com.ar" rel="noopener" target="_blank">
+<span>Powered by</span>
+<strong>Foglar</strong>
+<svg fill="none" viewbox="0 0 12 12"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path></svg>
+</a>
+<ul class="nav-links" id="nav-links">
+<li data-i18n="txt_4"><a href="#inicio">Inicio</a></li>
+<li data-i18n="txt_5"><a href="#algoritmo">El Algoritmo</a></li>
+<li data-i18n="txt_6"><a href="#features">Características</a></li>
+<li data-i18n="txt_7"><a href="#como-funciona">Cómo Funciona</a></li>
+<li data-i18n="txt_8"><a class="fire-text" href="#online" style="font-weight: 600;">Nesting Online</a></li>
+<li data-i18n="txt_9"><a class="nav-cta" href="#descargar">Descargar</a></li>
+<li><button id="lang-toggle" class="lang-btn" aria-label="Cambiar idioma">EN</button></li>
+</ul>
+<button aria-label="Abrir menú" class="nav-toggle" id="nav-toggle">
+<span></span>
+<span></span>
+<span></span>
+</button>
+</div>
+</nav>
+<!-- ========== HERO ========== -->
+<section class="hero" id="inicio">
+<canvas id="neural-canvas"></canvas>
+<div class="hero-dna"></div>
+<div class="hero-content">
+<div class="hero-isotipo">
+<img alt="Foglar isotipo" src="assets/nuevo_logo_beige.png"/>
+</div>
+<span class="hero-label" data-i18n="txt_10">🚀 Optimización de Corte para Chapa Metálica</span>
+<h1 data-i18n="txt_11"><span class="fire-text">Fogl</span><span class="forest-text">esting</span></h1>
+<p class="hero-sub" data-i18n="txt_12">Software gratuito para talleres metalúrgicos</p>
+<p class="hero-tagline" data-i18n="txt_13">Usamos un <strong>Algoritmo Genético</strong> para calcular el mejor ordenamiento de tus piezas. Cargá tus DXF y obtené el acomodo óptimo que minimiza el desperdicio de chapa.</p>
+<div class="hero-buttons">
+<a class="btn btn-primary" data-i18n="txt_14" href="#descargar">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
                     Descargar Gratis
                 </a>
-                <a href="#algoritmo" class="btn btn-outline">¿Cómo funciona?</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== STATS BAR ========== -->
-    <div class="stats-bar">
-        <div class="container">
-            <div class="stats-grid">
-                <div class="stat-item reveal">
-                    <span class="stat-number">C++</span>
-                    <span class="stat-desc">Motor nativo compilado</span>
-                </div>
-                <div class="stat-item reveal">
-                    <span class="stat-number">∞</span>
-                    <span class="stat-desc">Iteraciones genéticas</span>
-                </div>
-                <div class="stat-item reveal">
-                    <span class="stat-number">4</span>
-                    <span class="stat-desc">Rotaciones por pieza</span>
-                </div>
-                <div class="stat-item reveal">
-                    <span class="stat-number">DXF</span>
-                    <span class="stat-desc">Entrada y salida</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========== ALGORITHM SECTION ========== -->
-    <section class="section algorithm" id="algoritmo">
-        <div class="container">
-            <div class="algo-grid">
-                <div class="algo-visual reveal-left">
-                    <img src="assets/nesting_screenshot.png" alt="Foglesting — resultado de nesting optimizado">
-                </div>
-                <div class="algo-content reveal-right">
-                    <span class="section-label">🧬 Impulsado por Algoritmo Genético</span>
-                    <h2>El mejor ordenamiento<br><span class="gradient-text">calculado automáticamente</span></h2>
-                    <p class="algo-tagline">Hacé que cada centímetro cuente.</p>
-                    <p>Foglesting se encarga del trabajo pesado por vos. Nuestro software evalúa miles de combinaciones en segundos para encontrar la mejor forma de acomodar tus piezas, reduciendo drásticamente el desperdicio de chapa.</p>
-                    <p>Ideal para corte láser, plasma y router CNC. El resultado final es un archivo listo para usar: <strong style="color:var(--fire)">más piezas por chapa y más ganancia para tu taller.</strong></p>
-
-                    <div class="algo-pipeline">
-                        <div class="pipe-step">
-                            <div class="pipe-icon">📁</div>
-                            <div class="pipe-text">
+<a class="btn btn-outline" data-i18n="txt_15" href="#algoritmo">¿Cómo funciona?</a>
+</div>
+</div>
+</section>
+<!-- ========== STATS BAR ========== -->
+<div class="stats-bar">
+<div class="container">
+<div class="stats-grid">
+<div class="stat-item reveal">
+<span class="stat-number">C++</span>
+<span class="stat-desc" data-i18n="txt_16">Motor nativo compilado</span>
+</div>
+<div class="stat-item reveal">
+<span class="stat-number">∞</span>
+<span class="stat-desc" data-i18n="txt_17">Iteraciones genéticas</span>
+</div>
+<div class="stat-item reveal">
+<span class="stat-number">4</span>
+<span class="stat-desc" data-i18n="txt_18">Rotaciones por pieza</span>
+</div>
+<div class="stat-item reveal">
+<span class="stat-number">DXF</span>
+<span class="stat-desc" data-i18n="txt_19">Entrada y salida</span>
+</div>
+</div>
+</div>
+</div>
+<!-- ========== ALGORITHM SECTION ========== -->
+<section class="section algorithm" id="algoritmo">
+<div class="container">
+<div class="algo-grid">
+<div class="algo-visual reveal-left">
+<img alt="Foglesting — resultado de nesting optimizado" src="assets/nesting_screenshot.png"/>
+</div>
+<div class="algo-content reveal-right">
+<span class="section-label" data-i18n="txt_20">🧬 Impulsado por Algoritmo Genético</span>
+<h2 data-i18n="txt_21">El mejor ordenamiento<br/><span class="gradient-text">calculado automáticamente</span></h2>
+<p class="algo-tagline" data-i18n="txt_22">Hacé que cada centímetro cuente.</p>
+<p data-i18n="txt_23">Foglesting se encarga del trabajo pesado por vos. Nuestro software evalúa miles de combinaciones en segundos para encontrar la mejor forma de acomodar tus piezas, reduciendo drásticamente el desperdicio de chapa.</p>
+<p data-i18n="txt_24">Ideal para corte láser, plasma y router CNC. El resultado final es un archivo listo para usar: <strong style="color:var(--fire)">más piezas por chapa y más ganancia para tu taller.</strong></p>
+<div class="algo-pipeline">
+<div class="pipe-step">
+<div class="pipe-icon">📁</div>
+<div class="pipe-text" data-i18n="txt_25">
                                 Cargá tus archivos
                                 <span>Importá tus piezas directamente en formato DXF</span>
-                            </div>
-                        </div>
-                        <div class="pipe-step">
-                            <div class="pipe-icon">⚙️</div>
-                            <div class="pipe-text">
+</div>
+</div>
+<div class="pipe-step">
+<div class="pipe-icon">⚙️</div>
+<div class="pipe-text" data-i18n="txt_26">
                                 Configurá la chapa
                                 <span>Indicá las medidas de tu material y los márgenes</span>
-                            </div>
-                        </div>
-                        <div class="pipe-step">
-                            <div class="pipe-icon">🧬</div>
-                            <div class="pipe-text">
+</div>
+</div>
+<div class="pipe-step">
+<div class="pipe-icon">🧬</div>
+<div class="pipe-text" data-i18n="txt_27">
                                 Algoritmo Genético
                                 <span>Evalúa miles de ordenamientos y selecciona el óptimo</span>
-                            </div>
-                        </div>
-                        <div class="pipe-step">
-                            <div class="pipe-icon">💾</div>
-                            <div class="pipe-text">
+</div>
+</div>
+<div class="pipe-step">
+<div class="pipe-icon">💾</div>
+<div class="pipe-text" data-i18n="txt_28">
                                 Exportá y Cortá
                                 <span>Guardá el resultado en DXF listo para enviar a la máquina</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Mini-animación del algoritmo -->
-                    <div class="nesting-anim-wrap">
-                        <canvas id="nesting-anim" width="560" height="180"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== FEATURES ========== -->
-    <section class="section features" id="features">
-        <div class="container">
-            <div class="section-header reveal">
-                <span class="section-label">Características</span>
-                <h2 class="section-title">Poder industrial<br>en tu escritorio</h2>
-                <p class="section-desc">Todo lo que necesitás para optimizar el corte de chapa, sin depender de software caro ni licencias</p>
-            </div>
-
-            <div class="features-grid">
-                <div class="feature-card reveal">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/>
-                        </svg>
-                    </div>
-                    <h3>Motor C++ Nativo</h3>
-                    <p>Compilado directamente a código máquina. Procesa cientos de piezas complejas en segundos, no minutos.</p>
-                </div>
-
-                <div class="feature-card reveal">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" y1="13" x2="8" y2="13"/>
-                            <line x1="16" y1="17" x2="8" y2="17"/>
-                        </svg>
-                    </div>
-                    <h3>Lectura DXF Completa</h3>
-                    <p>Soporta LINE, ARC, CIRCLE y LWPOLYLINE. Procesa la geometría de tus piezas con altísima precisión sin alterar las medidas originales.</p>
-                </div>
-
-                <div class="feature-card reveal">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="3"/>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                        </svg>
-                    </div>
-                    <h3>Parámetros Configurables</h3>
-                    <p>Separación entre piezas, tolerancia de curvas, rotaciones permitidas, cantidad por DXF, iteraciones y población genética.</p>
-                </div>
-
-                <div class="feature-card reveal">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="23 4 23 10 17 10"/>
-                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-                        </svg>
-                    </div>
-                    <h3>Búsqueda Iterativa</h3>
-                    <p>El algoritmo corre múltiples generaciones. Cada iteración muta, cruza y selecciona. La solución mejora con cada ciclo evolutivo.</p>
-                </div>
-
-                <div class="feature-card reveal">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                            <line x1="3" y1="9" x2="21" y2="9"/>
-                            <line x1="9" y1="21" x2="9" y2="9"/>
-                        </svg>
-                    </div>
-                    <h3>Preview en Tiempo Real</h3>
-                    <p>Vista previa del acomodo, porcentaje de utilización, chapas usadas y gráfico de mejora por iteración en la interfaz nativa Win32.</p>
-                </div>
-
-                <div class="feature-card reveal">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                            <polyline points="7 10 12 15 17 10"/>
-                            <line x1="12" y1="15" x2="12" y2="3"/>
-                        </svg>
-                    </div>
-                    <h3>Exportación DXF</h3>
-                    <p>Generá el layout optimizado como DXF listo para corte láser, CNC o plasma. Sin conversiones, directo a producción.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== HOW IT WORKS ========== -->
-    <section class="section how-it-works" id="como-funciona">
-        <div class="container">
-            <div class="section-header reveal">
-                <span class="section-label">Cómo funciona</span>
-                <h2 class="section-title">Tres pasos simples</h2>
-                <p class="section-desc">De tus archivos DXF a un corte optimizado genéticamente</p>
-            </div>
-
-            <div class="steps-container">
-                <div class="step-card reveal">
-                    <div class="step-number">1</div>
-                    <div class="step-image">
-                        <img src="assets/step_upload.png" alt="Paso 1: Cargar DXF">
-                    </div>
-                    <h3>Cargá tus DXF</h3>
-                    <p>Seleccioná una carpeta o archivos DXF individuales. Asigná cantidades por pieza.</p>
-                </div>
-
-                <div class="step-card reveal">
-                    <div class="step-number">2</div>
-                    <div class="step-image">
-                        <img src="assets/step_optimize.png" alt="Paso 2: Algoritmo genético optimiza">
-                    </div>
-                    <h3>El algoritmo evoluciona</h3>
-                    <p>El motor genético genera poblaciones, muta, cruza y selecciona las mejores soluciones automáticamente.</p>
-                </div>
-
-                <div class="step-card reveal">
-                    <div class="step-number">3</div>
-                    <div class="step-image">
-                        <img src="assets/step_export.png" alt="Paso 3: Exportar DXF optimizado">
-                    </div>
-                    <h3>Exportá tu DXF</h3>
-                    <p>Descargá el layout optimizado listo para mandarlo a corte láser, CNC o plasma.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== ONLINE SOLVER ========== -->
-    <section class="section algorithm" id="online" style="background: rgba(10, 10, 10, 0.4);">
-        <div class="container">
-            <div class="algo-grid" style="align-items: center;">
-                <div class="algo-text reveal-right">
-                    <span class="section-label" style="background:rgba(232,91,46,0.1);border-color:rgba(232,91,46,0.2);color:var(--fire);">Nuevo motor en la nube</span>
-                    <h2 style="font-size: 2.5rem; margin-bottom: 1.5rem;">Nesting Online</h2>
-                    <p>Experimentá una demostración rápida de nuestro algoritmo <strong>directamente desde tu navegador</strong>. Ideal para ver cómo trabaja el algoritmo genético antes de descargar la versión completa de escritorio.</p>
-                    <ul class="features-list">
-                        <li>Sube tus archivos DXF directamente.</li>
-                        <li>Configura el tamaño de tu chapa y la rotación.</li>
-                        <li>Observa cómo el algoritmo evoluciona en vivo.</li>
-                        <li>Descarga el DXF optimizado al instante.</li>
-                    </ul>
-                    <a href="online/?v=online-tool-20260528" class="btn btn-primary" style="margin-top: 2rem;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polygon points="10 8 16 12 10 16 10 8"></polygon>
-                        </svg>
+</div>
+</div>
+</div>
+<!-- Mini-animación del algoritmo -->
+<div class="nesting-anim-wrap">
+<canvas height="180" id="nesting-anim" width="560"></canvas>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========== FEATURES ========== -->
+<section class="section features" id="features">
+<div class="container">
+<div class="section-header reveal">
+<span class="section-label" data-i18n="txt_29">Características</span>
+<h2 class="section-title" data-i18n="txt_30">Poder industrial<br/>en tu escritorio</h2>
+<p class="section-desc" data-i18n="txt_31">Todo lo que necesitás para optimizar el corte de chapa, sin depender de software caro ni licencias</p>
+</div>
+<div class="features-grid">
+<div class="feature-card reveal">
+<div class="feature-icon">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<polygon points="13 2 3 14 12 14 11 22 21 10 12 10"></polygon>
+</svg>
+</div>
+<h3 data-i18n="txt_32">Motor C++ Nativo</h3>
+<p data-i18n="txt_33">Compilado directamente a código máquina. Procesa cientos de piezas complejas en segundos, no minutos.</p>
+</div>
+<div class="feature-card reveal">
+<div class="feature-icon">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+<polyline points="14 2 14 8 20 8"></polyline>
+<line x1="16" x2="8" y1="13" y2="13"></line>
+<line x1="16" x2="8" y1="17" y2="17"></line>
+</svg>
+</div>
+<h3 data-i18n="txt_34">Lectura DXF Completa</h3>
+<p data-i18n="txt_35">Soporta LINE, ARC, CIRCLE y LWPOLYLINE. Procesa la geometría de tus piezas con altísima precisión sin alterar las medidas originales.</p>
+</div>
+<div class="feature-card reveal">
+<div class="feature-icon">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="3"></circle>
+<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+</svg>
+</div>
+<h3 data-i18n="txt_36">Parámetros Configurables</h3>
+<p data-i18n="txt_37">Separación entre piezas, tolerancia de curvas, rotaciones permitidas, cantidad por DXF, iteraciones y población genética.</p>
+</div>
+<div class="feature-card reveal">
+<div class="feature-icon">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<polyline points="23 4 23 10 17 10"></polyline>
+<path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+</svg>
+</div>
+<h3 data-i18n="txt_38">Búsqueda Iterativa</h3>
+<p data-i18n="txt_39">El algoritmo corre múltiples generaciones. Cada iteración muta, cruza y selecciona. La solución mejora con cada ciclo evolutivo.</p>
+</div>
+<div class="feature-card reveal">
+<div class="feature-icon">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<rect height="18" rx="2" ry="2" width="18" x="3" y="3"></rect>
+<line x1="3" x2="21" y1="9" y2="9"></line>
+<line x1="9" x2="9" y1="21" y2="9"></line>
+</svg>
+</div>
+<h3 data-i18n="txt_40">Preview en Tiempo Real</h3>
+<p data-i18n="txt_41">Vista previa del acomodo, porcentaje de utilización, chapas usadas y gráfico de mejora por iteración en la interfaz nativa Win32.</p>
+</div>
+<div class="feature-card reveal">
+<div class="feature-icon">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+<polyline points="7 10 12 15 17 10"></polyline>
+<line x1="12" x2="12" y1="15" y2="3"></line>
+</svg>
+</div>
+<h3 data-i18n="txt_42">Exportación DXF</h3>
+<p data-i18n="txt_43">Generá el layout optimizado como DXF listo para corte láser, CNC o plasma. Sin conversiones, directo a producción.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- ========== HOW IT WORKS ========== -->
+<section class="section how-it-works" id="como-funciona">
+<div class="container">
+<div class="section-header reveal">
+<span class="section-label" data-i18n="txt_44">Cómo funciona</span>
+<h2 class="section-title" data-i18n="txt_45">Tres pasos simples</h2>
+<p class="section-desc" data-i18n="txt_46">De tus archivos DXF a un corte optimizado genéticamente</p>
+</div>
+<div class="steps-container">
+<div class="step-card reveal">
+<div class="step-number">1</div>
+<div class="step-image">
+<img alt="Paso 1: Cargar DXF" src="assets/step_upload.png"/>
+</div>
+<h3 data-i18n="txt_47">Cargá tus DXF</h3>
+<p data-i18n="txt_48">Seleccioná una carpeta o archivos DXF individuales. Asigná cantidades por pieza.</p>
+</div>
+<div class="step-card reveal">
+<div class="step-number">2</div>
+<div class="step-image">
+<img alt="Paso 2: Algoritmo genético optimiza" src="assets/step_optimize.png"/>
+</div>
+<h3 data-i18n="txt_49">El algoritmo evoluciona</h3>
+<p data-i18n="txt_50">El motor genético genera poblaciones, muta, cruza y selecciona las mejores soluciones automáticamente.</p>
+</div>
+<div class="step-card reveal">
+<div class="step-number">3</div>
+<div class="step-image">
+<img alt="Paso 3: Exportar DXF optimizado" src="assets/step_export.png"/>
+</div>
+<h3 data-i18n="txt_51">Exportá tu DXF</h3>
+<p data-i18n="txt_52">Descargá el layout optimizado listo para mandarlo a corte láser, CNC o plasma.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- ========== ONLINE SOLVER ========== -->
+<section class="section algorithm" id="online" style="background: rgba(10, 10, 10, 0.4);">
+<div class="container">
+<div class="algo-grid" style="align-items: center;">
+<div class="algo-text reveal-right">
+<span class="section-label" data-i18n="txt_53" style="background:rgba(232,91,46,0.1);border-color:rgba(232,91,46,0.2);color:var(--fire);">Nuevo motor en la nube</span>
+<h2 data-i18n="txt_54" style="font-size: 2.5rem; margin-bottom: 1.5rem;">Nesting Online</h2>
+<p data-i18n="txt_55">Experimentá una demostración rápida de nuestro algoritmo <strong>directamente desde tu navegador</strong>. Ideal para ver cómo trabaja el algoritmo genético antes de descargar la versión completa de escritorio.</p>
+<ul class="features-list">
+<li data-i18n="txt_56">Sube tus archivos DXF directamente.</li>
+<li data-i18n="txt_57">Configura el tamaño de tu chapa y la rotación.</li>
+<li data-i18n="txt_58">Observa cómo el algoritmo evoluciona en vivo.</li>
+<li data-i18n="txt_59">Descarga el DXF optimizado al instante.</li>
+</ul>
+<a class="btn btn-primary" data-i18n="txt_60" href="online/?v=online-tool-20260528" style="margin-top: 2rem;">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" style="margin-right: 8px;" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="10"></circle>
+<polygon points="10 8 16 12 10 16 10 8"></polygon>
+</svg>
                         Probar Solver Online (Gratis)
                     </a>
-                </div>
-                
-                <div class="cloud-demo reveal-left" style="position: relative; height: 350px; width: 100%; display: flex; align-items: center; justify-content: center; overflow: visible;">
-                    <style>
+</div>
+<div class="cloud-demo reveal-left" style="position: relative; height: 350px; width: 100%; display: flex; align-items: center; justify-content: center; overflow: visible;">
+<style>
                         @keyframes packP1 {
                             0%, 5% { transform: translate(150px, -200px) rotate(90deg) scale(0.8); opacity: 0; }
                             15%, 90% { transform: translate(10px, 10px) rotate(0deg) scale(1); opacity: 1; }
@@ -479,166 +461,151 @@
                             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
                         }
                     </style>
-
-                    <!-- Glowing outline -->
-                    <div class="cyber-cloud-glow"></div>
-
-                    <!-- Cloud background with grid -->
-                    <div class="cyber-cloud">
-                        <div class="cyber-grid"></div>
-                    </div>
-
-                    <!-- The sheet where pieces land (over the cloud) -->
-                    <div class="sheet-bg">
-                        <!-- Piece 1: Large L-Shape -->
-                        <svg class="nest-part" width="90" height="90" style="animation: packP1 6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;">
-                            <path d="M 0,0 L 90,0 L 90,40 L 40,40 L 40,90 L 0,90 Z" />
-                        </svg>
-
-                        <!-- Piece 2: Rectangle with hole -->
-                        <svg class="nest-part" width="130" height="60" style="animation: packP2 6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;">
-                            <rect x="0" y="0" width="130" height="60" rx="4" />
-                            <circle cx="20" cy="30" r="10" fill="#141414" stroke="none" />
-                        </svg>
-
-                        <!-- Piece 3: T-Shape -->
-                        <svg class="nest-part" width="120" height="60" style="animation: packP3 6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;">
-                            <path d="M 0,0 L 120,0 L 120,30 L 80,30 L 80,60 L 40,60 L 40,30 L 0,30 Z" />
-                        </svg>
-
-                        <!-- Piece 4: Small Circle -->
-                        <svg class="nest-part" width="40" height="40" style="animation: packP4 6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;">
-                            <circle cx="20" cy="20" r="18" />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== DOWNLOAD CTA ========== -->
-    <section class="section download-cta" id="descargar">
-        <div class="container">
-            <div class="download-content reveal">
-                <span class="section-label" style="background:rgba(255,223,184,0.1);border-color:rgba(255,223,184,0.15);color:var(--cream);">Descarga Gratuita</span>
-                <h2>Descargá <span class="fire-text">Fogl</span><span class="forest-text">esting</span></h2>
-                <p class="dl-desc">Optimización genética para tu corte de chapa. Sin licencias, sin límites, sin instalador.</p>
-
-                <a href="downloads/foglesting_windows_v4.exe" target="_blank" rel="noopener" class="btn btn-download-big" id="download-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: -4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    <span>DESCARGAR <span class="fire-text">FOGL</span><span class="forest-text">ESTING</span> V4</span>
-                </a>
-                <a href="downloads/foglesting_windows_v3.zip" target="_blank" rel="noopener" class="btn btn-outline" style="margin-top:14px;">
-                    <span>DESCARGAR <span class="fire-text">FOGL</span><span class="forest-text">ESTING</span> V3</span>
-                </a>
-                <a href="downloads/foglesting_windows_v2.zip" target="_blank" rel="noopener" class="btn btn-outline" style="margin-top:14px;">
-                    <span>DESCARGAR <span class="fire-text">FOGL</span><span class="forest-text">ESTING</span> V2</span>
-                </a>
-                <a href="downloads/foglesting_windows.zip" target="_blank" rel="noopener" class="btn btn-outline" style="margin-top:14px;">
-                    <span>DESCARGAR <span class="fire-text">FOGL</span><span class="forest-text">ESTING</span> V1</span>
-                </a>
-
-                <div class="download-info">
-                    <span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+<!-- Glowing outline -->
+<div class="cyber-cloud-glow"></div>
+<!-- Cloud background with grid -->
+<div class="cyber-cloud">
+<div class="cyber-grid"></div>
+</div>
+<!-- The sheet where pieces land (over the cloud) -->
+<div class="sheet-bg">
+<!-- Piece 1: Large L-Shape -->
+<svg class="nest-part" height="90" style="animation: packP1 6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;" width="90">
+<path d="M 0,0 L 90,0 L 90,40 L 40,40 L 40,90 L 0,90 Z"></path>
+</svg>
+<!-- Piece 2: Rectangle with hole -->
+<svg class="nest-part" height="60" style="animation: packP2 6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;" width="130">
+<rect height="60" rx="4" width="130" x="0" y="0"></rect>
+<circle cx="20" cy="30" fill="#141414" r="10" stroke="none"></circle>
+</svg>
+<!-- Piece 3: T-Shape -->
+<svg class="nest-part" height="60" style="animation: packP3 6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;" width="120">
+<path d="M 0,0 L 120,0 L 120,30 L 80,30 L 80,60 L 40,60 L 40,30 L 0,30 Z"></path>
+</svg>
+<!-- Piece 4: Small Circle -->
+<svg class="nest-part" height="40" style="animation: packP4 6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;" width="40">
+<circle cx="20" cy="20" r="18"></circle>
+</svg>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========== DOWNLOAD CTA ========== -->
+<section class="section download-cta" id="descargar">
+<div class="container">
+<div class="download-content reveal">
+<span class="section-label" data-i18n="txt_61" style="background:rgba(255,223,184,0.1);border-color:rgba(255,223,184,0.15);color:var(--cream);">Descarga Gratuita</span>
+<h2 data-i18n="txt_62">Descargá <span class="fire-text">Fogl</span><span class="forest-text">esting</span></h2>
+<p class="dl-desc" data-i18n="txt_63">Optimización genética para tu corte de chapa. Sin licencias, sin límites, sin instalador.</p>
+<a class="btn btn-download-big" data-i18n="txt_64" href="downloads/foglesting_windows_v4.exe" id="download-btn" rel="noopener" target="_blank">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" style="margin-right: -4px;" viewbox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
+<span>DESCARGAR <span class="fire-text">FOGL</span><span class="forest-text">ESTING</span> V4</span>
+</a>
+<a class="btn btn-outline" data-i18n="txt_65" href="downloads/foglesting_windows_v3.zip" rel="noopener" style="margin-top:14px;" target="_blank">
+<span>DESCARGAR <span class="fire-text">FOGL</span><span class="forest-text">ESTING</span> V3</span>
+</a>
+<a class="btn btn-outline" data-i18n="txt_66" href="downloads/foglesting_windows_v2.zip" rel="noopener" style="margin-top:14px;" target="_blank">
+<span>DESCARGAR <span class="fire-text">FOGL</span><span class="forest-text">ESTING</span> V2</span>
+</a>
+<a class="btn btn-outline" data-i18n="txt_67" href="downloads/foglesting_windows.zip" rel="noopener" style="margin-top:14px;" target="_blank">
+<span>DESCARGAR <span class="fire-text">FOGL</span><span class="forest-text">ESTING</span> V1</span>
+</a>
+<div class="download-info">
+<span data-i18n="txt_68">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><rect height="14" rx="2" ry="2" width="20" x="2" y="3"></rect><line x1="8" x2="16" y1="21" y2="21"></line><line x1="12" x2="12" y1="17" y2="21"></line></svg>
                         Windows 10/11
                     </span>
-                    <span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg>
+<span data-i18n="txt_69">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"></polygon></svg>
                         Motor C++ nativo
                     </span>
-                    <span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+<span data-i18n="txt_70">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="16"></line><line x1="8" x2="16" y1="12" y2="12"></line></svg>
                         100% Gratuito
                     </span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== FEEDBACK ========== -->
-    <section class="section feedback-section" id="feedback">
-        <div class="container">
-            <div class="feedback-inner">
-                <div class="feedback-copy reveal-left">
-                    <span class="section-label">💬 Tu opinión importa</span>
-                    <h2>¿Probaste <span class="fire-text">Fogl</span><span class="forest-text">esting</span>?<br><span class="gradient-text">Contanos qué pensás</span></h2>
-                    <p>Tu feedback nos ayuda a mejorar el software. Si encontraste un bug, tenés una idea, o simplemente querés comentar tu experiencia, este es el lugar.</p>
-                    <ul class="feedback-perks">
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+</div>
+</div>
+</div>
+</section>
+<!-- ========== FEEDBACK ========== -->
+<section class="section feedback-section" id="feedback">
+<div class="container">
+<div class="feedback-inner">
+<div class="feedback-copy reveal-left">
+<span class="section-label" data-i18n="txt_71">💬 Tu opinión importa</span>
+<h2 data-i18n="txt_72">¿Probaste <span class="fire-text">Fogl</span><span class="forest-text">esting</span>?<br/><span class="gradient-text">Contanos qué pensás</span></h2>
+<p data-i18n="txt_73">Tu feedback nos ayuda a mejorar el software. Si encontraste un bug, tenés una idea, o simplemente querés comentar tu experiencia, este es el lugar.</p>
+<ul class="feedback-perks">
+<li data-i18n="txt_74">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
                             Respondemos todos los mensajes
                         </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+<li data-i18n="txt_75">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
                             Los bugs reportados tienen prioridad
                         </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+<li data-i18n="txt_76">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
                             Las ideas pueden entrar en la próxima versión
                         </li>
-                    </ul>
-                </div>
-
-                <form class="feedback-form reveal-right" id="feedback-form">
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="fb-name">Nombre</label>
-                            <input type="text" id="fb-name" name="nombre" placeholder="Tu nombre" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="fb-email">Email (opcional)</label>
-                            <input type="email" id="fb-email" name="email" placeholder="Para que podamos responderte">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="fb-type">Tipo de mensaje</label>
-                        <select id="fb-type" name="tipo">
-                            <option value="Feedback general">💬 Feedback general</option>
-                            <option value="Reporte de bug">🐛 Reporte de bug</option>
-                            <option value="Sugerencia de función">💡 Sugerencia de función</option>
-                            <option value="Pregunta técnica">🔧 Pregunta técnica</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="fb-msg">Mensaje</label>
-                        <textarea id="fb-msg" name="mensaje" rows="4" placeholder="Contanos tu experiencia con el software..." required></textarea>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-feedback" id="btn-send-feedback">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+</ul>
+</div>
+<form class="feedback-form reveal-right" id="feedback-form">
+<div class="form-row">
+<div class="form-group">
+<label for="fb-name">Nombre</label>
+<input id="fb-name" name="nombre" placeholder="Tu nombre" required="" type="text"/>
+</div>
+<div class="form-group">
+<label for="fb-email">Email (opcional)</label>
+<input id="fb-email" name="email" placeholder="Para que podamos responderte" type="email"/>
+</div>
+</div>
+<div class="form-group">
+<label for="fb-type">Tipo de mensaje</label>
+<select id="fb-type" name="tipo">
+<option value="Feedback general">💬 Feedback general</option>
+<option value="Reporte de bug">🐛 Reporte de bug</option>
+<option value="Sugerencia de función">💡 Sugerencia de función</option>
+<option value="Pregunta técnica">🔧 Pregunta técnica</option>
+</select>
+</div>
+<div class="form-group">
+<label for="fb-msg">Mensaje</label>
+<textarea id="fb-msg" name="mensaje" placeholder="Contanos tu experiencia con el software..." required="" rows="4"></textarea>
+</div>
+<button class="btn btn-primary btn-feedback" data-i18n="txt_77" id="btn-send-feedback" type="submit">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><line x1="22" x2="11" y1="2" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                         Enviar Feedback
                     </button>
-                    <p id="feedback-status" style="margin-top: 15px; text-align: center; font-size: 14px; font-weight: 500;"></p>
-                </form>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== FOOTER ========== -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-inner">
-                <div class="footer-brand">
-                    <img src="assets/nuevo_logo_beige.png" alt="Foglesting">
-                    <div>
-                        <span class="footer-product"><span class="fire-text">Fogl</span><span class="forest-text">esting</span></span>
-                        <span class="footer-powered">Powered by <a href="https://foglar.com.ar" target="_blank" rel="noopener">Foglar</a> &mdash; 2025</span>
-                    </div>
-                </div>
-                <ul class="footer-links">
-                    <li><a href="#inicio">Inicio</a></li>
-                    <li><a href="#algoritmo">Algoritmo</a></li>
-                    <li><a href="#features">Features</a></li>
-                    <li><a href="https://foglar.com.ar" target="_blank" rel="noopener">foglar.com.ar ↗</a></li>
-                </ul>
-            </div>
-        </div>
-    </footer>
-
-    <script type="module" src="main.js"></script>
+<p id="feedback-status" style="margin-top: 15px; text-align: center; font-size: 14px; font-weight: 500;"></p>
+</form>
+</div>
+</div>
+</section>
+<!-- ========== FOOTER ========== -->
+<footer class="footer">
+<div class="container">
+<div class="footer-inner">
+<div class="footer-brand">
+<img alt="Foglesting" src="assets/nuevo_logo_beige.png"/>
+<div>
+<span class="footer-product" data-i18n="txt_78"><span class="fire-text">Fogl</span><span class="forest-text">esting</span></span>
+<span class="footer-powered" data-i18n="txt_79">Powered by <a href="https://foglar.com.ar" rel="noopener" target="_blank">Foglar</a> — 2025</span>
+</div>
+</div>
+<ul class="footer-links">
+<li data-i18n="txt_80"><a href="#inicio">Inicio</a></li>
+<li data-i18n="txt_81"><a href="#algoritmo">Algoritmo</a></li>
+<li data-i18n="txt_82"><a href="#features">Features</a></li>
+<li data-i18n="txt_83"><a href="https://foglar.com.ar" rel="noopener" target="_blank">foglar.com.ar ↗</a></li>
+</ul>
+</div>
+</div>
+</footer>
+<script src="translations.js"></script>
+<script src="i18n.js"></script>
+<script src="main.js" type="module"></script>
 </body>
 </html>

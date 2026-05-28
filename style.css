@@ -423,6 +423,26 @@ img { max-width: 100%; height: auto; display: block; }
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(232,91,46,0.35);
 }
+.lang-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--cream);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    min-width: 44px;
+}
+.lang-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--fire);
+    color: var(--fire);
+}
 
 .nav-toggle {
     display: none;
