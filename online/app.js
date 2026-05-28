@@ -121,6 +121,27 @@ function initWorker() {
 }
 initWorker();
 
+function initSettingsHelp() {
+    const help = document.getElementById('settings-help');
+    if (!help) return;
+    const defaultText = help.textContent.trim() || 'Ayuda de configuración.';
+    document.querySelectorAll('.info-tip').forEach(tip => {
+        const show = () => {
+            help.textContent = tip.dataset.tip || defaultText;
+            help.classList.add('active');
+        };
+        const hide = () => {
+            help.textContent = defaultText;
+            help.classList.remove('active');
+        };
+        tip.addEventListener('mouseenter', show);
+        tip.addEventListener('focus', show);
+        tip.addEventListener('mouseleave', hide);
+        tip.addEventListener('blur', hide);
+    });
+}
+initSettingsHelp();
+
 // ---- Drag and Drop ----
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));

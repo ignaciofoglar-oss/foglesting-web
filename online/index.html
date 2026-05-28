@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=solver-options-info-20260528">
+    <link rel="stylesheet" href="style.css?v=tooltip-strip-20260528">
 </head>
 <body>
     <!-- Background Canvas for Neural Network & Fire Effect -->
@@ -64,7 +64,7 @@
                 <div class="control-group">
                     <label class="control-label">
                         Tamaño de Chapa (mm)
-                        <span class="info-tip" tabindex="0" title="Define el ancho y alto de la chapa disponible. Default recomendado: 2500 x 1250 mm." data-tip="Define el ancho y alto de la chapa disponible. Default recomendado: 2500 x 1250 mm.">i</span>
+                        <span class="info-tip" tabindex="0" aria-label="Ayuda: tamaño de chapa" data-tip="Define el ancho y alto de la chapa disponible. Default recomendado: 2500 x 1250 mm.">i</span>
                     </label>
                     <div class="input-row">
                         <input type="number" id="sheet-width" value="2500" placeholder="Ancho">
@@ -76,7 +76,7 @@
                 <div class="control-group">
                     <label class="control-label">
                         Separación (mm)
-                        <span class="info-tip" tabindex="0" title="Distancia mínima entre piezas para dejar margen de corte. Default recomendado: 5 mm." data-tip="Distancia mínima entre piezas para dejar margen de corte. Default recomendado: 5 mm.">i</span>
+                        <span class="info-tip" tabindex="0" aria-label="Ayuda: separación" data-tip="Distancia mínima entre piezas para dejar margen de corte. Default recomendado: 5 mm.">i</span>
                     </label>
                     <input type="number" id="spacing" value="5" step="0.5" min="0">
                 </div>
@@ -84,14 +84,14 @@
                 <div class="control-group">
                     <label class="control-label">
                         Iteraciones
-                        <span class="info-tip" tabindex="0" title="Cantidad de intentos del solver. Más iteraciones suelen mejorar el aprovechamiento, pero tardan más. Default recomendado: 50." data-tip="Cantidad de intentos del solver. Más iteraciones suelen mejorar el aprovechamiento, pero tardan más. Default recomendado: 50.">i</span>
+                        <span class="info-tip" tabindex="0" aria-label="Ayuda: iteraciones" data-tip="Cantidad de intentos del solver. Más iteraciones suelen mejorar el aprovechamiento, pero tardan más. Default recomendado: 50.">i</span>
                     </label>
                     <input type="number" id="iterations-input" value="50" min="1" max="1000">
                 </div>
                 <div class="control-group">
                     <label class="control-label">
                         Población
-                        <span class="info-tip" tabindex="0" title="Cantidad de variantes que evalúa cada iteración del algoritmo genético. Más población explora más, pero consume más CPU. Default recomendado: 4." data-tip="Cantidad de variantes que evalúa cada iteración del algoritmo genético. Más población explora más, pero consume más CPU. Default recomendado: 4.">i</span>
+                        <span class="info-tip" tabindex="0" aria-label="Ayuda: población" data-tip="Cantidad de variantes que evalúa cada iteración del algoritmo genético. Más población explora más, pero consume más CPU. Default recomendado: 4.">i</span>
                     </label>
                     <input type="number" id="population-input" value="4" min="1" max="20">
                 </div>
@@ -99,7 +99,7 @@
                 <div class="control-group">
                     <label class="control-label">
                         Tipo de optimización
-                        <span class="info-tip" tabindex="0" title="Bounding Box minimiza el rectángulo ocupado. Compact Area busca empaquetar más cerrado y suele ahorrar chapa en formas irregulares. Default recomendado: Compact Area." data-tip="Bounding Box minimiza el rectángulo ocupado. Compact Area busca empaquetar más cerrado y suele ahorrar chapa en formas irregulares. Default recomendado: Compact Area.">i</span>
+                        <span class="info-tip" tabindex="0" aria-label="Ayuda: tipo de optimización" data-tip="Bounding Box minimiza el rectángulo ocupado. Compact Area busca empaquetar más cerrado y suele ahorrar chapa en formas irregulares. Default recomendado: Compact Area.">i</span>
                     </label>
                     <select id="optimization-type">
                         <option value="compact-area" selected>Compact Area</option>
@@ -110,7 +110,7 @@
                 <div class="control-group">
                     <label class="control-label">
                         Rotaciones
-                        <span class="info-tip" tabindex="0" title="Define cuántos ángulos puede probar cada pieza. Más rotaciones mejoran el acomodo, pero hacen más pesado el cálculo. Default recomendado: 4 cada 90 grados." data-tip="Define cuántos ángulos puede probar cada pieza. Más rotaciones mejoran el acomodo, pero hacen más pesado el cálculo. Default recomendado: 4 cada 90 grados.">i</span>
+                        <span class="info-tip" tabindex="0" aria-label="Ayuda: rotaciones" data-tip="Define cuántos ángulos puede probar cada pieza. Más rotaciones mejoran el acomodo, pero hacen más pesado el cálculo. Default recomendado: 4 cada 90 grados.">i</span>
                     </label>
                     <select id="rotations">
                         <option value="1">Sin rotación</option>
@@ -118,6 +118,9 @@
                         <option value="4" selected>4 (cada 90°)</option>
                         <option value="8">8 (cada 45°)</option>
                     </select>
+                </div>
+                <div id="settings-help" class="settings-help" aria-live="polite">
+                    Ayuda de configuración.
                 </div>
             </div>
 
@@ -185,6 +188,6 @@
         </footer>
     </div>
 
-    <script type="module" src="app.js?v=solver-options-info-20260528"></script>
+    <script type="module" src="app.js?v=tooltip-strip-20260528"></script>
 </body>
 </html>
