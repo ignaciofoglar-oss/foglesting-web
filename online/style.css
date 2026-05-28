@@ -74,7 +74,6 @@ body {
 
 header {
     position: relative;
-    text-align: center;
     margin-bottom: 2rem;
     display: flex;
     justify-content: center;
@@ -104,22 +103,28 @@ header {
     transform: translateY(-50%) scale(1.05);
 }
 
-.logo-col {
+.logo-row {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 16px;
 }
 
-.header-logo { height: 65px; filter: drop-shadow(0 2px 8px rgba(232,91,46,0.3)); object-fit: contain; }
+.header-logo { 
+    height: 44px; 
+    width: auto;
+    filter: drop-shadow(0 2px 8px rgba(232,91,46,0.3)); 
+}
 
 header h1 {
     font-family: var(--font-display);
-    font-size: 3rem;
+    font-size: 2.2rem;
     color: var(--cream);
-    letter-spacing: 1px;
-    line-height: 1.1;
+    letter-spacing: 0.5px;
+    line-height: 1;
     margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 .fire-text {
     color: var(--fire);
@@ -127,7 +132,17 @@ header h1 {
 .forest-text {
     color: var(--forest-light);
 }
-.accent { color: rgba(255,223,184,0.8); font-size: 0.6em; vertical-align: middle; }
+.accent { 
+    color: rgba(255,223,184,0.6); 
+    font-size: 0.45em; 
+    font-family: var(--font-body);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border: 1px solid rgba(255,223,184,0.2);
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(255,223,184,0.05);
+}
 .subtitle { color: rgba(255,223,184,0.45); font-size: 0.9rem; margin-top: 4px; }
 
 /* ---- Glass Panels ---- */
