@@ -305,16 +305,39 @@ img { max-width: 100%; height: auto; display: block; }
 .powered-badge {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     padding: 6px 14px;
-    border: 1px solid rgba(232,91,46,0.25);
-    border-radius: 100px;
-    background: rgba(232,91,46,0.07);
+    border: 1px solid transparent;
+    background: rgba(0,0,0,0.01);
     color: rgba(255,223,184,0.7);
     font-size: 0.78rem;
-    transition: all var(--transition);
     text-decoration: none;
     white-space: nowrap;
+    position: relative;
+    min-width: 140px; 
+    min-height: 32px;
+}
+.powered-badge::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    border-radius: 100px;
+    /* Animate size from 100% to 44px */
+    width: calc(100% - (100% - 44px) * var(--morph-progress, 0));
+    height: calc(100% + (44px - 100%) * var(--morph-progress, 0));
+    /* Animate background and border opacity */
+    background: rgba(232, 91, 46, calc(0.07 + 0.07 * var(--morph-progress, 0)));
+    border: 1px solid rgba(232, 91, 46, calc(0.25 + 0.25 * var(--morph-progress, 0)));
+    transition: all 0.1s ease-out; /* Tiny lag for smoothness */
+    z-index: -1;
+}
+.powered-badge span, .powered-badge strong, .powered-badge svg { 
+    position: relative;
+    z-index: 1;
+    opacity: calc(1 - var(--morph-progress, 0) * 1.5);
+    transition: opacity 0.1s ease-out;
 }
 .powered-badge span { font-weight: 400; }
 .powered-badge strong {
@@ -324,16 +347,24 @@ img { max-width: 100%; height: auto; display: block; }
 .powered-badge svg {
     width: 12px; height: 12px;
     color: var(--fire);
-    opacity: 0.7;
-    transition: transform var(--transition);
 }
-.powered-badge:hover {
-    background: rgba(232,91,46,0.14);
-    border-color: rgba(232,91,46,0.5);
-    color: var(--cream);
-    transform: translateY(-1px);
+.powered-badge::after {
+    content: "";
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    background: url('assets/isotipo_negativo.png') center/contain no-repeat;
+    left: 50%;
+    top: 50%;
+    margin-top: -14px;
+    margin-left: -12px;
+    z-index: 0;
+    pointer-events: none;
+    /* Fades in only at the end of the proximity */
+    opacity: calc(var(--morph-progress, 0) * 1.5 - 0.5);
+    transform: scale(calc(0.5 + 0.6 * var(--morph-progress, 0)));
+    transition: all 0.1s ease-out;
 }
-.powered-badge:hover svg { transform: translate(2px, -2px); opacity: 1; }
 
 /* Footer branding */
 .footer-product {

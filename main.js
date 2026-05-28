@@ -20,7 +20,39 @@ const db = getFirestore(app);
 // Foglar Landing Page — Interactions & Animations
 // =============================================
 
-document.addEventListener('DOMContentLoaded', () => {
+function init() {
+
+    // --- Proximity Morphing Badge ---
+    const badge = document.querySelector('.powered-badge');
+    if (badge) {
+        document.addEventListener('mousemove', (e) => {
+            const rect = badge.getBoundingClientRect();
+            // Center of the badge
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            // Distance from mouse to center
+            const dx = e.clientX - centerX;
+            const dy = e.clientY - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Define distances
+            const maxDist = 200; // Distance to start morphing
+            const minDist = 40;  // Distance to be 100% morphed (approx radius of the final button)
+            let progress = 0;
+            
+            if (distance <= minDist) {
+                progress = 1;
+            } else if (distance < maxDist) {
+                progress = 1 - ((distance - minDist) / (maxDist - minDist));
+                // Quadratic easing so the effect is stronger closer to the button
+                progress = progress * progress; 
+            }
+            
+            // Update CSS variable for the badge
+            badge.style.setProperty('--morph-progress', progress);
+        });
+    }
 
     // --- Navbar scroll effect ---
     const navbar = document.getElementById('navbar');
@@ -444,7 +476,13 @@ document.addEventListener('DOMContentLoaded', () => {
     resize();
     draw();
 
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
 
 // =============================================
 // Genetic Algorithm Population Animation
