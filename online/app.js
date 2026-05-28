@@ -49,7 +49,7 @@ const inputPreviewPanel = document.getElementById('input-preview-panel');
 // ---- Web Worker Init ----
 function initWorker() {
     if (nestingWorker) nestingWorker.terminate();
-    nestingWorker = new Worker('worker.js?v=download-preview-fix-20260528');
+    nestingWorker = new Worker('worker.js?v=dxf-orientation-fix-20260528');
     
     nestingWorker.onmessage = function(e) {
         const msg = e.data;
@@ -582,7 +582,7 @@ function pushGroup(lines, code, value) {
     lines.push(String(code), String(value));
 }
 
-function pushPolyline(lines, points, layer, xOffset = 0) {
+function pushPolyline(lines, points, layer, xOffset = 0, sheetHeight = null) {
     if (!points || points.length < 2) return;
     pushGroup(lines, 0, 'POLYLINE');
     pushGroup(lines, 8, layer);
@@ -592,10 +592,12 @@ function pushPolyline(lines, points, layer, xOffset = 0) {
     pushGroup(lines, 20, 0);
     pushGroup(lines, 30, 0);
     points.forEach(pt => {
+        const sourceY = Number(pt[1] || 0);
+        const dxfY = Number.isFinite(sheetHeight) ? sheetHeight - sourceY : sourceY;
         pushGroup(lines, 0, 'VERTEX');
         pushGroup(lines, 8, layer);
         pushGroup(lines, 10, dxfValue((pt[0] || 0) + xOffset));
-        pushGroup(lines, 20, dxfValue(pt[1] || 0));
+        pushGroup(lines, 20, dxfValue(dxfY));
         pushGroup(lines, 30, 0);
     });
     pushGroup(lines, 0, 'SEQEND');
@@ -658,13 +660,13 @@ function buildFallbackDxf(result) {
 
     for (let sheet = 0; sheet < sheetCount; sheet++) {
         const x = sheet * (sheetW + sheetGap);
-        pushPolyline(lines, [[0, 0], [sheetW, 0], [sheetW, sheetH], [0, sheetH]], 'SHEET', x);
+        pushPolyline(lines, [[0, 0], [sheetW, 0], [sheetW, sheetH], [0, sheetH]], 'SHEET', x, sheetH);
     }
 
     result.placements.forEach(part => {
         const x = Number(part.sheet_index || 0) * (sheetW + sheetGap);
-        pushPolyline(lines, part.outer, 'PARTS', x);
-        if (part.holes) part.holes.forEach(hole => pushPolyline(lines, hole, 'HOLES', x));
+        pushPolyline(lines, part.outer, 'PARTS', x, sheetH);
+        if (part.holes) part.holes.forEach(hole => pushPolyline(lines, hole, 'HOLES', x, sheetH));
     });
 
     pushGroup(lines, 0, 'ENDSEC');
@@ -674,9 +676,8 @@ function buildFallbackDxf(result) {
 }
 
 downloadBtn.addEventListener('click', () => {
-    const dxfBuffer = lastDxfBuffer && lastDxfBuffer.byteLength > 0
-        ? lastDxfBuffer
-        : buildFallbackDxf(lastResult);
+    const dxfBuffer = buildFallbackDxf(lastResult) ||
+        (lastDxfBuffer && lastDxfBuffer.byteLength > 0 ? lastDxfBuffer : null);
 
     if (!dxfBuffer || dxfBuffer.byteLength === 0) {
         alert("El DXF de salida no está disponible.");
