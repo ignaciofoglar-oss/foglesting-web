@@ -3,7 +3,7 @@
 // Runs nesting in background, yields previews
 // ====================================================
 
-importScripts('nesting.js?v=stats-20260528');
+importScripts('nesting.js?v=solver-options-info-20260528');
 
 let nestingModule = null;
 
@@ -17,7 +17,7 @@ createNestingModule().then(Module => {
 onmessage = function(e) {
     if (e.data.type === 'run') {
         try {
-            const { files, spacing, iterations, population, rotations, sheetWidth, sheetHeight } = e.data;
+            const { files, spacing, iterations, population, rotations, sheetWidth, sheetHeight, optimizationType } = e.data;
 
             try {
                 if (nestingModule.FS.analyzePath('output.dxf').exists) {
@@ -50,6 +50,7 @@ onmessage = function(e) {
 
             const result_json = nestingModule.run_nesting_wasm(
                 quantities_str, sheetWidth, sheetHeight, population, iterations, 10.0, 10.0, spacing, rotations,
+                optimizationType || 'compact-area',
                 progress_callback
             );
 

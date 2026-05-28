@@ -49,7 +49,7 @@ const inputPreviewPanel = document.getElementById('input-preview-panel');
 // ---- Web Worker Init ----
 function initWorker() {
     if (nestingWorker) nestingWorker.terminate();
-    nestingWorker = new Worker('worker.js?v=dxf-orientation-fix-20260528');
+    nestingWorker = new Worker('worker.js?v=solver-options-info-20260528');
     
     nestingWorker.onmessage = function(e) {
         const msg = e.data;
@@ -240,6 +240,7 @@ runBtn.addEventListener('click', async () => {
     const iters = parseInt(document.getElementById('iterations-input').value);
     const spacing = parseFloat(document.getElementById('spacing').value);
     const rotations = parseInt(document.getElementById('rotations').value);
+    const optimizationType = document.getElementById('optimization-type').value;
 
     // Send to worker
     nestingWorker.postMessage({
@@ -250,7 +251,8 @@ runBtn.addEventListener('click', async () => {
         spacing: spacing,
         iterations: iters,
         population: pop,
-        rotations: rotations
+        rotations: rotations,
+        optimizationType: optimizationType
     });
 });
 
