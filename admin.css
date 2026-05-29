@@ -30,7 +30,6 @@ body {
     font-family: var(--font-body);
     background-color: var(--bg-dark);
     color: var(--text-main);
-    display: flex;
     min-height: 100vh;
     position: relative;
 }
@@ -186,8 +185,10 @@ h1, h2, h3 {
     flex-direction: column;
     border-right: 1px solid #333;
     box-shadow: 5px 0 15px rgba(0,0,0,0.5);
-    z-index: 10;
+    z-index: 100;
     backdrop-filter: blur(10px);
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
 }
 
 .sidebar-logo {
@@ -226,6 +227,7 @@ h1, h2, h3 {
     overflow-y: auto;
     position: relative;
     z-index: 5;
+    min-width: 0;
 }
 
 .view {
@@ -353,4 +355,171 @@ header h1 {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== MOBILE TOPBAR ========== */
+.mobile-topbar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: rgba(17,17,17,0.95);
+    border-bottom: 1px solid #333;
+    backdrop-filter: blur(10px);
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    z-index: 200;
+}
+
+.mobile-topbar-title {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    letter-spacing: 1px;
+}
+
+.hamburger-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    border-radius: 6px;
+}
+
+.hamburger-btn span {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background: #ffdfb8;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.hamburger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger-btn.open span:nth-child(2) { opacity: 0; }
+.hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Overlay behind open sidebar on mobile */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 99;
+    backdrop-filter: blur(2px);
+}
+
+.sidebar-overlay.visible {
+    display: block;
+}
+
+/* ========== RESPONSIVE BREAKPOINTS ========== */
+@media (max-width: 768px) {
+
+    /* Show mobile topbar */
+    .mobile-topbar {
+        display: flex;
+    }
+
+    /* Push content down to account for topbar */
+    #dashboard-screen {
+        padding-top: 56px;
+    }
+
+    /* Sidebar slides off-screen by default */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+        width: 260px;
+        padding-top: 72px;
+        z-index: 150;
+    }
+
+    /* Sidebar visible when toggled */
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    /* Content takes full width */
+    .content {
+        padding: 20px 16px;
+        width: 100%;
+    }
+
+    /* Smaller headings */
+    header h1 {
+        font-size: 1.6rem;
+        margin-bottom: 20px;
+    }
+
+    header h2 {
+        font-size: 1.3rem;
+    }
+
+    /* Stats go to single column */
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .stat-card {
+        padding: 18px;
+    }
+
+    .stat-value {
+        font-size: 28px;
+    }
+
+    /* Charts */
+    .charts-container > div {
+        padding: 16px !important;
+    }
+
+    /* Table scrolls horizontally */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .data-table th, .data-table td {
+        padding: 12px 10px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    /* License generator */
+    .license-generator {
+        padding: 18px;
+    }
+
+    /* Message cards */
+    .message-header {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    /* Login card padding */
+    .login-card {
+        padding: 28px 20px;
+        margin: 16px auto;
+        width: calc(100% - 32px);
+    }
+}
+
+@media (max-width: 380px) {
+    .stat-value {
+        font-size: 24px;
+    }
+
+    header h1 {
+        font-size: 1.4rem;
+    }
 }
