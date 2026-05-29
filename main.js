@@ -302,6 +302,19 @@ function init() {
                     message: msg,
                     timestamp: serverTimestamp()
                 });
+
+                // Enviar notificación a WhatsApp vía nuestra API en Vercel
+                try {
+                    await fetch('/api/whatsapp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, email: email || 'No especificado', type, message: msg })
+                    });
+                } catch (wspError) {
+                    console.error("No se pudo enviar la notificación de WhatsApp:", wspError);
+                    // Si falla el WhatsApp no importa, igual le mostramos éxito al usuario porque se guardó en BD.
+                }
+
                 feedbackForm.reset();
                 feedbackStatus.style.color = '#50c878';
                 feedbackStatus.textContent = '¡Mensaje enviado con éxito! Gracias por tu feedback.';
