@@ -1125,9 +1125,20 @@ img { max-width: 100%; height: auto; display: block; }
 .download-info span {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.88rem;
-    color: rgba(255,223,184,0.45);
+    gap: 6px;
+    font-size: 0.85rem;
+    color: rgba(255,223,184,0.6);
+}
+
+/* --- Old Versions Dropdown --- */
+.old-versions-dropdown summary {
+    list-style: none;
+}
+.old-versions-dropdown summary::-webkit-details-marker {
+    display: none;
+}
+.old-versions-dropdown[open] summary svg {
+    transform: rotate(180deg);
 }
 
 .download-info svg { width: 16px; height: 16px; opacity: 0.6; }
