@@ -3,7 +3,8 @@ import {
     getAuth, 
     signInWithEmailAndPassword, 
     onAuthStateChanged, 
-    signOut 
+    signOut,
+    sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { 
     getFirestore, 
@@ -103,7 +104,8 @@ navItems.forEach(item => {
 function loadDashboardData() {
     loadMetrics();
     loadMessages();
-    loadLicenses();
+    loadUsers();
+    loadGlobalSettings();
 }
 
 // 5a. Load Metrics and draw Chart
@@ -272,88 +274,120 @@ async function loadMessages() {
     }
 }
 
-// 5c. Load and Generate Licenses
-async function loadLicenses() {
-    const container = document.getElementById('licenses-container');
+// 5c. Load Users
+async function loadUsers() {
+    const container = document.getElementById('users-container');
     try {
-        const q = query(collection(db, 'licenses'), orderBy('createdAt', 'desc'));
+        // Assume users collection exists
+        const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);
         
         if (querySnapshot.empty) {
-            container.innerHTML = '<tr><td colspan="5" class="loading">No hay licencias generadas.</td></tr>';
+            container.innerHTML = '<tr><td colspan="4" class="loading">No hay usuarios registrados.</td></tr>';
             return;
         }
         
         container.innerHTML = '';
         querySnapshot.forEach((docSnap) => {
-            const lic = docSnap.data();
-            const date = lic.createdAt ? lic.createdAt.toDate().toLocaleDateString('es-AR') : 'N/A';
-            const statusClass = lic.active ? 'status-active' : 'status-revoked';
-            const statusText = lic.active ? 'ACTIVA' : 'REVOCADA';
+            const user = docSnap.data();
+            const date = user.createdAt ? (user.createdAt.toDate ? user.createdAt.toDate().toLocaleDateString('es-AR') : 'N/A') : 'N/A';
+            const lastLogin = user.lastLogin ? (user.lastLogin.toDate ? user.lastLogin.toDate().toLocaleString('es-AR') : 'N/A') : 'Nunca';
+            const name = user.name ? user.name : '<span style="color:#777;font-style:italic;">Sin nombre</span>';
+            
+            let statusClass = 'status-revoked';
+            let statusText = 'SIN LICENCIA';
+            let hasLicense = false;
+
+            // Check if Sheet Metal Nesting is active in the new map or fallback to hasActiveLicense
+            if (user.licenses && user.licenses['Sheet Metal Nesting'] && user.licenses['Sheet Metal Nesting'].status === 'active') {
+                statusClass = 'status-active';
+                statusText = 'LICENCIA ACTIVA';
+                hasLicense = true;
+            } else if (user.hasActiveLicense) {
+                statusClass = 'status-active';
+                statusText = 'LICENCIA ACTIVA';
+                hasLicense = true;
+            }
             
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td class="mono">${lic.key}</td>
-                <td>${lic.client}</td>
+                <td>${name}</td>
+                <td class="mono">${user.email || docSnap.id}</td>
                 <td>${date}</td>
+                <td>${lastLogin}</td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td>
-                    ${lic.active ? `<button class="btn-danger revoke-btn" data-id="${docSnap.id}">Revocar</button>` : '-'}
+                    <div style="display:flex; gap:8px;">
+                        ${hasLicense 
+                            ? `<button class="btn-danger toggle-license-btn" data-id="${docSnap.id}" data-action="revoke" style="padding: 6px 12px; font-size: 13px;">Revocar</button>` 
+                            : `<button class="btn-primary toggle-license-btn" data-id="${docSnap.id}" data-action="grant" style="padding: 6px 12px; font-size: 13px;">Otorgar</button>`}
+                        <button class="btn-primary reset-pwd-btn" data-email="${user.email}" style="padding: 6px 12px; font-size: 13px; background: #444; border: 1px solid #555;">Reset Clave</button>
+                    </div>
                 </td>
             `;
             container.appendChild(tr);
         });
         
-        // Add revoke listeners
-        document.querySelectorAll('.revoke-btn').forEach(btn => {
+        // Add toggle listeners
+        document.querySelectorAll('.toggle-license-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                if(confirm('¿Seguro que quieres revocar esta licencia? El programa dejará de funcionar con ella.')) {
-                    await updateDoc(doc(db, 'licenses', e.target.dataset.id), { active: false });
-                    loadLicenses(); // Reload
+                const action = e.target.dataset.action;
+                if(confirm(action === 'revoke' ? '¿Seguro que quieres revocar esta licencia?' : '¿Otorgar licencia a este usuario?')) {
+                    const status = action === 'grant' ? 'active' : 'inactive';
+                    await updateDoc(doc(db, 'users', e.target.dataset.id), { 
+                        'licenses.Sheet Metal Nesting.status': status,
+                        hasActiveLicense: action === 'grant' // Fallback flag kept in sync just in case
+                    });
+                    loadUsers(); // Reload
+                }
+            });
+        });
+
+        // Add reset password listeners
+        document.querySelectorAll('.reset-pwd-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const email = e.target.dataset.email;
+                if (!email) return;
+                if(confirm(`¿Enviar email oficial de Foglesting para restablecer la contraseña a: ${email}?`)) {
+                    try {
+                        await sendPasswordResetEmail(auth, email);
+                        alert(`Mail de restablecimiento enviado exitosamente a ${email}`);
+                    } catch (error) {
+                        console.error(error);
+                        alert(`Error al enviar el mail: ${error.message}`);
+                    }
                 }
             });
         });
         
     } catch (e) {
-        console.error("Error loading licenses:", e);
-        container.innerHTML = '<tr><td colspan="5" class="error-msg">Error al cargar licencias.</td></tr>';
+        console.error("Error loading users:", e);
+        container.innerHTML = '<tr><td colspan="4" class="error-msg">Error al cargar usuarios.</td></tr>';
     }
 }
 
-// Generate New License
-document.getElementById('generate-license-btn').addEventListener('click', async () => {
-    const clientName = document.getElementById('license-client').value.trim();
-    if (!clientName) {
-        alert('Por favor ingresa un nombre para el cliente.');
-        return;
-    }
-    
-    const btn = document.getElementById('generate-license-btn');
-    btn.textContent = 'Generando...';
-    btn.disabled = true;
-    
-    // Generate a random 16 character key (XXXX-XXXX-XXXX-XXXX)
-    const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let key = "";
-    for(let i=0; i<16; i++) {
-        key += charset.charAt(Math.floor(Math.random() * charset.length));
-        if((i+1) % 4 === 0 && i !== 15) key += "-";
-    }
-    
+// 5d. Load Global Settings
+async function loadGlobalSettings() {
+    const toggle = document.getElementById('global-license-toggle');
     try {
-        await setDoc(doc(db, 'licenses', key), {
-            key: key,
-            client: clientName,
-            active: true,
-            createdAt: serverTimestamp()
-        });
-        document.getElementById('license-client').value = '';
-        loadLicenses();
-    } catch (e) {
-        console.error("Error generating license:", e);
-        alert('Error al generar licencia.');
-    } finally {
-        btn.textContent = 'Generar Nueva Clave';
-        btn.disabled = false;
+        const docSnap = await getDoc(doc(db, 'settings', 'app_config'));
+        if (docSnap.exists()) {
+            toggle.checked = docSnap.data().requireLicense === true;
+        } else {
+            toggle.checked = false;
+        }
+    } catch(e) {
+        console.error("Error loading settings", e);
     }
-});
+
+    toggle.addEventListener('change', async (e) => {
+        try {
+            await setDoc(doc(db, 'settings', 'app_config'), { requireLicense: e.target.checked }, { merge: true });
+        } catch(err) {
+            console.error("Error updating settings", err);
+            alert("Error al actualizar la configuración");
+            e.target.checked = !e.target.checked; // Revert
+        }
+    });
+}
+

@@ -59,7 +59,7 @@
             <nav>
                 <a href="#" class="nav-item active" data-target="metrics">Métricas</a>
                 <a href="#" class="nav-item" data-target="messages">Mensajes</a>
-                <a href="#" class="nav-item" data-target="licenses">Licencias</a>
+                <a href="#" class="nav-item" data-target="users">Usuarios & Licencias</a>
             </nav>
             <button id="logout-btn" class="btn-secondary">Cerrar Sesión</button>
         </aside>
@@ -128,33 +128,38 @@
                 </div>
             </section>
 
-            <!-- Licenses View -->
-            <section id="view-licenses" class="view">
-                <header>
-                    <h1>Generador de Licencias</h1>
-                </header>
-                <div class="license-generator">
-                    <div class="input-group">
-                        <label>Nombre del Cliente</label>
-                        <input type="text" id="license-client" placeholder="Ej. Metalúrgica San José">
+            <!-- Users & Licenses View -->
+            <section id="view-users" class="view">
+                <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                    <h1>Gestión de Usuarios</h1>
+                    
+                    <div style="background: var(--bg-panel); padding: 15px 25px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px;">
+                        <div>
+                            <h3 style="margin: 0; font-size: 1rem; color: #fff;">Modo Pago (Cobro)</h3>
+                            <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #a0a8a3;">Exigir login y licencia activa a todos</p>
+                        </div>
+                        <label class="switch" style="position: relative; display: inline-block; width: 50px; height: 26px;">
+                            <input type="checkbox" id="global-license-toggle" style="opacity: 0; width: 0; height: 0;">
+                            <span class="slider round" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 26px;"></span>
+                        </label>
                     </div>
-                    <button id="generate-license-btn" class="btn-primary">Generar Nueva Clave</button>
-                </div>
+                </header>
                 
-                <h3 style="margin-top: 30px;">Licencias Activas</h3>
+                <h3 style="margin-top: 30px;">Usuarios Registrados</h3>
                 <div class="table-container">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Clave</th>
-                                <th>Cliente</th>
-                                <th>Fecha Creada</th>
+                                <th>Nombre</th>
+                                <th>Usuario / Email</th>
+                                <th>Fecha Registro</th>
+                                <th>Último Acceso</th>
                                 <th>Estado</th>
-                                <th>Acción</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="licenses-container">
-                            <tr><td colspan="5" class="loading">Cargando licencias...</td></tr>
+                        <tbody id="users-container">
+                            <tr><td colspan="6" class="loading">Cargando usuarios...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -163,7 +168,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="admin.js"></script>
+    <script type="module" src="admin.js?v=2"></script>
     <script>
         // Mobile hamburger menu logic
         (function() {
