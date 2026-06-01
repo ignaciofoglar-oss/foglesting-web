@@ -342,6 +342,23 @@ header h1 {
     border-bottom: none;
 }
 
+.role-select {
+    width: 150px;
+    max-width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    background: rgba(10,10,10,0.8);
+    color: var(--text-main);
+    font-family: var(--font-body);
+}
+
+.role-select:focus {
+    outline: none;
+    border-color: var(--accent-orange);
+    box-shadow: 0 0 0 2px rgba(232, 91, 46, 0.16);
+}
+
 .status-active {
     color: var(--success);
     font-weight: 600;

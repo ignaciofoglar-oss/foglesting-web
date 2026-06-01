@@ -45,16 +45,50 @@ const logoutBtn = document.getElementById('logout-btn');
 
 const navItems = document.querySelectorAll('.nav-item');
 const views = document.querySelectorAll('.view');
+let currentAdminUid = null;
+
+async function isAuthorizedAdmin(user) {
+    if (!user) return false;
+
+    const userRef = doc(db, 'users', user.uid);
+    const userSnap = await getDoc(userRef);
+    const userData = userSnap.exists() ? userSnap.data() : {};
+    if (userData.role === 'admin' || userData.isAdmin === true) return true;
+
+    // Bootstrap de transicion: si todavia no hay ningun administrador marcado,
+    // dejamos entrar para que Ignacio pueda asignar el primer rol admin desde el panel.
+    const usersSnap = await getDocs(collection(db, 'users'));
+    let hasAnyAdmin = false;
+    usersSnap.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data.role === 'admin' || data.isAdmin === true) hasAnyAdmin = true;
+    });
+    return !hasAnyAdmin;
+}
 
 // 1. Authentication State Observer
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
     if (user) {
-        // User is logged in
-        loginScreen.classList.remove('active');
-        dashboardScreen.classList.add('active');
-        loadDashboardData();
+        try {
+            const allowed = await isAuthorizedAdmin(user);
+            if (!allowed) {
+                loginError.textContent = 'Tu cuenta no tiene rol de administrador.';
+                await signOut(auth);
+                return;
+            }
+
+            currentAdminUid = user.uid;
+            loginScreen.classList.remove('active');
+            dashboardScreen.classList.add('active');
+            loadDashboardData();
+        } catch (error) {
+            console.error('Error checking admin role:', error);
+            loginError.textContent = 'No se pudo verificar el rol administrador.';
+            await signOut(auth);
+        }
     } else {
         // User is logged out
+        currentAdminUid = null;
         dashboardScreen.classList.remove('active');
         loginScreen.classList.add('active');
     }
@@ -284,7 +318,7 @@ async function loadUsers() {
         const querySnapshot = await getDocs(q);
         
         if (querySnapshot.empty) {
-            container.innerHTML = '<tr><td colspan="4" class="loading">No hay usuarios registrados.</td></tr>';
+            container.innerHTML = '<tr><td colspan="7" class="loading">No hay usuarios registrados.</td></tr>';
             return;
         }
         
@@ -294,6 +328,7 @@ async function loadUsers() {
             const date = user.createdAt ? (user.createdAt.toDate ? user.createdAt.toDate().toLocaleDateString('es-AR') : 'N/A') : 'N/A';
             const lastLogin = user.lastLogin ? (user.lastLogin.toDate ? user.lastLogin.toDate().toLocaleString('es-AR') : 'N/A') : 'Nunca';
             const name = user.name ? user.name : '<span style="color:#777;font-style:italic;">Sin nombre</span>';
+            const role = user.role === 'admin' || user.isAdmin === true ? 'admin' : 'user';
             
             let statusClass = 'status-revoked';
             let statusText = 'SIN LICENCIA';
@@ -316,6 +351,12 @@ async function loadUsers() {
                 <td class="mono">${user.email || docSnap.id}</td>
                 <td>${date}</td>
                 <td>${lastLogin}</td>
+                <td>
+                    <select class="role-select" data-id="${docSnap.id}" ${docSnap.id === currentAdminUid && role === 'admin' ? 'title="Cuidado: esta es tu cuenta actual"' : ''}>
+                        <option value="user" ${role === 'user' ? 'selected' : ''}>Usuario</option>
+                        <option value="admin" ${role === 'admin' ? 'selected' : ''}>Administrador</option>
+                    </select>
+                </td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td>
                     <div style="display:flex; gap:8px;">
@@ -327,6 +368,32 @@ async function loadUsers() {
                 </td>
             `;
             container.appendChild(tr);
+        });
+
+        document.querySelectorAll('.role-select').forEach(select => {
+            select.addEventListener('change', async (e) => {
+                const userId = e.target.dataset.id;
+                const nextRole = e.target.value;
+                const previousRole = nextRole === 'admin' ? 'user' : 'admin';
+                const label = nextRole === 'admin' ? 'administrador' : 'usuario';
+
+                if (!confirm(`Â¿Cambiar rol a ${label}?`)) {
+                    e.target.value = previousRole;
+                    return;
+                }
+
+                try {
+                    await updateDoc(doc(db, 'users', userId), {
+                        role: nextRole,
+                        isAdmin: nextRole === 'admin'
+                    });
+                    loadUsers();
+                } catch (error) {
+                    console.error('Error updating role:', error);
+                    alert('No se pudo cambiar el rol del usuario.');
+                    e.target.value = previousRole;
+                }
+            });
         });
         
         // Add toggle listeners
@@ -363,7 +430,7 @@ async function loadUsers() {
         
     } catch (e) {
         console.error("Error loading users:", e);
-        container.innerHTML = '<tr><td colspan="4" class="error-msg">Error al cargar usuarios.</td></tr>';
+        container.innerHTML = '<tr><td colspan="7" class="error-msg">Error al cargar usuarios.</td></tr>';
     }
 }
 
