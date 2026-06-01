@@ -484,11 +484,15 @@ img { max-width: 100%; height: auto; display: block; }
     box-shadow: 0 8px 20px rgba(232,91,46,0.35);
 }
 .nav-login {
+    display: inline-flex !important;
+    align-items: center !important;
     border: 1px solid rgba(255,223,184,0.35) !important;
     color: var(--cream) !important;
     padding: 9px 22px !important;
     border-radius: var(--radius-sm) !important;
     font-weight: 600 !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
 }
 .nav-login::after { display: none !important; }
 .nav-login:hover {
