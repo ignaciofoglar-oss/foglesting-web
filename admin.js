@@ -359,11 +359,12 @@ async function loadUsers() {
                 </td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td>
-                    <div style="display:flex; gap:8px;">
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
                         ${hasLicense 
                             ? `<button class="btn-danger toggle-license-btn" data-id="${docSnap.id}" data-action="revoke" style="padding: 6px 12px; font-size: 13px;">Revocar</button>` 
                             : `<button class="btn-primary toggle-license-btn" data-id="${docSnap.id}" data-action="grant" style="padding: 6px 12px; font-size: 13px;">Otorgar</button>`}
                         <button class="btn-primary reset-pwd-btn" data-email="${user.email}" style="padding: 6px 12px; font-size: 13px; background: #444; border: 1px solid #555;">Reset Clave</button>
+                        <button class="btn-danger delete-user-btn" data-id="${docSnap.id}" data-email="${user.email || ''}" ${docSnap.id === currentAdminUid ? 'disabled title="No podes borrar tu propia cuenta desde esta sesion"' : ''} style="padding: 6px 12px; font-size: 13px;">Borrar</button>
                     </div>
                 </td>
             `;
@@ -424,6 +425,48 @@ async function loadUsers() {
                         console.error(error);
                         alert(`Error al enviar el mail: ${error.message}`);
                     }
+                }
+            });
+        });
+
+        // Add delete user listeners
+        document.querySelectorAll('.delete-user-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const userId = e.target.dataset.id;
+                const email = e.target.dataset.email || userId;
+                if (!userId || userId === currentAdminUid) return;
+
+                const confirmed = confirm(
+                    `Borrar el usuario ${email} del panel?\n\n` +
+                    'Esto elimina su perfil, rol y licencia del panel de Foglesting. ' +
+                    'La cuenta de login de Firebase Auth puede seguir existiendo hasta borrarla desde Firebase.'
+                );
+                if (!confirmed) return;
+
+                try {
+                    e.target.disabled = true;
+                    e.target.textContent = 'Borrando...';
+                    const currentUser = auth.currentUser;
+                    if (!currentUser) throw new Error('Sesion admin no disponible.');
+                    const idToken = await currentUser.getIdToken(true);
+                    const response = await fetch('/api/delete-user', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({ uid: userId })
+                    });
+                    const payload = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        throw new Error(payload.error || 'No se pudo borrar el usuario.');
+                    }
+                    loadUsers();
+                } catch (error) {
+                    console.error('Error deleting user:', error);
+                    alert(error.message || 'No se pudo borrar el usuario.');
+                    e.target.disabled = false;
+                    e.target.textContent = 'Borrar';
                 }
             });
         });
