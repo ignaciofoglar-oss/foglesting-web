@@ -1,0 +1,15 @@
+{
+  "active_public_version": "4.0.0",
+  "candidates": [
+    {
+      "version": "5.0.0",
+      "name": "FOGLESTING V5",
+      "file": "foglesting_windows_v5.exe",
+      "download_url": "/admin-releases/foglesting_windows_v5.exe",
+      "sha256": "CED34C117E92052EED979ABB687D63B0C167D5A1CCA44BBF1954A84928E1318B",
+      "size_bytes": 1738240,
+      "created_at": "2026-06-01",
+      "notes": "Build local para probar en notebook. Usa autenticacion publica de foglesting.com y guarda la licencia en AppData."
+    }
+  ]
+}

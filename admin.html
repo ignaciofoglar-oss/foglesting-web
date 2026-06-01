@@ -60,6 +60,7 @@
                 <a href="#" class="nav-item active" data-target="metrics">Métricas</a>
                 <a href="#" class="nav-item" data-target="messages">Mensajes</a>
                 <a href="#" class="nav-item" data-target="users">Usuarios & Licencias</a>
+                <a href="#" class="nav-item" data-target="releases">Versiones</a>
             </nav>
             <button id="logout-btn" class="btn-secondary">Cerrar Sesión</button>
         </aside>
@@ -164,11 +165,43 @@
                     </table>
                 </div>
             </section>
+
+            <!-- Releases View -->
+            <section id="view-releases" class="view">
+                <header>
+                    <h1>Versiones del Programa</h1>
+                    <p class="view-subtitle">
+                        Aca se guardan las versiones nuevas para probar desde el admin antes de publicarlas en la pagina principal.
+                    </p>
+                </header>
+
+                <div class="release-warning">
+                    <strong>Publico actual:</strong>
+                    <span id="release-current-public">FOGLESTING V4</span>
+                    <span>La descarga publica no se modifica hasta que uses el boton de release.</span>
+                </div>
+
+                <div class="release-grid" id="release-candidates">
+                    <p class="loading">Cargando versiones...</p>
+                </div>
+
+                <div class="release-panel">
+                    <h3>Como funciona el release</h3>
+                    <p>
+                        Primero descarga y proba el .exe desde esta pantalla. Cuando confirmes que anda en otra PC,
+                        elegi esa version y apreta <strong>Publicar release</strong>. Ese boton esta preparado para actualizar
+                        la descarga principal mediante la API del sitio cuando configuremos las variables seguras en Vercel.
+                    </p>
+                    <p class="release-muted">
+                        Por seguridad, esta pantalla no cambia automaticamente el archivo publico viejo mientras estas probando.
+                    </p>
+                </div>
+            </section>
         </main>
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="admin.js?v=2"></script>
+    <script type="module" src="admin.js?v=3"></script>
     <script>
         // Mobile hamburger menu logic
         (function() {

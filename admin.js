@@ -106,6 +106,7 @@ function loadDashboardData() {
     loadMessages();
     loadUsers();
     loadGlobalSettings();
+    loadReleaseCandidates();
 }
 
 // 5a. Load Metrics and draw Chart
@@ -391,3 +392,118 @@ async function loadGlobalSettings() {
     });
 }
 
+// 5e. Load desktop release candidates
+async function loadReleaseCandidates() {
+    const container = document.getElementById('release-candidates');
+    const currentPublic = document.getElementById('release-current-public');
+    if (!container) return;
+
+    try {
+        const response = await fetch('/admin-releases/releases.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+
+        if (currentPublic) {
+            currentPublic.textContent = data.active_public_version
+                ? `FOGLESTING V${data.active_public_version}`
+                : 'No informado';
+        }
+
+        if (candidates.length === 0) {
+            container.innerHTML = '<p class="loading">Todavia no hay versiones para probar.</p>';
+            return;
+        }
+
+        container.innerHTML = '';
+        candidates.forEach((release) => {
+            const card = document.createElement('article');
+            card.className = 'release-card';
+            const sizeMb = release.size_bytes ? (release.size_bytes / (1024 * 1024)).toFixed(2) : 'N/A';
+            const downloadUrl = release.download_url || `/admin-releases/${release.file}`;
+            card.innerHTML = `
+                <div class="release-card-header">
+                    <div>
+                        <h2>${release.name || `FOGLESTING ${release.version}`}</h2>
+                        <p>Version ${release.version || 'sin numero'} · ${sizeMb} MB · ${release.created_at || 'sin fecha'}</p>
+                    </div>
+                    <span class="release-badge">Prueba admin</span>
+                </div>
+                <p class="release-notes">${release.notes || 'Sin notas.'}</p>
+                <div class="release-hash mono">${release.sha256 || ''}</div>
+                <div class="release-actions">
+                    <a class="btn-primary release-download" href="${downloadUrl}" download>Descargar .exe</a>
+                    <button class="btn-secondary promote-release-btn" data-version="${release.version}" data-file="${release.file}" data-url="${downloadUrl}" data-name="${release.name || ''}">
+                        Publicar release
+                    </button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+
+        document.querySelectorAll('.promote-release-btn').forEach((button) => {
+            button.addEventListener('click', promoteReleaseCandidate);
+        });
+    } catch (error) {
+        console.error('Error loading release candidates:', error);
+        container.innerHTML = '<p class="error-msg">No se pudieron cargar las versiones del admin.</p>';
+    }
+}
+
+async function promoteReleaseCandidate(event) {
+    const button = event.currentTarget;
+    const version = button.dataset.version;
+    const file = button.dataset.file;
+    const name = button.dataset.name || `FOGLESTING V${version}`;
+    const downloadUrl = `/downloads/${file}`;
+
+    const ok = confirm(
+        `Esto publicaria ${name} como descarga principal.\n\n` +
+        `No copies archivos a mano si todavia no lo probaste en otra PC.\n\n` +
+        `¿Querés continuar?`
+    );
+    if (!ok) return;
+
+    let releaseSecret = sessionStorage.getItem('foglesting_release_secret') || '';
+    if (!releaseSecret) {
+        releaseSecret = prompt('Clave privada de release:') || '';
+        if (!releaseSecret) return;
+        sessionStorage.setItem('foglesting_release_secret', releaseSecret);
+    }
+
+    const previousText = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Publicando...';
+
+    try {
+        const response = await fetch('/api/promote-release', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-release-secret': releaseSecret
+            },
+            body: JSON.stringify({
+                version,
+                name,
+                sourceFile: file,
+                publicFile: file,
+                downloadUrl,
+                notes: `${name} disponible. Descarga directa del ejecutable.`
+            })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(result.error || `HTTP ${response.status}`);
+        }
+        alert('Release publicado. Vercel puede tardar unos minutos en reflejar el cambio.');
+    } catch (error) {
+        alert(
+            'No se pudo publicar automaticamente.\n\n' +
+            'El .exe para probar ya esta disponible en admin, pero para activar el boton de release falta configurar las variables seguras del servidor.\n\n' +
+            `Detalle: ${error.message}`
+        );
+    } finally {
+        button.disabled = false;
+        button.textContent = previousText;
+    }
+}
