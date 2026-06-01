@@ -56,10 +56,10 @@
       "download_url": "/admin-releases/foglesting_windows_v5.exe",
       "source_path": "/admin-releases/foglesting_windows_v5.exe",
       "public_listed": false,
-      "sha256": "FF56D825DE80E01C2FF1617BBCE5A40A9426D67C62F149F4C3967B2D339073E9",
+      "sha256": "B8116AAB1793F808F7BAA2C4C0E15986B64AF5A0BCE315A07B28892CA3506459",
       "size_bytes": 1737728,
       "created_at": "2026-06-01",
-      "notes": "Build local para probar en notebook. Usa autenticacion publica de foglesting.com, guarda la licencia en AppData y corrige el escalado en pantallas 4K/alta DPI."
+      "notes": "Build local para probar en notebook. Corrige escalado 4K/alta DPI y agranda la lista DXF a procesar con mejor contraste."
     }
   ]
 }
