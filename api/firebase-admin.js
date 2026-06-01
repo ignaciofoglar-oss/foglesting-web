@@ -1,8 +1,56 @@
 import admin from 'firebase-admin';
 
+function cleanJsonEnv(value) {
+    let raw = String(value || '').trim();
+    raw = raw.replace(/^\uFEFF/, '').trim();
+
+    // Handles values pasted as:
+    // ```json
+    // { ... }
+    // ```
+    raw = raw.replace(/^```(?:json|JSON)?\s*/i, '').replace(/\s*```$/i, '').trim();
+
+    // Handles values pasted as:
+    // JSON
+    // { ... }
+    if (/^json\s*[\r\n{]/i.test(raw)) {
+        raw = raw.replace(/^json\s*/i, '').trim();
+    }
+
+    return raw;
+}
+
+function parseJsonOrBase64(value) {
+    const raw = cleanJsonEnv(value);
+    if (!raw) return null;
+
+    const candidates = [raw];
+
+    if (!raw.startsWith('{')) {
+        try {
+            candidates.push(Buffer.from(raw, 'base64').toString('utf8').trim());
+        } catch {
+            // Ignore base64 fallback errors.
+        }
+    }
+
+    for (const candidate of candidates) {
+        if (!candidate || !candidate.startsWith('{')) continue;
+        try {
+            return JSON.parse(candidate);
+        } catch {
+            // Keep trying candidates so the final error is user-facing.
+        }
+    }
+
+    const error = new Error('FIREBASE_SERVICE_ACCOUNT_JSON no es un JSON valido. Pegá el JSON completo de la service account, sin la palabra JSON arriba.');
+    error.statusCode = 500;
+    throw error;
+}
+
 function parseServiceAccount() {
     if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+        const serviceAccount = parseJsonOrBase64(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
         if (serviceAccount.private_key) {
             serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
         }
