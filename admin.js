@@ -396,6 +396,8 @@ async function loadGlobalSettings() {
 async function loadReleaseCandidates() {
     const container = document.getElementById('release-candidates');
     const currentPublic = document.getElementById('release-current-public');
+    const select = document.getElementById('release-version-select');
+    const publishSelected = document.getElementById('release-selected-btn');
     if (!container) return;
 
     try {
@@ -403,10 +405,33 @@ async function loadReleaseCandidates() {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+        const activeVersion = data.active_public_version || '';
+        candidates.sort((a, b) => String(b.version || '').localeCompare(String(a.version || ''), undefined, { numeric: true }));
 
         if (currentPublic) {
-            currentPublic.textContent = data.active_public_version
-                ? `FOGLESTING V${data.active_public_version}`
+            const active = candidates.find(item => item.version === activeVersion);
+            currentPublic.textContent = active
+                ? `${active.name} (${active.file})`
+                : activeVersion
+                    ? `FOGLESTING V${activeVersion}`
+                    : 'No informado';
+        }
+
+        if (select) {
+            select.innerHTML = candidates.map((release) => `
+                <option value="${release.version}" ${release.version === activeVersion ? 'selected' : ''}>
+                    ${release.name || `FOGLESTING ${release.version}`} ${release.version === activeVersion ? ' - publica actual' : ''}
+                </option>
+            `).join('');
+        }
+
+        if (publishSelected) {
+            publishSelected.onclick = () => {
+                const release = candidates.find(item => item.version === select.value);
+                if (release) promoteRelease(release, publishSelected);
+            };
+            publishSelected.textContent = activeVersion
+                ? 'Publicar versión elegida'
                 : 'No informado';
         }
 
@@ -419,22 +444,24 @@ async function loadReleaseCandidates() {
         candidates.forEach((release) => {
             const card = document.createElement('article');
             card.className = 'release-card';
+            if (release.version === activeVersion) card.classList.add('release-card-active');
             const sizeMb = release.size_bytes ? (release.size_bytes / (1024 * 1024)).toFixed(2) : 'N/A';
             const downloadUrl = release.download_url || `/admin-releases/${release.file}`;
+            const isActive = release.version === activeVersion;
             card.innerHTML = `
                 <div class="release-card-header">
                     <div>
                         <h2>${release.name || `FOGLESTING ${release.version}`}</h2>
                         <p>Version ${release.version || 'sin numero'} · ${sizeMb} MB · ${release.created_at || 'sin fecha'}</p>
                     </div>
-                    <span class="release-badge">Prueba admin</span>
+                    <span class="release-badge">${isActive ? 'Publica actual' : 'Guardada'}</span>
                 </div>
                 <p class="release-notes">${release.notes || 'Sin notas.'}</p>
                 <div class="release-hash mono">${release.sha256 || ''}</div>
                 <div class="release-actions">
-                    <a class="btn-primary release-download" href="${downloadUrl}" download>Descargar .exe</a>
-                    <button class="btn-secondary promote-release-btn" data-version="${release.version}" data-file="${release.file}" data-url="${downloadUrl}" data-name="${release.name || ''}">
-                        Publicar release
+                    <a class="btn-primary release-download" href="${downloadUrl}" download>Descargar archivo</a>
+                    <button class="btn-secondary promote-release-btn" data-version="${release.version}" ${isActive ? 'disabled' : ''}>
+                        ${isActive ? 'Ya esta publica' : 'Publicar esta version'}
                     </button>
                 </div>
             `;
@@ -442,7 +469,10 @@ async function loadReleaseCandidates() {
         });
 
         document.querySelectorAll('.promote-release-btn').forEach((button) => {
-            button.addEventListener('click', promoteReleaseCandidate);
+            button.addEventListener('click', () => {
+                const release = candidates.find(item => item.version === button.dataset.version);
+                if (release) promoteRelease(release, button);
+            });
         });
     } catch (error) {
         console.error('Error loading release candidates:', error);
@@ -450,12 +480,12 @@ async function loadReleaseCandidates() {
     }
 }
 
-async function promoteReleaseCandidate(event) {
-    const button = event.currentTarget;
-    const version = button.dataset.version;
-    const file = button.dataset.file;
-    const name = button.dataset.name || `FOGLESTING V${version}`;
-    const downloadUrl = `/downloads/${file}`;
+async function promoteRelease(release, button) {
+    const version = release.version;
+    const file = release.file;
+    const name = release.name || `FOGLESTING V${version}`;
+    const sourcePath = release.source_path || release.download_url || `/admin-releases/${file}`;
+    const publicPath = sourcePath.startsWith('/downloads/') ? sourcePath : `/downloads/${file}`;
 
     const ok = confirm(
         `Esto publicaria ${name} como descarga principal.\n\n` +
@@ -486,8 +516,9 @@ async function promoteReleaseCandidate(event) {
                 version,
                 name,
                 sourceFile: file,
+                sourcePath,
                 publicFile: file,
-                downloadUrl,
+                downloadUrl: publicPath,
                 notes: `${name} disponible. Descarga directa del ejecutable.`
             })
         });
@@ -496,6 +527,7 @@ async function promoteReleaseCandidate(event) {
             throw new Error(result.error || `HTTP ${response.status}`);
         }
         alert('Release publicado. Vercel puede tardar unos minutos en reflejar el cambio.');
+        loadReleaseCandidates();
     } catch (error) {
         alert(
             'No se pudo publicar automaticamente.\n\n' +

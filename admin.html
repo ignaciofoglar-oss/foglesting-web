@@ -178,7 +178,18 @@
                 <div class="release-warning">
                     <strong>Publico actual:</strong>
                     <span id="release-current-public">FOGLESTING V4</span>
-                    <span>La descarga publica no se modifica hasta que uses el boton de release.</span>
+                    <span>Elegí cualquier versión del listado y publicala cuando quieras cambiar la descarga principal.</span>
+                </div>
+
+                <div class="release-selector-panel">
+                    <label for="release-version-select">Versión para publicar</label>
+                    <div class="release-selector-row">
+                        <select id="release-version-select"></select>
+                        <button class="btn-primary" id="release-selected-btn" type="button">Publicar versión elegida</button>
+                    </div>
+                    <p class="release-muted">
+                        El listado incluye versiones ya públicas e instaladores nuevos de prueba. Publicar una versión actualiza el manifiesto que usa la página principal y el actualizador del programa.
+                    </p>
                 </div>
 
                 <div class="release-grid" id="release-candidates">

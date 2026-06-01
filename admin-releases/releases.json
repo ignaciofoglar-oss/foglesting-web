@@ -2,10 +2,55 @@
   "active_public_version": "4.0.0",
   "candidates": [
     {
+      "version": "1.0.0",
+      "name": "FOGLESTING V1",
+      "file": "foglesting_windows.zip",
+      "download_url": "/downloads/foglesting_windows.zip",
+      "source_path": "/downloads/foglesting_windows.zip",
+      "sha256": "B98217C1288FB068629635A764FA9AA366DE6C7699CBA7207834EB030E4BC36E",
+      "size_bytes": 758731,
+      "created_at": "2026-05-27",
+      "notes": "Primera version guardada en la pagina."
+    },
+    {
+      "version": "2.0.0",
+      "name": "FOGLESTING V2",
+      "file": "foglesting_windows_v2.zip",
+      "download_url": "/downloads/foglesting_windows_v2.zip",
+      "source_path": "/downloads/foglesting_windows_v2.zip",
+      "sha256": "E657DBF61F68C6282557C81A02DB6CAC04BC0749BD2FF0128DF565E7F7A5F213",
+      "size_bytes": 762414,
+      "created_at": "2026-05-27",
+      "notes": "Version historica guardada como ZIP."
+    },
+    {
+      "version": "3.0.0",
+      "name": "FOGLESTING V3",
+      "file": "foglesting_windows_v3.zip",
+      "download_url": "/downloads/foglesting_windows_v3.zip",
+      "source_path": "/downloads/foglesting_windows_v3.zip",
+      "sha256": "9B1255B78FDC8292DD5EB25DF8FC3A7161EB13071DEAD63C8442AFE039C5D02B",
+      "size_bytes": 763683,
+      "created_at": "2026-05-28",
+      "notes": "Version historica guardada como ZIP."
+    },
+    {
+      "version": "4.0.0",
+      "name": "FOGLESTING V4",
+      "file": "foglesting_windows_v4.exe",
+      "download_url": "/downloads/foglesting_windows_v4.exe",
+      "source_path": "/downloads/foglesting_windows_v4.exe",
+      "sha256": "89033B2B781BE2F5F540745FAC5434C6312102F21500B0F94369BFC19AB89254",
+      "size_bytes": 1720832,
+      "created_at": "2026-05-28",
+      "notes": "Version publica actual. Descarga directa del ejecutable."
+    },
+    {
       "version": "5.0.0",
       "name": "FOGLESTING V5",
       "file": "foglesting_windows_v5.exe",
       "download_url": "/admin-releases/foglesting_windows_v5.exe",
+      "source_path": "/admin-releases/foglesting_windows_v5.exe",
       "sha256": "CED34C117E92052EED979ABB687D63B0C167D5A1CCA44BBF1954A84928E1318B",
       "size_bytes": 1738240,
       "created_at": "2026-06-01",

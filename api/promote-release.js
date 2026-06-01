@@ -8,8 +8,15 @@ function json(res, status, payload) {
 
 function cleanFileName(value) {
     const name = String(value || '').trim();
-    if (!/^[a-zA-Z0-9._-]+\.exe$/.test(name)) return '';
+    if (!/^[a-zA-Z0-9._-]+\.(exe|zip)$/i.test(name)) return '';
     return name;
+}
+
+function cleanSourcePath(value, fallbackFile) {
+    const path = String(value || '').trim();
+    const fallback = `/admin-releases/${fallbackFile}`;
+    const match = path.match(/^\/(admin-releases|downloads)\/([a-zA-Z0-9._-]+\.(exe|zip))$/i);
+    return match ? path : fallback;
 }
 
 function encodeBase64(buffer) {
@@ -87,17 +94,18 @@ export default async function handler(req, res) {
 
     const branch = process.env.GITHUB_BRANCH || DEFAULT_BRANCH;
     const publicBaseUrl = (process.env.PUBLIC_BASE_URL || DEFAULT_PUBLIC_BASE_URL).replace(/\/$/, '');
-    const { version, name, sourceFile, publicFile, notes } = req.body || {};
+    const { version, name, sourceFile, sourcePath, publicFile, notes } = req.body || {};
 
     const sourceName = cleanFileName(sourceFile);
     const publicName = cleanFileName(publicFile || sourceFile);
+    const safeSourcePath = cleanSourcePath(sourcePath, sourceName);
     if (!version || !sourceName || !publicName) {
         return json(res, 400, { error: 'Datos de release incompletos.' });
     }
 
     try {
         const origin = `https://${req.headers.host}`;
-        const sourceUrl = `${origin}/admin-releases/${encodeURIComponent(sourceName)}`;
+        const sourceUrl = `${origin}${safeSourcePath}`;
         const exeResponse = await fetch(sourceUrl);
         if (!exeResponse.ok) {
             return json(res, 404, { error: `No se pudo leer ${sourceUrl}` });
