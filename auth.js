@@ -90,6 +90,8 @@ const changePasswordBtn = document.getElementById('change-password-btn');
 const dashNewPassword = document.getElementById('dash-new-password');
 const profileMsg = document.getElementById('profile-msg');
 const passwordMsg = document.getElementById('password-msg');
+const adminMasterLink = document.getElementById('admin-master-link');
+const adminAccessBox = document.getElementById('admin-access-box');
 
 // Process authentication success
 async function showDashboard(user) {
@@ -107,6 +109,9 @@ async function showDashboard(user) {
         
         if (userDoc.exists()) {
             const data = userDoc.data();
+            const isAdmin = data.role === 'admin' || data.isAdmin === true;
+            if (adminMasterLink) adminMasterLink.style.display = isAdmin ? 'flex' : 'none';
+            if (adminAccessBox) adminAccessBox.style.display = isAdmin ? 'block' : 'none';
             if (data.name) {
                 dashName.value = data.name;
                 topbarName.textContent = data.name;
@@ -146,6 +151,9 @@ async function showDashboard(user) {
                     </div>`;
                 }
             }
+        } else {
+            if (adminMasterLink) adminMasterLink.style.display = 'none';
+            if (adminAccessBox) adminAccessBox.style.display = 'none';
         }
     } catch (e) {
         console.error("Error fetching user data:", e);
@@ -210,6 +218,7 @@ authForm.addEventListener('submit', async (e) => {
                 licenses: {
                     'Sheet Metal Nesting': { status: 'inactive' }
                 },
+                role: 'user',
                 createdAt: serverTimestamp()
             }).catch(e => console.error("Firestore write error:", e));
             

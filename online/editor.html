@@ -1226,122 +1226,75 @@ function fitToScreen() {
     if(!isFinite(view.scale)||view.scale<=0) view.scale=1;
 }
 
-// ── DXF Export — Full AC1015 (R2000) format ───────────────────────
+// ── DXF Export — Maximum Compatibility AC1009 (R12) ──────────────────
 function exportDXF() {
-    // Collect unique layer names
     const layers = [...new Set(entities.map(e=>e.layer||'0'))];
     if(!layers.includes('0')) layers.unshift('0');
 
     const L = [];
-    const p = (code, val) => L.push(String(code).padStart(3,' '), String(val));
+    const p = (code, val) => L.push(code, val);
     const f = v => (+v).toFixed(6);
-    let handle = 1;
-    const H = () => (handle++).toString(16).toUpperCase().padStart(5,'0');
 
-    // ── HEADER ──────────────────────────────────────────────────────
+    // HEADER
     p(0,'SECTION'); p(2,'HEADER');
-    p(9,'$ACADVER'); p(1,'AC1015');
-    p(9,'$DWGCODEPAGE'); p(3,'ANSI_1252');
-    p(9,'$INSUNITS'); p(70,4);  // 4 = mm
-    p(9,'$MEASUREMENT'); p(70,1);
-    p(9,'$EXTMIN'); p(10,f(0));p(20,f(0));p(30,f(0));
-    p(9,'$EXTMAX'); p(10,f(0));p(20,f(0));p(30,f(0));
+    p(9,'$ACADVER'); p(1,'AC1009');
+    p(9,'$INSUNITS'); p(70,4);
     p(0,'ENDSEC');
 
-    // ── TABLES ──────────────────────────────────────────────────────
+    // TABLES
     p(0,'SECTION'); p(2,'TABLES');
-
-    // LTYPE table
-    p(0,'TABLE'); p(2,'LTYPE'); p(5,H()); p(330,0); p(100,'AcDbSymbolTable'); p(70,1);
-    p(0,'LTYPE'); p(5,H()); p(330,5); p(100,'AcDbSymbolTableRecord'); p(100,'AcDbLinetypeTableRecord');
-    p(2,'CONTINUOUS'); p(70,0); p(3,'Solid line'); p(72,65); p(73,0); p(40,0.0);
-    p(0,'ENDTAB');
-
-    // LAYER table
-    p(0,'TABLE'); p(2,'LAYER'); p(5,H()); p(330,0); p(100,'AcDbSymbolTable'); p(70,layers.length);
+    p(0,'TABLE'); p(2,'LAYER'); p(70,layers.length);
     layers.forEach(lname => {
-        p(0,'LAYER'); p(5,H()); p(330,2); p(100,'AcDbSymbolTableRecord'); p(100,'AcDbLayerTableRecord');
-        p(2,lname||'0'); p(70,0); p(62,7); p(6,'CONTINUOUS');
+        p(0,'LAYER'); p(2,lname||'0'); p(70,0); p(62,7); p(6,'CONTINUOUS');
     });
     p(0,'ENDTAB');
-
-    // STYLE table
-    p(0,'TABLE'); p(2,'STYLE'); p(5,H()); p(330,0); p(100,'AcDbSymbolTable'); p(70,1);
-    p(0,'STYLE'); p(5,H()); p(330,3); p(100,'AcDbSymbolTableRecord'); p(100,'AcDbTextStyleTableRecord');
-    p(2,'STANDARD'); p(70,0); p(40,0.0); p(41,1.0); p(50,0.0); p(71,0); p(42,0.2); p(3,'txt'); p(4,'');
-    p(0,'ENDTAB');
-
-    // Minimal required empty tables
-    ['VIEW','UCS','APPID','VPORT','DIMSTYLE'].forEach(tname => {
-        p(0,'TABLE'); p(2,tname); p(5,H()); p(330,0); p(100,'AcDbSymbolTable'); p(70,0);
-        p(0,'ENDTAB');
-    });
-
     p(0,'ENDSEC');
 
-    // ── BLOCKS ──────────────────────────────────────────────────────
-    p(0,'SECTION'); p(2,'BLOCKS');
-    ['*Model_Space','*Paper_Space'].forEach(bname => {
-        p(0,'BLOCK');  p(5,H()); p(330,1); p(100,'AcDbEntity'); p(8,'0');
-        p(100,'AcDbBlockBegin'); p(2,bname); p(70,0);
-        p(10,0); p(20,0); p(30,0); p(3,bname); p(1,'');
-        p(0,'ENDBLK'); p(5,H()); p(330,1); p(100,'AcDbEntity'); p(8,'0');
-        p(100,'AcDbBlockEnd');
-    });
-    p(0,'ENDSEC');
-
-    // ── ENTITIES ─────────────────────────────────────────────────────
+    // ENTITIES
     p(0,'SECTION'); p(2,'ENTITIES');
     entities.forEach(e => {
         const layer = e.layer || '0';
-        const h = H();
         switch(e.type) {
             case 'LINE':
-                p(0,'LINE'); p(5,h); p(330,0); p(100,'AcDbEntity'); p(8,layer);
-                p(100,'AcDbLine');
+                p(0,'LINE'); p(8,layer);
                 p(10,f(e.x1)); p(20,f(e.y1)); p(30,0);
                 p(11,f(e.x2)); p(21,f(e.y2)); p(31,0);
                 break;
             case 'CIRCLE':
-                p(0,'CIRCLE'); p(5,h); p(330,0); p(100,'AcDbEntity'); p(8,layer);
-                p(100,'AcDbCircle');
+                p(0,'CIRCLE'); p(8,layer);
                 p(10,f(e.cx)); p(20,f(e.cy)); p(30,0); p(40,f(e.r));
                 break;
             case 'ARC':
-                p(0,'ARC'); p(5,h); p(330,0); p(100,'AcDbEntity'); p(8,layer);
-                p(100,'AcDbCircle'); p(10,f(e.cx)); p(20,f(e.cy)); p(30,0); p(40,f(e.r));
-                p(100,'AcDbArc'); p(50,f(e.sa)); p(51,f(e.ea));
+                p(0,'ARC'); p(8,layer);
+                p(10,f(e.cx)); p(20,f(e.cy)); p(30,0); p(40,f(e.r));
+                p(50,f(e.sa)); p(51,f(e.ea));
                 break;
-            case 'LWPOLYLINE':case 'POLYLINE':{
-                p(0,'LWPOLYLINE'); p(5,h); p(330,0); p(100,'AcDbEntity'); p(8,layer);
-                p(100,'AcDbPolyline');
-                p(90,e.verts.length); p(70,e.closed?1:0); p(43,0);
-                e.verts.forEach(v=>{ p(10,f(v.x)); p(20,f(v.y)); });
+            case 'LWPOLYLINE': case 'POLYLINE':
+                p(0,'POLYLINE'); p(8,layer); p(66,1); p(70,e.closed?1:0);
+                p(10,0); p(20,0); p(30,0);
+                e.verts.forEach(v => {
+                    p(0,'VERTEX'); p(8,layer); p(10,f(v.x)); p(20,f(v.y)); p(30,0);
+                });
+                p(0,'SEQEND'); p(8,layer);
                 break;
-            }
             case 'ELLIPSE':
-                p(0,'ELLIPSE'); p(5,h); p(330,0); p(100,'AcDbEntity'); p(8,layer);
-                p(100,'AcDbEllipse');
+                p(0,'ELLIPSE'); p(8,layer);
                 p(10,f(e.cx)); p(20,f(e.cy)); p(30,0);
                 p(11,f(e.ex)); p(21,f(e.ey)); p(31,0);
                 p(40,f(e.ratio)); p(41,f(e.sa)); p(42,f(e.ea));
                 break;
-            case 'SPLINE':{
+            case 'SPLINE':
                 if(e.pts.length<2) break;
-                p(0,'SPLINE'); p(5,h); p(330,0); p(100,'AcDbEntity'); p(8,layer);
-                p(100,'AcDbSpline'); p(70,e.closed?11:8); p(71,3); p(72,e.pts.length+4); p(73,e.pts.length); p(74,0);
-                // knots
+                p(0,'SPLINE'); p(8,layer);
+                p(70,e.closed?11:8); p(71,3); p(72,e.pts.length+4); p(73,e.pts.length); p(74,0);
                 const deg=3, nk=e.pts.length+deg+1;
                 for(let ki=0;ki<nk;ki++) p(40, ki<deg+1?0:ki>e.pts.length-1?1:(ki-deg)/(e.pts.length-deg));
                 e.pts.forEach(pt=>{ p(10,f(pt.x));p(20,f(pt.y));p(30,0); });
                 break;
-            }
             case 'TEXT':
-                p(0,'TEXT'); p(5,h); p(330,0); p(100,'AcDbEntity'); p(8,layer);
-                p(100,'AcDbText');
+                p(0,'TEXT'); p(8,layer);
                 p(10,f(e.x)); p(20,f(e.y)); p(30,0);
-                p(40,f(Math.abs(e.height)||5)); p(1,e.content||''); p(7,e.font||'Standard');
-                p(100,'AcDbText');
+                p(40,f(Math.abs(e.height)||5)); p(1,e.content||'');
                 break;
         }
     });
@@ -1351,10 +1304,7 @@ function exportDXF() {
     const text = L.join('\r\n') + '\r\n';
     const blob = new Blob([text], { type:'application/dxf' });
     const url  = URL.createObjectURL(blob);
-    const a = Object.assign(document.createElement('a'), {
-        href: url,
-        download: 'foglesting_edit.dxf'
-    });
+    const a = Object.assign(document.createElement('a'), { href: url, download: 'foglesting_edit.dxf' });
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }

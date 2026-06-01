@@ -1143,6 +1143,147 @@ img { max-width: 100%; height: auto; display: block; }
 
 .download-info svg { width: 16px; height: 16px; opacity: 0.6; }
 
+/* --- Account / License Portal --- */
+.license-portal {
+    background:
+        linear-gradient(135deg, rgba(38,38,38,0.96), rgba(13,17,15,0.98)),
+        radial-gradient(circle at 80% 18%, rgba(232,91,46,0.16), transparent 42%);
+    border-top: 1px solid rgba(255,223,184,0.06);
+    border-bottom: 1px solid rgba(255,223,184,0.06);
+}
+
+.license-portal-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.82fr);
+    gap: 72px;
+    align-items: center;
+}
+
+.license-portal-copy h2 {
+    font-size: clamp(2rem, 4.2vw, 3.35rem);
+    line-height: 1.05;
+    color: var(--cream);
+    margin: 18px 0 22px;
+}
+
+.license-portal-copy p {
+    max-width: 640px;
+    color: rgba(255,223,184,0.66);
+    font-size: 1.06rem;
+    line-height: 1.75;
+}
+
+.license-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 32px;
+}
+
+.license-actions .btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.license-card-preview {
+    position: relative;
+    padding: 28px;
+    border: 1px solid rgba(255,223,184,0.14);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(17,17,17,0.94), rgba(8,10,9,0.96));
+    box-shadow: 0 24px 70px rgba(0,0,0,0.44);
+    overflow: hidden;
+}
+
+.license-card-preview::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-left: 4px solid var(--fire);
+    pointer-events: none;
+}
+
+.license-card-top {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.license-card-top img {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+}
+
+.license-card-top strong {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    letter-spacing: 0.04em;
+    line-height: 1;
+}
+
+.license-card-top span {
+    display: block;
+    margin-top: 4px;
+    color: rgba(255,223,184,0.52);
+    font-size: 0.86rem;
+}
+
+.license-preview-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    padding: 18px 0;
+    border-top: 1px solid rgba(255,223,184,0.1);
+    color: var(--cream);
+}
+
+.license-preview-row strong {
+    color: var(--forest-light);
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+}
+
+.license-preview-row.muted span {
+    color: rgba(255,223,184,0.58);
+}
+
+.license-preview-profile {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-top: 20px;
+    padding: 18px;
+    border-radius: 14px;
+    background: rgba(232,91,46,0.09);
+    border: 1px solid rgba(232,91,46,0.16);
+}
+
+.license-preview-profile > span {
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--fire), var(--cream));
+}
+
+.license-preview-profile b {
+    display: block;
+    color: var(--cream);
+}
+
+.license-preview-profile small {
+    display: block;
+    color: rgba(255,223,184,0.58);
+}
+
+.account-download-link {
+    margin-top: 18px;
+    font-family: var(--font-display);
+}
+
 /* --- Footer --- */
 .footer {
     background: var(--dark-deep);
@@ -1190,6 +1331,10 @@ img { max-width: 100%; height: auto; display: block; }
     }
     .features-grid { grid-template-columns: repeat(2, 1fr); }
     .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .license-portal-grid {
+        grid-template-columns: 1fr;
+        gap: 42px;
+    }
 }
 
 @media (max-width: 768px) {
@@ -1221,6 +1366,9 @@ img { max-width: 100%; height: auto; display: block; }
 
     .algo-content h2 { font-size: 2rem; }
     .algo-pipeline { gap: 10px; }
+    .license-actions { flex-direction: column; align-items: stretch; }
+    .license-actions .btn { justify-content: center; }
+    .license-card-preview { padding: 22px; }
 
     .footer-inner {
         flex-direction: column;
