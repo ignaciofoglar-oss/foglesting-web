@@ -448,20 +448,25 @@ async function loadReleaseCandidates() {
             const sizeMb = release.size_bytes ? (release.size_bytes / (1024 * 1024)).toFixed(2) : 'N/A';
             const downloadUrl = release.download_url || `/admin-releases/${release.file}`;
             const isActive = release.version === activeVersion;
+            const isPublicListed = release.public_listed === true;
+            const badgeText = isActive ? 'Principal actual' : isPublicListed ? 'En historial publico' : 'Solo guardada';
             card.innerHTML = `
                 <div class="release-card-header">
                     <div>
                         <h2>${release.name || `FOGLESTING ${release.version}`}</h2>
                         <p>Version ${release.version || 'sin numero'} · ${sizeMb} MB · ${release.created_at || 'sin fecha'}</p>
                     </div>
-                    <span class="release-badge">${isActive ? 'Publica actual' : 'Guardada'}</span>
+                    <span class="release-badge">${badgeText}</span>
                 </div>
                 <p class="release-notes">${release.notes || 'Sin notas.'}</p>
                 <div class="release-hash mono">${release.sha256 || ''}</div>
                 <div class="release-actions">
                     <a class="btn-primary release-download" href="${downloadUrl}" download>Descargar archivo</a>
                     <button class="btn-secondary promote-release-btn" data-version="${release.version}" ${isActive ? 'disabled' : ''}>
-                        ${isActive ? 'Ya esta publica' : 'Publicar esta version'}
+                        ${isActive ? 'Ya es principal' : 'Hacer principal'}
+                    </button>
+                    <button class="btn-secondary toggle-release-visibility-btn" data-version="${release.version}" data-listed="${isPublicListed ? '1' : '0'}">
+                        ${isPublicListed ? 'Quitar del historial publico' : 'Mostrar en historial publico'}
                     </button>
                 </div>
             `;
@@ -474,9 +479,55 @@ async function loadReleaseCandidates() {
                 if (release) promoteRelease(release, button);
             });
         });
+        document.querySelectorAll('.toggle-release-visibility-btn').forEach((button) => {
+            button.addEventListener('click', () => {
+                const release = candidates.find(item => item.version === button.dataset.version);
+                if (release) toggleReleaseVisibility(release, button);
+            });
+        });
     } catch (error) {
         console.error('Error loading release candidates:', error);
         container.innerHTML = '<p class="error-msg">No se pudieron cargar las versiones del admin.</p>';
+    }
+}
+
+async function toggleReleaseVisibility(release, button) {
+    const nextListed = release.public_listed !== true;
+    const action = nextListed ? 'mostrar en el historial publico' : 'quitar del historial publico';
+    if (!confirm(`¿Querés ${action} ${release.name}?`)) return;
+
+    let releaseSecret = sessionStorage.getItem('foglesting_release_secret') || '';
+    if (!releaseSecret) {
+        releaseSecret = prompt('Clave privada de release:') || '';
+        if (!releaseSecret) return;
+        sessionStorage.setItem('foglesting_release_secret', releaseSecret);
+    }
+
+    const previousText = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Guardando...';
+
+    try {
+        const response = await fetch('/api/update-release-visibility', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-release-secret': releaseSecret
+            },
+            body: JSON.stringify({
+                version: release.version,
+                publicListed: nextListed
+            })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+        alert('Visibilidad actualizada. Puede tardar unos minutos en reflejarse.');
+        loadReleaseCandidates();
+    } catch (error) {
+        alert(`No se pudo actualizar la visibilidad.\n\nDetalle: ${error.message}`);
+    } finally {
+        button.disabled = false;
+        button.textContent = previousText;
     }
 }
 

@@ -1,5 +1,5 @@
-const DEFAULT_REPO = 'ignaciofoglar-oss/foglesting-web';
-const DEFAULT_BRANCH = 'main';
+import { getGithubFile, putGithubFile, requireReleaseAuth } from './github-content.js';
+
 const DEFAULT_PUBLIC_BASE_URL = 'https://foglesting-web.vercel.app';
 
 function json(res, status, payload) {
@@ -23,76 +23,13 @@ function encodeBase64(buffer) {
     return Buffer.from(buffer).toString('base64');
 }
 
-async function githubRequest(path, options = {}) {
-    const token = process.env.GITHUB_TOKEN;
-    const repo = process.env.GITHUB_REPO || DEFAULT_REPO;
-    const url = `https://api.github.com/repos/${repo}${path}`;
-    const response = await fetch(url, {
-        ...options,
-        headers: {
-            'Accept': 'application/vnd.github+json',
-            'Authorization': `Bearer ${token}`,
-            'X-GitHub-Api-Version': '2022-11-28',
-            ...(options.headers || {})
-        }
-    });
-
-    const text = await response.text();
-    let body = {};
-    try {
-        body = text ? JSON.parse(text) : {};
-    } catch {
-        body = { raw: text };
-    }
-
-    if (!response.ok) {
-        throw new Error(body.message || `GitHub HTTP ${response.status}`);
-    }
-    return body;
-}
-
-async function getExistingSha(repoPath, branch) {
-    try {
-        const body = await githubRequest(`/contents/${encodeURIComponent(repoPath).replace(/%2F/g, '/')}?ref=${encodeURIComponent(branch)}`);
-        return body.sha || null;
-    } catch (error) {
-        if (String(error.message).includes('Not Found')) return null;
-        return null;
-    }
-}
-
-async function putGithubFile(repoPath, contentBase64, message, branch) {
-    const sha = await getExistingSha(repoPath, branch);
-    const body = {
-        message,
-        content: contentBase64,
-        branch
-    };
-    if (sha) body.sha = sha;
-
-    return githubRequest(`/contents/${encodeURIComponent(repoPath).replace(/%2F/g, '/')}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-    });
-}
-
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return json(res, 405, { error: 'Method Not Allowed' });
     }
 
-    const configuredSecret = process.env.RELEASE_ADMIN_SECRET;
-    const providedSecret = req.headers['x-release-secret'];
-    if (!configuredSecret || !providedSecret || providedSecret !== configuredSecret) {
-        return json(res, 401, { error: 'Release no autorizado o RELEASE_ADMIN_SECRET no configurado.' });
-    }
+    if (!requireReleaseAuth(req, res)) return;
 
-    if (!process.env.GITHUB_TOKEN) {
-        return json(res, 500, { error: 'Falta GITHUB_TOKEN en Vercel.' });
-    }
-
-    const branch = process.env.GITHUB_BRANCH || DEFAULT_BRANCH;
     const publicBaseUrl = (process.env.PUBLIC_BASE_URL || DEFAULT_PUBLIC_BASE_URL).replace(/\/$/, '');
     const { version, name, sourceFile, sourcePath, publicFile, notes } = req.body || {};
 
@@ -115,8 +52,7 @@ export default async function handler(req, res) {
         await putGithubFile(
             `downloads/${publicName}`,
             encodeBase64(exeBuffer),
-            `Publish ${name || `FOGLESTING ${version}`} executable`,
-            branch
+            `Publish ${name || `FOGLESTING ${version}`} executable`
         );
 
         const manifest = {
@@ -129,9 +65,30 @@ export default async function handler(req, res) {
         await putGithubFile(
             'version.json',
             Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`, 'utf8').toString('base64'),
-            `Release ${manifest.name}`,
-            branch
+            `Release ${manifest.name}`
         );
+
+        try {
+            const releasesFile = await getGithubFile('admin-releases/releases.json');
+            const releases = JSON.parse(releasesFile.content);
+            releases.active_public_version = version;
+            releases.candidates = (releases.candidates || []).map((candidate) => {
+                if (candidate.version !== version) return candidate;
+                return {
+                    ...candidate,
+                    public_listed: true,
+                    download_url: `/downloads/${publicName}`,
+                    source_path: `/downloads/${publicName}`
+                };
+            });
+            await putGithubFile(
+                'admin-releases/releases.json',
+                Buffer.from(`${JSON.stringify(releases, null, 2)}\n`, 'utf8').toString('base64'),
+                `Update release manifest for ${manifest.name}`
+            );
+        } catch (manifestError) {
+            console.error('Could not update releases manifest:', manifestError);
+        }
 
         return json(res, 200, {
             success: true,

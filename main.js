@@ -234,6 +234,44 @@ function init() {
         });
     }
 
+    // --- Public release history controlled from admin ---
+    async function loadPublicReleaseHistory() {
+        const list = document.getElementById('old-versions-list');
+        if (!list) return;
+
+        try {
+            const response = await fetch('/admin-releases/releases.json', { cache: 'no-store' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            const activeVersion = data.active_public_version;
+            const releases = Array.isArray(data.candidates) ? data.candidates : [];
+            const publicHistory = releases
+                .filter((release) => release.public_listed === true && release.version !== activeVersion)
+                .sort((a, b) => String(b.version || '').localeCompare(String(a.version || ''), undefined, { numeric: true }));
+
+            if (publicHistory.length === 0) {
+                const dropdown = list.closest('details');
+                if (dropdown) dropdown.style.display = 'none';
+                return;
+            }
+
+            list.innerHTML = publicHistory.map((release) => {
+                const url = release.download_url || `/downloads/${release.file}`;
+                const label = release.name || `FOGLESTING V${release.version}`;
+                const versionText = label.replace(/^FOGLESTING\s*/i, '');
+                return `
+                    <a class="btn btn-outline" href="${url}" rel="noopener" style="font-family: var(--font-display);" target="_blank">
+                        <span>DESCARGAR <span class="fire-text">FOGL</span><span class="forest-text">ESTING</span> ${versionText}</span>
+                    </a>
+                `;
+            }).join('');
+        } catch (error) {
+            console.warn('No se pudo cargar el historial de versiones publicas:', error);
+        }
+    }
+
+    loadPublicReleaseHistory();
+
     // --- Page View Tracking ---
     async function trackPageView() {
         if (!sessionStorage.getItem('page_viewed')) {
