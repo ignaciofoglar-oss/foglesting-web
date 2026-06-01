@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foglesting — Editor DXF</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .container { max-width:100% !important; padding:0 !important; height:100vh; }
+        body { overflow:hidden; }
+
+        .editor-wrap { display:flex; flex-direction:column; height:100vh; width:100%; }
+
+        /* ─ Header ─ */
+        .editor-header {
+            display:flex; align-items:center; gap:12px; padding:8px 16px;
+            background:rgba(10,10,10,0.92); border-bottom:1px solid rgba(255,223,184,0.07);
+            flex-shrink:0; flex-wrap:wrap;
+        }
+        .editor-header h1 {
+            font-family:var(--font-display); font-size:1.5rem; color:var(--cream);
+            margin:0; display:flex; align-items:center; gap:6px;
+        }
+
+        /* ─ Toolbar ─ */
+        .toolbar {
+            display:flex; align-items:center; gap:6px; padding:7px 16px;
+            background:rgba(15,15,15,0.88); border-bottom:1px solid rgba(255,223,184,0.05);
+            flex-shrink:0; flex-wrap:wrap;
+        }
+        .tb-sep { width:1px; height:26px; background:rgba(255,223,184,0.1); margin:0 3px; }
+
+        .btn-tool {
+            height:32px; padding:0 11px; border-radius:6px;
+            border:1px solid rgba(255,223,184,0.12); background:rgba(28,28,28,0.9);
+            color:rgba(255,223,184,0.7); cursor:pointer; font-size:0.8rem;
+            font-family:var(--font-body); display:flex; align-items:center; gap:5px;
+            transition:all 0.15s; white-space:nowrap; user-select:none;
+        }
+        .btn-tool:hover  { border-color:var(--fire); color:var(--cream); background:rgba(232,91,46,0.1); }
+        .btn-tool.active { background:rgba(232,91,46,0.2); border-color:var(--fire); color:var(--fire); }
+        .btn-tool.primary{ background:var(--fire); color:#fff; border-color:var(--fire-dark); }
+        .btn-tool.primary:hover { background:var(--fire-dark); }
+        .btn-tool.success{ background:var(--forest); color:#fff; border-color:var(--forest); }
+        .btn-tool.success:hover { background:var(--forest-light); }
+        .btn-tool.danger { border-color:rgba(220,50,50,0.3); color:#ff8888; }
+        .btn-tool.danger:hover { background:rgba(220,50,50,0.18); border-color:#ff6666; color:#fff; }
+        .btn-tool:disabled { opacity:.3; cursor:not-allowed; pointer-events:none; }
+
+        /* Text tool options panel */
+        .text-opts {
+            display:none; align-items:center; gap:6px; padding:0 6px;
+            border:1px solid rgba(255,223,184,0.1); border-radius:6px;
+            background:rgba(20,20,20,0.9);
+        }
+        .text-opts.visible { display:flex; }
+        .text-opts label { font-size:0.76rem; color:rgba(255,223,184,0.45); white-space:nowrap; }
+        .text-opts select, .text-opts input[type=number] {
+            height:28px; background:rgba(10,10,10,0.8); border:1px solid rgba(255,223,184,0.15);
+            color:var(--cream); border-radius:5px; font-size:0.8rem; font-family:var(--font-body);
+            padding:0 6px; outline:none;
+        }
+        .text-opts select:focus, .text-opts input[type=number]:focus { border-color:var(--fire); }
+        .text-opts input[type=number] { width:56px; }
+
+        /* ─ File Tabs ─ */
+        .tabs-bar {
+            display:flex; gap:4px; align-items:center; padding:4px 16px;
+            background:rgba(10,10,10,0.7); border-bottom:1px solid rgba(255,223,184,0.04);
+            flex-shrink:0; overflow-x:auto; min-height:0;
+        }
+        .tabs-bar:empty { display:none; }
+        .file-tab {
+            padding:3px 10px; border-radius:5px;
+            border:1px solid rgba(255,223,184,0.1); background:transparent;
+            color:rgba(255,223,184,0.45); font-size:0.78rem; font-family:var(--font-body);
+            cursor:pointer; white-space:nowrap; max-width:170px; overflow:hidden;
+            text-overflow:ellipsis; transition:all 0.15s; display:flex; align-items:center; gap:5px;
+        }
+        .file-tab:hover { color:var(--cream); border-color:rgba(255,223,184,0.3); }
+        .file-tab.active { color:var(--fire); border-color:var(--fire); background:rgba(232,91,46,0.1); }
+        .file-tab-close {
+            font-size:0.95rem; opacity:0.4; line-height:1;
+            padding:0 2px; flex-shrink:0;
+        }
+        .file-tab-close:hover { opacity:1; color:#ff6666; }
+
+        /* ─ Canvas area ─ */
+        .canvas-area { flex:1; position:relative; overflow:hidden; min-height:0; }
+        #dxf-canvas {
+            position:absolute; top:0; left:0; width:100%; height:100%;
+            display:block; touch-action:none;
+        }
+
+        .hint-bar {
+            position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
+            background:rgba(8,8,8,0.82); border:1px solid rgba(255,223,184,0.07);
+            border-radius:7px; padding:5px 14px; font-size:0.71rem;
+            color:rgba(255,223,184,0.28); pointer-events:none; white-space:nowrap;
+        }
+        .hint-bar kbd {
+            background:rgba(255,255,255,0.07); border-radius:3px;
+            padding:1px 4px; font-size:0.9em; font-family:monospace;
+        }
+
+        .coord-readout {
+            position:absolute; top:10px; right:14px;
+            background:rgba(8,8,8,0.72); border:1px solid rgba(255,223,184,0.06);
+            border-radius:6px; padding:3px 10px;
+            font-size:0.71rem; color:rgba(255,223,184,0.3);
+            pointer-events:none; font-family:monospace;
+        }
+
+        .drop-overlay {
+            position:absolute; inset:0; display:flex; align-items:center;
+            justify-content:center; flex-direction:column; gap:10px;
+            color:rgba(255,223,184,0.3); font-size:1rem; pointer-events:none;
+            transition:opacity 0.3s;
+        }
+        .drop-overlay.hidden { opacity:0; }
+        .drop-overlay-icon { font-size:2.8rem; }
+
+        .dragging-over #dxf-canvas { outline:2px dashed var(--fire); }
+
+        /* Text input popup */
+        #text-input-popup {
+            position:absolute; display:none; z-index:20;
+            background:rgba(15,15,15,0.96); border:1px solid rgba(232,91,46,0.5);
+            border-radius:8px; padding:10px 12px; gap:8px; flex-direction:column;
+            box-shadow:0 8px 24px rgba(0,0,0,0.6);
+        }
+        #text-input-popup.visible { display:flex; }
+        #text-input-popup input[type=text] {
+            background:rgba(0,0,0,0.5); border:1px solid rgba(255,223,184,0.2);
+            color:var(--cream); border-radius:5px; padding:6px 10px;
+            font-size:0.9rem; font-family:var(--font-body); outline:none; width:220px;
+        }
+        #text-input-popup input[type=text]:focus { border-color:var(--fire); }
+        #text-popup-ok {
+            height:30px; background:var(--fire); color:#fff; border:none;
+            border-radius:5px; font-family:var(--font-body); font-size:0.82rem;
+            cursor:pointer; transition:background 0.15s;
+        }
+        #text-popup-ok:hover { background:var(--fire-dark); }
+
+        #sel-info { font-size:0.76rem; color:rgba(255,223,184,0.3); margin-left:4px; }
+
+        /* Measure result bubble */
+        .measure-bubble {
+            position:absolute; background:rgba(10,10,10,0.9);
+            border:1px solid rgba(61,135,96,0.6); border-radius:7px;
+            padding:5px 12px; font-size:0.78rem; font-family:monospace;
+            color:#7fff7f; pointer-events:none; white-space:nowrap;
+            box-shadow:0 4px 14px rgba(0,0,0,0.5);
+        }
+        .measure-bubble strong { color:#b8ffb8; }
+    </style>
+</head>
+<body>
+<canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:-1;opacity:0.45;pointer-events:none;"></canvas>
+
+<div class="container" style="position:relative;z-index:1;">
+<div class="editor-wrap">
+
+    <!-- Header -->
+    <div class="editor-header">
+        <a href="index.html" class="back-home" title="Volver" style="flex-shrink:0;">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 18l-6-6 6-6"/><path d="M18 12H6"/></svg>
+        </a>
+        <h1><span class="fire-text">Fogl</span><span class="forest-text">esting</span>
+            <span class="accent" style="font-size:.7em;">Editor DXF</span></h1>
+        <div style="flex:1;display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap;">
+            <label class="btn-tool primary" for="file-input">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Abrir DXF
+            </label>
+            <input type="file" id="file-input" accept=".dxf" multiple hidden>
+            <button class="btn-tool success" id="export-btn" disabled>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Exportar DXF
+            </button>
+        </div>
+    </div>
+
+    <!-- Tool ribbon -->
+    <div class="toolbar">
+        <button class="btn-tool active" data-tool="select" title="Seleccionar (S)">👆 Sel.</button>
+        <button class="btn-tool" data-tool="pan"    title="Pan / mover vista (P)">🖐 Pan</button>
+        <div class="tb-sep"></div>
+        <button class="btn-tool" data-tool="move"   title="Mover selección (M)">↔ Mover</button>
+        <button class="btn-tool" data-tool="line"   title="Línea (L)">📏 Línea</button>
+        <button class="btn-tool" data-tool="circle" title="Círculo (C)">⭕ Círculo</button>
+        <button class="btn-tool" data-tool="text"    title="Texto (T)">🔤 Texto</button>
+        <button class="btn-tool" data-tool="measure" title="Medir distancia (R)">📐 Medir</button>
+
+        <!-- Text tool options (shown only when text tool is active) -->
+        <div class="text-opts" id="text-opts">
+            <label>Fuente</label>
+            <select id="txt-font">
+                <option value="DM Sans">DM Sans</option>
+                <option value="Arial">Arial</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Courier New">Courier New</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Impact">Impact</option>
+            </select>
+            <label>Tam.</label>
+            <input type="number" id="txt-size" value="20" min="4" max="500" step="1">
+        </div>
+
+        <div class="tb-sep"></div>
+        <button class="btn-tool danger" id="delete-btn" title="Eliminar selección (Supr)">🗑 Eliminar</button>
+        <button class="btn-tool" id="clear-measure-btn" title="Limpiar mediciones" style="display:none;">✕ Mediciones</button>
+        <div class="tb-sep"></div>
+        <button class="btn-tool" id="fit-btn" title="Ajustar vista (F)">⊡ Fit</button>
+        <span id="sel-info"></span>
+    </div>
+
+    <!-- File Tabs -->
+    <div class="tabs-bar" id="tabs-bar"></div>
+
+    <!-- Canvas -->
+    <div class="canvas-area" id="canvas-area">
+        <canvas id="dxf-canvas"></canvas>
+
+        <!-- Text input popup -->
+        <div id="text-input-popup">
+            <input type="text" id="text-content" placeholder="Escribí el texto..." autocomplete="off">
+            <button id="text-popup-ok">Colocar texto</button>
+        </div>
+
+        <div class="drop-overlay" id="drop-overlay">
+            <div class="drop-overlay-icon">📂</div>
+            <div>Arrastrá archivos <strong>.dxf</strong> aquí</div>
+            <div style="font-size:.85rem;opacity:.55;">o usá el botón <strong>Abrir DXF</strong></div>
+        </div>
+        <div class="coord-readout" id="coord-readout">X: 0.00  Y: 0.00</div>
+        <!-- Measure bubble (floats near second click) -->
+        <div class="measure-bubble" id="measure-bubble" style="display:none;"></div>
+        <div class="hint-bar">
+            Rueda: zoom · Click medio / 🖐: pan · <kbd>F</kbd> fit · <kbd>S</kbd>/<kbd>L</kbd>/<kbd>C</kbd>/<kbd>T</kbd>/<kbd>M</kbd>/<kbd>R</kbd> herramientas · <kbd>Supr</kbd> borrar · <kbd>Esc</kbd> cancelar
+        </div>
+    </div>
+
+</div><!-- editor-wrap -->
+</div><!-- container -->
+
+<script src="../translations.js"></script>
+<script src="../i18n.js"></script>
+<script>
+// ================================================================
+//  FOGLESTING DXF EDITOR  —  Pure Vanilla JS, zero dependencies
+// ================================================================
+
+// ── Robust DXF Parser ───────────────────────────────────────────
+function parseDXF(text) {
+    // 1. Normalize & tokenize into (code, val) pairs
+    const raw = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+    const lines = raw.split('\n');
+    const G = [];
+    for (let i = 0; i+1 < lines.length; i += 2) {
+        const code = parseInt(lines[i].trim(), 10);
+        if (!isNaN(code)) G.push({ code, val: (lines[i+1]||'').trim() });
+    }
+
+    // 2. Find entity ranges: ENTITIES section + *Model_Space block
+    const ranges = [];
+    let gi = 0;
+
+    while (gi < G.length) {
+        if (G[gi].code === 0 && G[gi].val === 'SECTION') {
+            gi++;
+            if (gi < G.length && G[gi].code === 2) {
+                const secName = G[gi].val.toUpperCase();
+                gi++;
+                if (secName === 'ENTITIES') {
+                    const start = gi;
+                    while (gi < G.length && !(G[gi].code === 0 && G[gi].val === 'ENDSEC')) gi++;
+                    ranges.push({ start, end: gi });
+                    if (gi < G.length) gi++;
+                } else if (secName === 'BLOCKS') {
+                    // look for *Model_Space block inside BLOCKS section
+                    while (gi < G.length && !(G[gi].code === 0 && G[gi].val === 'ENDSEC')) {
+                        if (G[gi].code === 0 && G[gi].val === 'BLOCK') {
+                            gi++;
+                            let blockName = '';
+                            while (gi < G.length && G[gi].code !== 0) {
+                                if (G[gi].code === 2) blockName = G[gi].val;
+                                gi++;
+                            }
+                            const nm = blockName.toUpperCase();
+                            if (nm === '*MODEL_SPACE' || nm === '*MODEL_SPACE0') {
+                                const start = gi;
+                                while (gi < G.length && !(G[gi].code === 0 && G[gi].val === 'ENDBLK')) gi++;
+                                ranges.push({ start, end: gi });
+                            } else {
+                                while (gi < G.length && !(G[gi].code === 0 && G[gi].val === 'ENDBLK')) gi++;
+                            }
+                            if (gi < G.length) gi++;
+                        } else { gi++; }
+                    }
+                    if (gi < G.length) gi++;
+                } else {
+                    // skip this section entirely
+                    while (gi < G.length && !(G[gi].code === 0 && G[gi].val === 'ENDSEC')) gi++;
+                    if (gi < G.length) gi++;
+                }
+            }
+        } else { gi++; }
+    }
+
+    // 3. Fallback: if no ENTITIES/BLOCKS section found, scan whole file
+    //    (handles flat/minimal DXF exports from this editor and similar tools)
+    if (ranges.length === 0) ranges.push({ start: 0, end: G.length });
+
+    // 4. Parse entities within detected ranges
+    const out = [];
+    const n = v => parseFloat(v) || 0;
+
+    function parseRange(start, end) {
+        let i = start;
+        while (i < end) {
+            if (G[i].code !== 0) { i++; continue; }
+            const type = G[i].val; i++;
+
+            if (type === 'LINE') {
+                const e = { type, x1:0,y1:0,x2:0,y2:0, layer:'0' };
+                while (i<end && G[i].code!==0) {
+                    const {code,val}=G[i];
+                    if(code===8)  e.layer=val;
+                    if(code===10) e.x1=n(val);
+                    if(code===20) e.y1=n(val);
+                    if(code===11) e.x2=n(val);
+                    if(code===21) e.y2=n(val);
+                    i++;
+                }
+                out.push(e);
+            } else if (type === 'CIRCLE') {
+                const e = { type, cx:0,cy:0,r:0, layer:'0' };
+                while (i<end && G[i].code!==0) {
+                    const {code,val}=G[i];
+                    if(code===8)  e.layer=val;
+                    if(code===10) e.cx=n(val);
+                    if(code===20) e.cy=n(val);
+                    if(code===40) e.r=n(val);
+                    i++;
+                }
+                out.push(e);
+            } else if (type === 'ARC') {
+                const e = { type, cx:0,cy:0,r:0,sa:0,ea:360, layer:'0' };
+                while (i<end && G[i].code!==0) {
+                    const {code,val}=G[i];
+                    if(code===8)  e.layer=val;
+                    if(code===10) e.cx=n(val);
+                    if(code===20) e.cy=n(val);
+                    if(code===40) e.r=n(val);
+                    if(code===50) e.sa=n(val);
+                    if(code===51) e.ea=n(val);
+                    i++;
+                }
+                out.push(e);
+            } else if (type === 'LWPOLYLINE') {
+                const e = { type, verts:[], closed:false, layer:'0' };
+                let cx=0;
+                while (i<end && G[i].code!==0) {
+                    const {code,val}=G[i];
+                    if(code===8)  e.layer=val;
+                    if(code===70) e.closed=!!(parseInt(val)&1);
+                    if(code===10) cx=n(val);
+                    if(code===20) e.verts.push({x:cx,y:n(val)});
+                    i++;
+                }
+                if(e.verts.length>0) out.push(e);
+            } else if (type === 'POLYLINE') {
+                const e = { type, verts:[], closed:false, layer:'0' };
+                while (i<end && G[i].code!==0) {
+                    const {code,val}=G[i];
+                    if(code===8)  e.layer=val;
+                    if(code===70) e.closed=!!(parseInt(val)&1);
+                    i++;
+                }
+                while (i<end) {
+                    if(G[i].code===0&&G[i].val==='SEQEND'){i++;break;}
+                    if(G[i].code===0&&G[i].val==='VERTEX'){
+                        let vx=0,vy=0;i++;
+                        while(i<end&&G[i].code!==0){
+                            if(G[i].code===10)vx=n(G[i].val);
+                            if(G[i].code===20)vy=n(G[i].val);
+                            i++;
+                        }
+                        e.verts.push({x:vx,y:vy});
+                    } else i++;
+                }
+                if(e.verts.length>0) out.push(e);
+            } else if (type === 'ELLIPSE') {
+                const e = { type, cx:0,cy:0,ex:1,ey:0,ratio:1,sa:0,ea:Math.PI*2, layer:'0' };
+                while(i<end&&G[i].code!==0){
+                    const {code,val}=G[i];
+                    if(code===8)  e.layer=val;
+                    if(code===10) e.cx=n(val);
+                    if(code===20) e.cy=n(val);
+                    if(code===11) e.ex=n(val);
+                    if(code===21) e.ey=n(val);
+                    if(code===40) e.ratio=n(val);
+                    if(code===41) e.sa=n(val);
+                    if(code===42) e.ea=n(val);
+                    i++;
+                }
+                out.push(e);
+            } else if (type === 'SPLINE') {
+                const e = { type, pts:[], closed:false, layer:'0' };
+                let px=null;
+                while(i<end&&G[i].code!==0){
+                    const {code,val}=G[i];
+                    if(code===8)  e.layer=val;
+                    if(code===70) e.closed=!!(parseInt(val)&1);
+                    if(code===10) px=n(val);
+                    if(code===20&&px!==null){e.pts.push({x:px,y:n(val)});px=null;}
+                    i++;
+                }
+                if(e.pts.length>0) out.push(e);
+            } else if (type === 'TEXT' || type === 'MTEXT') {
+                const e = { type:'TEXT', x:0,y:0, content:'', height:5, layer:'0', font:'Arial' };
+                while(i<end&&G[i].code!==0){
+                    const {code,val}=G[i];
+                    if(code===8)  e.layer=val;
+                    if(code===10) e.x=n(val);
+                    if(code===20) e.y=n(val);
+                    if(code===40) e.height=Math.abs(n(val))||5;
+                    if(code===1)  e.content=val.replace(/\\P/g,'\n').replace(/\{[^}]*\}/g,'').trim();
+                    if(code===7)  e.font=val||'Arial';
+                    i++;
+                }
+                if(e.content) out.push(e);
+            } else {
+                // Unknown entity — skip its properties
+                while(i<end&&G[i].code!==0) i++;
+            }
+        }
+    }
+
+    for (const r of ranges) parseRange(r.start, r.end);
+
+    if (out.length === 0) {
+        throw new Error('No se encontraron entidades legibles. El DXF puede estar vacío o en un formato no compatible.');
+    }
+    return out;
+}
+
+// ── Global State ─────────────────────────────────────────────────
+let canvas, ctx;
+let view = { x:0, y:0, scale:1 };
+let entities = [];       // current active entity list (ref to loadedFiles[activeFile].entities)
+let selectedSet = new Set();
+let activeTool = 'select';
+let toolState = null;    // per-tool transient state
+let mouse = { wx:0, wy:0, sx:0, sy:0 };
+let isPanning = false, panSX=0, panSY=0;
+let loadedFiles = [];    // [{name, entities:[]}]
+let activeFile = -1;
+
+// Undo & Edit state
+let undoStack = [];
+let editingText = null;
+
+// Text pending
+let pendingTextPos = null;
+
+// Measure tool state
+let measurements = [];   // [{x1,y1,x2,y2}] — persistent rulers
+let measureStart = null; // {wx,wy} — first click in progress
+
+// Rubber-band (marquee) selection state
+let marquee = null; // null | {wx1,wy1,wx2,wy2,shift,dragging}
+
+// ── Init ─────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+    canvas = document.getElementById('dxf-canvas');
+    ctx = canvas.getContext('2d');
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    initBgAnim();
+    setupEvents();
+    requestAnimationFrame(renderLoop);
+});
+
+function resizeCanvas() {
+    const area = document.getElementById('canvas-area');
+    canvas.width  = area.clientWidth  || 800;
+    canvas.height = area.clientHeight || 600;
+}
+
+// ── Setup events ─────────────────────────────────────────────────
+function setupEvents() {
+    // File open
+    document.getElementById('file-input').addEventListener('change', e => {
+        openFiles([...e.target.files]);
+        e.target.value = '';
+    });
+    document.getElementById('export-btn').addEventListener('click', exportDXF);
+
+    // Toolbar buttons
+    document.querySelectorAll('[data-tool]').forEach(btn => {
+        btn.addEventListener('click', () => setTool(btn.dataset.tool));
+    });
+
+    // Action buttons
+    document.getElementById('delete-btn').addEventListener('click', deleteSelected);
+    document.getElementById('fit-btn').addEventListener('click', fitToScreen);
+    document.getElementById('clear-measure-btn').addEventListener('click', clearMeasurements);
+
+    // Text popup confirm
+    document.getElementById('text-popup-ok').addEventListener('click', commitText);
+    document.getElementById('text-content').addEventListener('keydown', e => {
+        if (e.key === 'Enter') commitText();
+        if (e.key === 'Escape') closeTextPopup();
+    });
+
+    // Canvas events
+    canvas.addEventListener('mousedown', onDown);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    canvas.addEventListener('wheel', onWheel, { passive:false });
+    canvas.addEventListener('dblclick', e => {
+        const {sx,sy} = getXY(e);
+        const {wx,wy} = toWorld(sx,sy);
+        const hit = hitTest(wx,wy);
+        if (hit && hit.type === 'TEXT') {
+            editingText = hit;
+            document.getElementById('text-content').value = hit.content;
+            document.getElementById('txt-font').value = hit.font || 'Arial';
+            document.getElementById('txt-size').value = Math.round(hit.height * view.scale) || 20;
+            setTool('text');
+            showTextPopup(sx,sy);
+        }
+    });
+
+    // Drag & drop
+    const area = document.getElementById('canvas-area');
+    area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('dragging-over'); });
+    area.addEventListener('dragleave', () => area.classList.remove('dragging-over'));
+    area.addEventListener('drop', e => {
+        e.preventDefault(); area.classList.remove('dragging-over');
+        const files = [...e.dataTransfer.files].filter(f => f.name.toLowerCase().endsWith('.dxf'));
+        if (files.length) openFiles(files);
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', e => {
+        const tag = document.activeElement.tagName;
+        if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+        const k = e.key;
+        if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'z') { e.preventDefault(); undo(); }
+        else if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); deleteSelected(); }
+        else if (k === 'Escape') { toolState=null; measureStart=null; closeTextPopup(); selectedSet.clear(); updateSelInfo(); document.getElementById('measure-bubble').style.display='none'; }
+        else if (k === 'f' || k === 'F') fitToScreen();
+        else if (k === 's' || k === 'S') setTool('select');
+        else if (k === 'p' || k === 'P') setTool('pan');
+        else if (k === 'l' || k === 'L') setTool('line');
+        else if (k === 'c' || k === 'C') setTool('circle');
+        else if (k === 't' || k === 'T') setTool('text');
+        else if (k === 'm' || k === 'M') setTool('move');
+        else if (k === 'r' || k === 'R') setTool('measure');
+    });
+}
+
+function setTool(t) {
+    activeTool  = t;
+    toolState   = null;
+    measureStart = null;
+    closeTextPopup();
+    document.querySelectorAll('[data-tool]').forEach(b =>
+        b.classList.toggle('active', b.dataset.tool === t)
+    );
+    // Show/hide text options
+    document.getElementById('text-opts').classList.toggle('visible', t === 'text');
+    // Hide measure bubble when switching away
+    if (t !== 'measure') document.getElementById('measure-bubble').style.display = 'none';
+    // Cursor
+    canvas.style.cursor = t === 'pan' ? 'grab' : t === 'select' ? 'default' : 'crosshair';
+}
+
+// ── Coordinate helpers ────────────────────────────────────────────
+function toScreen(wx, wy) {
+    return {
+        x: (wx - view.x) * view.scale + canvas.width  / 2,
+        y: canvas.height / 2 - (wy - view.y) * view.scale
+    };
+}
+function toWorld(sx, sy) {
+    return {
+        wx: (sx - canvas.width  / 2) / view.scale + view.x,
+        wy: view.y - (sy - canvas.height / 2) / view.scale
+    };
+}
+
+// ── Render loop ───────────────────────────────────────────────────
+function renderLoop() {
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawGrid();
+    drawAllEntities();
+    drawMeasurements();
+    drawPreview();
+    requestAnimationFrame(renderLoop);
+}
+
+function drawGrid() {
+    const wW = canvas.width  / view.scale;
+    const wH = canvas.height / view.scale;
+    const raw  = wW / 12;
+    const exp  = Math.floor(Math.log10(Math.max(raw, 1e-10)));
+    const base = Math.pow(10, exp);
+    const nice = [1,2,5,10].find(n => base*n >= raw) || 10;
+    const minor = base * nice;
+    const major = minor * 5;
+    const L = view.x - wW/2, R = view.x + wW/2;
+    const B = view.y - wH/2, T = view.y + wH/2;
+
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.strokeStyle = '#222';
+    for (let x = Math.floor(L/minor)*minor; x<=R; x+=minor){const sx=toScreen(x,0).x;ctx.moveTo(sx,0);ctx.lineTo(sx,canvas.height);}
+    for (let y = Math.floor(B/minor)*minor; y<=T; y+=minor){const sy=toScreen(0,y).y;ctx.moveTo(0,sy);ctx.lineTo(canvas.width,sy);}
+    ctx.stroke();
+
+    ctx.beginPath(); ctx.strokeStyle = '#2e2e2e';
+    for (let x = Math.floor(L/major)*major; x<=R; x+=major){const sx=toScreen(x,0).x;ctx.moveTo(sx,0);ctx.lineTo(sx,canvas.height);}
+    for (let y = Math.floor(B/major)*major; y<=T; y+=major){const sy=toScreen(0,y).y;ctx.moveTo(0,sy);ctx.lineTo(canvas.width,sy);}
+    ctx.stroke();
+
+    const o = toScreen(0,0);
+    ctx.lineWidth=1.5;
+    ctx.strokeStyle='#e85b2e'; ctx.beginPath(); ctx.moveTo(o.x,o.y); ctx.lineTo(o.x+36,o.y); ctx.stroke();
+    ctx.strokeStyle='#3d8760'; ctx.beginPath(); ctx.moveTo(o.x,o.y); ctx.lineTo(o.x,o.y-36); ctx.stroke();
+}
+
+function drawAllEntities() {
+    entities.forEach(e => {
+        const sel = selectedSet.has(e);
+        ctx.strokeStyle = sel ? '#e85b2e' : '#ffdfb8';
+        ctx.fillStyle   = sel ? '#e85b2e' : '#ffdfb8';
+        ctx.lineWidth   = sel ? 2 : 1.5;
+        ctx.setLineDash([]);
+        renderEntity(e);
+    });
+}
+
+function renderEntity(e, preview=false) {
+    if (!preview) ctx.setLineDash([]);
+
+    switch (e.type) {
+        case 'LINE': {
+            const a=toScreen(e.x1,e.y1), b=toScreen(e.x2,e.y2);
+            ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+            break;
+        }
+        case 'CIRCLE': {
+            const c=toScreen(e.cx,e.cy);
+            ctx.beginPath(); ctx.arc(c.x,c.y,e.r*view.scale,0,Math.PI*2); ctx.stroke();
+            break;
+        }
+        case 'ARC': {
+            const c=toScreen(e.cx,e.cy);
+            const sa=e.sa*Math.PI/180, ea=e.ea*Math.PI/180;
+            ctx.beginPath(); ctx.arc(c.x,c.y,e.r*view.scale,-ea,-sa,false); ctx.stroke();
+            break;
+        }
+        case 'LWPOLYLINE': case 'POLYLINE': {
+            if(e.verts.length<2) break;
+            const p0=toScreen(e.verts[0].x,e.verts[0].y);
+            ctx.beginPath(); ctx.moveTo(p0.x,p0.y);
+            for(let i=1;i<e.verts.length;i++){const p=toScreen(e.verts[i].x,e.verts[i].y);ctx.lineTo(p.x,p.y);}
+            if(e.closed) ctx.closePath();
+            ctx.stroke(); break;
+        }
+        case 'ELLIPSE': {
+            const c=toScreen(e.cx,e.cy);
+            const rx=Math.hypot(e.ex,e.ey)*view.scale, ry=rx*e.ratio;
+            ctx.beginPath(); ctx.ellipse(c.x,c.y,rx,ry,-Math.atan2(e.ey,e.ex),-e.ea,-e.sa,false); ctx.stroke();
+            break;
+        }
+        case 'SPLINE': {
+            if(e.pts.length<2) break;
+            const p0=toScreen(e.pts[0].x,e.pts[0].y);
+            ctx.beginPath(); ctx.moveTo(p0.x,p0.y);
+            for(let i=1;i<e.pts.length;i++){const p=toScreen(e.pts[i].x,e.pts[i].y);ctx.lineTo(p.x,p.y);}
+            if(e.closed) ctx.closePath();
+            ctx.stroke(); break;
+        }
+        case 'TEXT': {
+            const p=toScreen(e.x,e.y);
+            const sz=Math.max(2, e.height*view.scale);
+            ctx.font=`${sz}px '${e.font||'Arial'}'`;
+            ctx.fillStyle = selectedSet.has(e) ? '#e85b2e' : '#ffdfb8';
+            ctx.fillText(e.content||'', p.x, p.y);
+            // Selection bounding box
+            if(selectedSet.has(e)){
+                const m=ctx.measureText(e.content||'');
+                ctx.strokeStyle='#e85b2e'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+                ctx.strokeRect(p.x-2, p.y-sz-2, m.width+4, sz+6);
+                ctx.setLineDash([]);
+            }
+            break;
+        }
+    }
+}
+
+// ── Draw all saved measurements ────────────────────────────────────
+function drawMeasurements() {
+    measurements.forEach(m => drawRuler(m.x1,m.y1,m.x2,m.y2,false));
+}
+
+function drawRuler(wx1,wy1,wx2,wy2,live) {
+    const a=toScreen(wx1,wy1), b=toScreen(wx2,wy2);
+    const dist=Math.hypot(wx2-wx1, wy2-wy1);
+    const angle=Math.atan2(wy2-wy1, wx2-wx1)*180/Math.PI;
+
+    // Main line
+    ctx.save();
+    ctx.strokeStyle = live ? 'rgba(127,255,127,0.75)' : 'rgba(127,255,127,0.55)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([8,5]);
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // End-caps (small perpendicular ticks)
+    const perpAngle = Math.atan2(b.y-a.y, b.x-a.x) + Math.PI/2;
+    const tk = 7;
+    [[a.x,a.y],[b.x,b.y]].forEach(([px,py]) => {
+        ctx.beginPath();
+        ctx.moveTo(px + Math.cos(perpAngle)*tk, py + Math.sin(perpAngle)*tk);
+        ctx.lineTo(px - Math.cos(perpAngle)*tk, py - Math.sin(perpAngle)*tk);
+        ctx.stroke();
+    });
+
+    // Dot at start
+    ctx.fillStyle='rgba(127,255,127,0.9)';
+    ctx.beginPath(); ctx.arc(a.x,a.y,3,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(b.x,b.y,3,0,Math.PI*2); ctx.fill();
+
+    // Label on canvas (mid-point, slightly above line)
+    const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+    const label=dist.toFixed(2) + ' u';
+    ctx.font='bold 11px monospace';
+    ctx.textAlign='center'; ctx.textBaseline='bottom';
+    // background pill
+    const tw=ctx.measureText(label).width+10;
+    ctx.fillStyle='rgba(0,0,0,0.65)';
+    ctx.beginPath(); ctx.roundRect(mx-tw/2, my-18, tw, 16, 4); ctx.fill();
+    ctx.fillStyle='#7fff7f';
+    ctx.fillText(label, mx, my-4);
+    ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+    ctx.restore();
+}
+
+function drawPreview() {
+    ctx.strokeStyle = '#3d8760';
+    ctx.fillStyle   = '#3d8760';
+    ctx.lineWidth   = 1.5;
+    ctx.setLineDash([6,4]);
+
+    if (activeTool==='line' && toolState) {
+        const a=toScreen(toolState.x1,toolState.y1), b=toScreen(mouse.wx,mouse.wy);
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    } else if (activeTool==='circle' && toolState) {
+        const c=toScreen(toolState.cx,toolState.cy);
+        const r=Math.hypot(mouse.wx-toolState.cx, mouse.wy-toolState.cy)*view.scale;
+        ctx.beginPath(); ctx.arc(c.x,c.y,r,0,Math.PI*2); ctx.stroke();
+    } else if (activeTool==='move' && toolState && selectedSet.size>0) {
+        const dx=mouse.wx-toolState.ox, dy=mouse.wy-toolState.oy;
+        selectedSet.forEach(e => {
+            const cl=cloneE(e); moveE(cl,dx,dy); renderEntity(cl,true);
+        });
+    } else if (activeTool==='measure' && measureStart) {
+        // Live ruler preview
+        drawRuler(measureStart.wx, measureStart.wy, mouse.wx, mouse.wy, true);
+        // Update floating bubble
+        const dist=Math.hypot(mouse.wx-measureStart.wx, mouse.wy-measureStart.wy);
+        const dx=mouse.wx-measureStart.wx, dy=mouse.wy-measureStart.wy;
+        const ang=Math.atan2(dy,dx)*180/Math.PI;
+        const bubble=document.getElementById('measure-bubble');
+        const bx=toScreen(mouse.wx,mouse.wy);
+        bubble.style.display='block';
+        bubble.style.left=(bx.x+14)+'px';
+        bubble.style.top =(bx.y-38)+'px';
+        bubble.innerHTML=`<strong>${dist.toFixed(4)}</strong> u &nbsp;|&nbsp; ∠ ${ang.toFixed(1)}° &nbsp;|&nbsp; ΔX ${dx.toFixed(2)} · ΔY ${dy.toFixed(2)}`;
+    } else if (activeTool==='select' && marquee && marquee.dragging) {
+        // Draw rubber-band rectangle
+        const a=toScreen(marquee.wx1,marquee.wy1), b=toScreen(marquee.wx2,marquee.wy2);
+        ctx.setLineDash([4,3]);
+        ctx.strokeStyle='rgba(100,180,255,0.85)';
+        ctx.fillStyle  ='rgba(60,140,255,0.07)';
+        ctx.lineWidth  =1;
+        ctx.beginPath();
+        ctx.rect(a.x,a.y,b.x-a.x,b.y-a.y);
+        ctx.fill();
+        ctx.stroke();
+    }
+    ctx.setLineDash([]);
+}
+
+// ── Mouse handlers ────────────────────────────────────────────────
+function getXY(e) {
+    const r=canvas.getBoundingClientRect();
+    return { sx: e.clientX-r.left, sy: e.clientY-r.top };
+}
+
+function onDown(e) {
+    const {sx,sy} = getXY(e);
+    const {wx,wy} = toWorld(sx,sy);
+
+    // Middle click or pan tool → start panning
+    if (e.button===1 || (activeTool==='pan' && e.button===0)) {
+        isPanning=true; panSX=e.clientX; panSY=e.clientY;
+        canvas.style.cursor='grabbing';
+        return;
+    }
+    if (e.button!==0) return;
+
+    closeTextPopup();
+
+    switch(activeTool) {
+        case 'select': {
+            // Start marquee — defer selection to mouseUp so we can distinguish click vs drag
+            marquee = { wx1:wx, wy1:wy, wx2:wx, wy2:wy, shift:e.shiftKey, dragging:false };
+            break;
+        }
+        case 'line': {
+            if (!toolState) { toolState={x1:wx,y1:wy}; }
+            else {
+                saveState();
+                pushEntity({ type:'LINE', x1:toolState.x1,y1:toolState.y1,x2:wx,y2:wy, layer:'0' });
+                toolState=null; setDirty();
+            }
+            break;
+        }
+        case 'circle': {
+            if (!toolState) { toolState={cx:wx,cy:wy}; }
+            else {
+                saveState();
+                const r=Math.hypot(wx-toolState.cx,wy-toolState.cy);
+                pushEntity({ type:'CIRCLE', cx:toolState.cx,cy:toolState.cy,r, layer:'0' });
+                toolState=null; setDirty();
+            }
+            break;
+        }
+        case 'text': {
+            pendingTextPos = { wx, wy };
+            showTextPopup(sx,sy);
+            break;
+        }
+        case 'move': {
+            if (selectedSet.size===0) {
+                const hit=hitTest(wx,wy);
+                if(hit) selectedSet.add(hit);
+                updateSelInfo(); return;
+            }
+            if (!toolState) { toolState={ox:wx,oy:wy}; }
+            else {
+                saveState();
+                const dx=wx-toolState.ox, dy=wy-toolState.oy;
+                selectedSet.forEach(e => moveE(e,dx,dy));
+                toolState=null; setDirty();
+            }
+            break;
+        }
+        case 'measure': {
+            if (!measureStart) {
+                measureStart = { wx, wy };
+            } else {
+                // Commit measurement
+                measurements.push({ x1:measureStart.wx,y1:measureStart.wy,x2:wx,y2:wy });
+                measureStart = null;
+                document.getElementById('measure-bubble').style.display='none';
+                document.getElementById('clear-measure-btn').style.display='flex';
+            }
+            break;
+        }
+    }
+}
+
+function onMove(e) {
+    const r=canvas.getBoundingClientRect();
+    const sx=e.clientX-r.left, sy=e.clientY-r.top;
+    const w=toWorld(sx,sy);
+    mouse.wx=w.wx; mouse.wy=w.wy; mouse.sx=sx; mouse.sy=sy;
+
+    document.getElementById('coord-readout').textContent=`X: ${mouse.wx.toFixed(2)}  Y: ${mouse.wy.toFixed(2)}`;
+
+    if (isPanning) {
+        const dx=e.clientX-panSX, dy=e.clientY-panSY;
+        view.x-=dx/view.scale; view.y+=dy/view.scale;
+        panSX=e.clientX; panSY=e.clientY;
+    }
+
+    // Update marquee extents
+    if (marquee) {
+        marquee.wx2 = mouse.wx;
+        marquee.wy2 = mouse.wy;
+        // Require at least 5 screen-pixels of drag before switching to box-select
+        const dsx = Math.abs(marquee.wx2 - marquee.wx1) * view.scale;
+        const dsy = Math.abs(marquee.wy2 - marquee.wy1) * view.scale;
+        if (dsx > 5 || dsy > 5) marquee.dragging = true;
+    }
+}
+
+function onUp(e) {
+    if (isPanning) {
+        isPanning=false;
+        canvas.style.cursor = activeTool==='pan' ? 'grab' : activeTool==='select' ? 'default' : 'crosshair';
+    }
+
+    // Commit marquee selection
+    if (marquee) {
+        if (!marquee.shift) selectedSet.clear();
+        if (marquee.dragging) {
+            // Box-select: add entities that intersect the rectangle
+            const rx1=Math.min(marquee.wx1,marquee.wx2), rx2=Math.max(marquee.wx1,marquee.wx2);
+            const ry1=Math.min(marquee.wy1,marquee.wy2), ry2=Math.max(marquee.wy1,marquee.wy2);
+            entities.forEach(ent => { if(entityInRect(ent,rx1,ry1,rx2,ry2)) selectedSet.add(ent); });
+        } else {
+            // Normal click
+            const hit=hitTest(marquee.wx1,marquee.wy1);
+            if(hit) { selectedSet.has(hit) ? selectedSet.delete(hit) : selectedSet.add(hit); }
+        }
+        marquee=null;
+        updateSelInfo();
+    }
+}
+
+function onWheel(e) {
+    e.preventDefault();
+    const f=e.deltaY<0 ? 1.12 : 1/1.12;
+    const prev=view.scale;
+    view.scale=Math.max(1e-5, Math.min(1e6, view.scale*f));
+    view.x=mouse.wx-(mouse.wx-view.x)*(prev/view.scale);
+    view.y=mouse.wy-(mouse.wy-view.y)*(prev/view.scale);
+}
+
+// ── Text popup ────────────────────────────────────────────────────
+function showTextPopup(sx, sy) {
+    const popup=document.getElementById('text-input-popup');
+    const area=document.getElementById('canvas-area').getBoundingClientRect();
+    let left=sx+10, top=sy-60;
+    if(left+280>area.width)  left=sx-290;
+    if(top<0)               top=sy+15;
+    popup.style.left=left+'px';
+    popup.style.top =top +'px';
+    popup.classList.add('visible');
+    document.getElementById('text-content').focus();
+    document.getElementById('text-content').select();
+}
+
+function closeTextPopup() {
+    document.getElementById('text-input-popup').classList.remove('visible');
+    document.getElementById('text-content').value='';
+    pendingTextPos=null;
+    editingText=null;
+}
+
+function commitText() {
+    const content=document.getElementById('text-content').value.trim();
+    if (!content) { closeTextPopup(); return; }
+    const font=document.getElementById('txt-font').value;
+    const size=parseFloat(document.getElementById('txt-size').value)||20;
+    
+    saveState();
+    
+    if (editingText) {
+        editingText.content = content;
+        editingText.font = font;
+        editingText.height = size/view.scale;
+    } else {
+        if (!pendingTextPos) { closeTextPopup(); return; }
+        pushEntity({ type:'TEXT', x:pendingTextPos.wx, y:pendingTextPos.wy, content, height:size/view.scale, font, layer:'0' });
+    }
+    setDirty();
+    closeTextPopup();
+}
+
+// ── Measure helpers ───────────────────────────────────────────────
+function clearMeasurements() {
+    measurements = [];
+    measureStart = null;
+    document.getElementById('measure-bubble').style.display='none';
+    document.getElementById('clear-measure-btn').style.display='none';
+}
+
+// ── Entity management ─────────────────────────────────────────────
+/** Push entity to active list (creates a blank file if nothing loaded) */
+function pushEntity(e) {
+    if (activeFile < 0) {
+        loadedFiles.push({ name:'nuevo.dxf', entities:[] });
+        activeFile = loadedFiles.length-1;
+        entities = loadedFiles[activeFile].entities;
+        buildTabs();
+        document.getElementById('drop-overlay').classList.add('hidden');
+    }
+    entities.push(e);
+}
+
+function deleteSelected() {
+    if (!selectedSet.size) return;
+    saveState();
+    // Remove from current entities array
+    const filtered = entities.filter(e => !selectedSet.has(e));
+    entities.length = 0;
+    filtered.forEach(e => entities.push(e));
+    // Sync back to file
+    if (activeFile >= 0) loadedFiles[activeFile].entities = entities;
+    selectedSet.clear();
+    updateSelInfo();
+    setDirty();
+}
+
+function cloneE(e) { return JSON.parse(JSON.stringify(e)); }
+
+function saveState() {
+    undoStack.push(JSON.stringify(entities));
+    if (undoStack.length > 30) undoStack.shift();
+}
+
+function undo() {
+    if (undoStack.length === 0) return;
+    entities = JSON.parse(undoStack.pop());
+    if (activeFile >= 0) loadedFiles[activeFile].entities = entities;
+    selectedSet.clear();
+    updateSelInfo();
+    setDirty();
+}
+
+function moveE(e, dx, dy) {
+    switch(e.type){
+        case 'LINE': e.x1+=dx;e.y1+=dy;e.x2+=dx;e.y2+=dy; break;
+        case 'CIRCLE':case 'ARC':case 'ELLIPSE': e.cx+=dx;e.cy+=dy; break;
+        case 'LWPOLYLINE':case 'POLYLINE': e.verts.forEach(v=>{v.x+=dx;v.y+=dy;}); break;
+        case 'SPLINE': e.pts.forEach(p=>{p.x+=dx;p.y+=dy;}); break;
+        case 'TEXT': e.x+=dx;e.y+=dy; break;
+    }
+}
+
+// ── Hit test ──────────────────────────────────────────────────────
+function hitTest(wx, wy) {
+    const thr=8/view.scale;
+    for(let i=entities.length-1;i>=0;i--) {
+        if(hitEntity(entities[i],wx,wy,thr)) return entities[i];
+    }
+    return null;
+}
+
+function hitEntity(e,wx,wy,thr) {
+    switch(e.type){
+        case 'LINE':   return segDist(wx,wy,e.x1,e.y1,e.x2,e.y2)<thr;
+        case 'CIRCLE': return Math.abs(Math.hypot(wx-e.cx,wy-e.cy)-e.r)<thr;
+        case 'ARC':    return Math.abs(Math.hypot(wx-e.cx,wy-e.cy)-e.r)<thr;
+        case 'LWPOLYLINE':case 'POLYLINE':{
+            const v=e.verts;
+            for(let i=0;i<v.length-1;i++) if(segDist(wx,wy,v[i].x,v[i].y,v[i+1].x,v[i+1].y)<thr) return true;
+            if(e.closed&&v.length>1) return segDist(wx,wy,v[v.length-1].x,v[v.length-1].y,v[0].x,v[0].y)<thr;
+            return false;
+        }
+        case 'TEXT': {
+            ctx.font=`${e.height*view.scale}px '${e.font||'Arial'}'`;
+            const m=ctx.measureText(e.content||'');
+            const sw=m.width/view.scale, sh=e.height*1.4;
+            return wx>=e.x-0.1 && wx<=e.x+sw+0.1 && wy>=e.y-sh && wy<=e.y+0.2;
+        }
+        default: return false;
+    }
+}
+
+function segDist(px,py,ax,ay,bx,by){
+    const dx=bx-ax,dy=by-ay,l2=dx*dx+dy*dy;
+    if(l2===0) return Math.hypot(px-ax,py-ay);
+    const t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/l2));
+    return Math.hypot(px-(ax+t*dx),py-(ay+t*dy));
+}
+
+// ── Rect intersection for marquee selection ───────────────────────
+function entityInRect(ent, rx1,ry1,rx2,ry2) {
+    const inn=(x,y)=>x>=rx1&&x<=rx2&&y>=ry1&&y<=ry2;
+    // Does segment (ax,ay)-(bx,by) cross any edge of rect?
+    function segCrossesRect(ax,ay,bx,by){
+        if(inn(ax,ay)||inn(bx,by)) return true;
+        // Check each rect edge
+        function segsIntersect(p1x,p1y,p2x,p2y,p3x,p3y,p4x,p4y){
+            const d1x=p2x-p1x,d1y=p2y-p1y,d2x=p4x-p3x,d2y=p4y-p3y;
+            const denom=d1x*d2y-d1y*d2x;
+            if(Math.abs(denom)<1e-10) return false;
+            const t=((p3x-p1x)*d2y-(p3y-p1y)*d2x)/denom;
+            const u=((p3x-p1x)*d1y-(p3y-p1y)*d1x)/denom;
+            return t>=0&&t<=1&&u>=0&&u<=1;
+        }
+        return segsIntersect(ax,ay,bx,by,rx1,ry1,rx2,ry1)||
+               segsIntersect(ax,ay,bx,by,rx2,ry1,rx2,ry2)||
+               segsIntersect(ax,ay,bx,by,rx2,ry2,rx1,ry2)||
+               segsIntersect(ax,ay,bx,by,rx1,ry2,rx1,ry1);
+    }
+    switch(ent.type){
+        case 'LINE': return segCrossesRect(ent.x1,ent.y1,ent.x2,ent.y2);
+        case 'CIRCLE':case 'ARC':
+            return ent.cx+ent.r>=rx1&&ent.cx-ent.r<=rx2&&ent.cy+ent.r>=ry1&&ent.cy-ent.r<=ry2;
+        case 'LWPOLYLINE':case 'POLYLINE':{
+            const v=ent.verts;
+            for(let i=0;i<v.length-1;i++) if(segCrossesRect(v[i].x,v[i].y,v[i+1].x,v[i+1].y)) return true;
+            if(ent.closed&&v.length>1) return segCrossesRect(v[v.length-1].x,v[v.length-1].y,v[0].x,v[0].y);
+            return v.some(p=>inn(p.x,p.y));
+        }
+        case 'ELLIPSE':{
+            const r=Math.hypot(ent.ex,ent.ey);
+            return ent.cx+r>=rx1&&ent.cx-r<=rx2&&ent.cy+r>=ry1&&ent.cy-r<=ry2;
+        }
+        case 'SPLINE': return ent.pts.some(p=>inn(p.x,p.y));
+        case 'TEXT':   return inn(ent.x,ent.y);
+        default: return false;
+    }
+}
+
+function updateSelInfo() {
+    document.getElementById('sel-info').textContent =
+        selectedSet.size>0 ? `${selectedSet.size} seleccionada(s)` : '';
+}
+
+function setDirty() { document.getElementById('export-btn').disabled=false; }
+
+// ── File tabs ─────────────────────────────────────────────────────
+function openFiles(files) {
+    let pending=files.length;
+    files.forEach(file => {
+        const reader=new FileReader();
+        reader.onload = evt => {
+            try {
+                const parsed=parseDXF(evt.target.result);
+                const idx=loadedFiles.findIndex(f=>f.name===file.name);
+                if(idx>=0){
+                    loadedFiles[idx].entities=parsed;
+                    if(activeFile===idx) { entities=parsed; selectedSet.clear(); undoStack=[]; }
+                } else {
+                    loadedFiles.push({name:file.name, entities:parsed});
+                    activeFile=loadedFiles.length-1;
+                    entities=loadedFiles[activeFile].entities;
+                    selectedSet.clear(); undoStack=[];
+                }
+            } catch(err){ alert('Error: "'+file.name+'" — '+err.message); }
+            pending--;
+            if(pending===0){ buildTabs(); fitToScreen(); setDirty(); }
+        };
+        reader.onerror=()=>{ alert('No se pudo leer: '+file.name); pending--; };
+        reader.readAsText(file);
+    });
+}
+
+function buildTabs() {
+    const bar=document.getElementById('tabs-bar');
+    bar.innerHTML='';
+    document.getElementById('drop-overlay').classList.toggle('hidden', loadedFiles.length>0);
+
+    loadedFiles.forEach((f,idx) => {
+        const tab=document.createElement('button');
+        tab.className='file-tab'+(idx===activeFile?' active':'');
+        tab.title=f.name;
+
+        const lbl=document.createElement('span');
+        lbl.textContent=f.name.length>24?f.name.slice(0,22)+'…':f.name;
+        tab.appendChild(lbl);
+
+        // Close × button
+        const cls=document.createElement('span');
+        cls.className='file-tab-close'; cls.textContent='×';
+        cls.addEventListener('click', ev => { ev.stopPropagation(); removeFile(idx); });
+        tab.appendChild(cls);
+
+        tab.addEventListener('click', () => switchFile(idx));
+        bar.appendChild(tab);
+    });
+}
+
+function switchFile(idx) {
+    activeFile=idx;
+    entities=loadedFiles[idx].entities;
+    selectedSet.clear(); toolState=null; undoStack=[];
+    buildTabs(); fitToScreen();
+}
+
+function removeFile(idx) {
+    loadedFiles.splice(idx,1);
+    // Adjust active index
+    if(loadedFiles.length===0){
+        activeFile=-1; entities=[]; selectedSet.clear(); undoStack=[];
+        document.getElementById('export-btn').disabled=true;
+        buildTabs(); return;
+    }
+    // If removed tab was before active → shift left
+    if(idx < activeFile) activeFile--;
+    // If removed tab was the active one → clamp
+    if(activeFile >= loadedFiles.length) activeFile=loadedFiles.length-1;
+    entities=loadedFiles[activeFile].entities;
+    selectedSet.clear(); toolState=null; undoStack=[];
+    buildTabs(); fitToScreen();
+}
+
+// ── Fit to screen ─────────────────────────────────────────────────
+function fitToScreen() {
+    if(!entities.length) return;
+    let mn_x=Infinity,mn_y=Infinity,mx_x=-Infinity,mx_y=-Infinity;
+    function ex(x,y){if(x<mn_x)mn_x=x;if(x>mx_x)mx_x=x;if(y<mn_y)mn_y=y;if(y>mx_y)mx_y=y;}
+    entities.forEach(e=>{
+        switch(e.type){
+            case 'LINE': ex(e.x1,e.y1);ex(e.x2,e.y2); break;
+            case 'CIRCLE':case 'ARC': ex(e.cx-e.r,e.cy-e.r);ex(e.cx+e.r,e.cy+e.r); break;
+            case 'ELLIPSE':{const r=Math.hypot(e.ex,e.ey);ex(e.cx-r,e.cy-r);ex(e.cx+r,e.cy+r);}break;
+            case 'LWPOLYLINE':case 'POLYLINE': e.verts.forEach(v=>ex(v.x,v.y)); break;
+            case 'SPLINE': e.pts.forEach(p=>ex(p.x,p.y)); break;
+            case 'TEXT': ex(e.x,e.y); break;
+        }
+    });
+    if(!isFinite(mn_x)) return;
+    const w=mx_x-mn_x||1, h=mx_y-mn_y||1, pad=50;
+    view.x=mn_x+w/2; view.y=mn_y+h/2;
+    view.scale=Math.min((canvas.width-pad*2)/w,(canvas.height-pad*2)/h);
+    if(!isFinite(view.scale)||view.scale<=0) view.scale=1;
+}
+
+// ── DXF Export — Full AC1015 (R2000) format ───────────────────────
+function exportDXF() {
+    // Collect unique layer names
+    const layers = [...new Set(entities.map(e=>e.layer||'0'))];
+    if(!layers.includes('0')) layers.unshift('0');
+
+    const L = [];
+    const p = (code, val) => L.push(String(code).padStart(3,' '), String(val));
+    const f = v => (+v).toFixed(6);
+    let handle = 1;
+    const H = () => (handle++).toString(16).toUpperCase().padStart(5,'0');
+
+    // ── HEADER ──────────────────────────────────────────────────────
+    p(0,'SECTION'); p(2,'HEADER');
+    p(9,'$ACADVER'); p(1,'AC1015');
+    p(9,'$DWGCODEPAGE'); p(3,'ANSI_1252');
+    p(9,'$INSUNITS'); p(70,4);  // 4 = mm
+    p(9,'$MEASUREMENT'); p(70,1);
+    p(9,'$EXTMIN'); p(10,f(0));p(20,f(0));p(30,f(0));
+    p(9,'$EXTMAX'); p(10,f(0));p(20,f(0));p(30,f(0));
+    p(0,'ENDSEC');
+
+    // ── TABLES ──────────────────────────────────────────────────────
+    p(0,'SECTION'); p(2,'TABLES');
+
+    // LTYPE table
+    p(0,'TABLE'); p(2,'LTYPE'); p(5,H()); p(330,0); p(100,'AcDbSymbolTable'); p(70,1);
+    p(0,'LTYPE'); p(5,H()); p(330,5); p(100,'AcDbSymbolTableRecord'); p(100,'AcDbLinetypeTableRecord');
+    p(2,'CONTINUOUS'); p(70,0); p(3,'Solid line'); p(72,65); p(73,0); p(40,0.0);
+    p(0,'ENDTAB');
+
+    // LAYER table
+    p(0,'TABLE'); p(2,'LAYER'); p(5,H()); p(330,0); p(100,'AcDbSymbolTable'); p(70,layers.length);
+    layers.forEach(lname => {
+        p(0,'LAYER'); p(5,H()); p(330,2); p(100,'AcDbSymbolTableRecord'); p(100,'AcDbLayerTableRecord');
+        p(2,lname||'0'); p(70,0); p(62,7); p(6,'CONTINUOUS');
+    });
+    p(0,'ENDTAB');
+
+    // STYLE table
+    p(0,'TABLE'); p(2,'STYLE'); p(5,H()); p(330,0); p(100,'AcDbSymbolTable'); p(70,1);
+    p(0,'STYLE'); p(5,H()); p(330,3); p(100,'AcDbSymbolTableRecord'); p(100,'AcDbTextStyleTableRecord');
+    p(2,'STANDARD'); p(70,0); p(40,0.0); p(41,1.0); p(50,0.0); p(71,0); p(42,0.2); p(3,'txt'); p(4,'');
+    p(0,'ENDTAB');
+
+    // Minimal required empty tables
+    ['VIEW','UCS','APPID','VPORT','DIMSTYLE'].forEach(tname => {
+        p(0,'TABLE'); p(2,tname); p(5,H()); p(330,0); p(100,'AcDbSymbolTable'); p(70,0);
+        p(0,'ENDTAB');
+    });
+
+    p(0,'ENDSEC');
+
+    // ── BLOCKS ──────────────────────────────────────────────────────
+    p(0,'SECTION'); p(2,'BLOCKS');
+    ['*Model_Space','*Paper_Space'].forEach(bname => {
+        p(0,'BLOCK');  p(5,H()); p(330,1); p(100,'AcDbEntity'); p(8,'0');
+        p(100,'AcDbBlockBegin'); p(2,bname); p(70,0);
+        p(10,0); p(20,0); p(30,0); p(3,bname); p(1,'');
+        p(0,'ENDBLK'); p(5,H()); p(330,1); p(100,'AcDbEntity'); p(8,'0');
+        p(100,'AcDbBlockEnd');
+    });
+    p(0,'ENDSEC');
+
+    // ── ENTITIES ─────────────────────────────────────────────────────
+    p(0,'SECTION'); p(2,'ENTITIES');
+    entities.forEach(e => {
+        const layer = e.layer || '0';
+        const h = H();
+        switch(e.type) {
+            case 'LINE':
+                p(0,'LINE'); p(5,h); p(330,0); p(100,'AcDbEntity'); p(8,layer);
+                p(100,'AcDbLine');
+                p(10,f(e.x1)); p(20,f(e.y1)); p(30,0);
+                p(11,f(e.x2)); p(21,f(e.y2)); p(31,0);
+                break;
+            case 'CIRCLE':
+                p(0,'CIRCLE'); p(5,h); p(330,0); p(100,'AcDbEntity'); p(8,layer);
+                p(100,'AcDbCircle');
+                p(10,f(e.cx)); p(20,f(e.cy)); p(30,0); p(40,f(e.r));
+                break;
+            case 'ARC':
+                p(0,'ARC'); p(5,h); p(330,0); p(100,'AcDbEntity'); p(8,layer);
+                p(100,'AcDbCircle'); p(10,f(e.cx)); p(20,f(e.cy)); p(30,0); p(40,f(e.r));
+                p(100,'AcDbArc'); p(50,f(e.sa)); p(51,f(e.ea));
+                break;
+            case 'LWPOLYLINE':case 'POLYLINE':{
+                p(0,'LWPOLYLINE'); p(5,h); p(330,0); p(100,'AcDbEntity'); p(8,layer);
+                p(100,'AcDbPolyline');
+                p(90,e.verts.length); p(70,e.closed?1:0); p(43,0);
+                e.verts.forEach(v=>{ p(10,f(v.x)); p(20,f(v.y)); });
+                break;
+            }
+            case 'ELLIPSE':
+                p(0,'ELLIPSE'); p(5,h); p(330,0); p(100,'AcDbEntity'); p(8,layer);
+                p(100,'AcDbEllipse');
+                p(10,f(e.cx)); p(20,f(e.cy)); p(30,0);
+                p(11,f(e.ex)); p(21,f(e.ey)); p(31,0);
+                p(40,f(e.ratio)); p(41,f(e.sa)); p(42,f(e.ea));
+                break;
+            case 'SPLINE':{
+                if(e.pts.length<2) break;
+                p(0,'SPLINE'); p(5,h); p(330,0); p(100,'AcDbEntity'); p(8,layer);
+                p(100,'AcDbSpline'); p(70,e.closed?11:8); p(71,3); p(72,e.pts.length+4); p(73,e.pts.length); p(74,0);
+                // knots
+                const deg=3, nk=e.pts.length+deg+1;
+                for(let ki=0;ki<nk;ki++) p(40, ki<deg+1?0:ki>e.pts.length-1?1:(ki-deg)/(e.pts.length-deg));
+                e.pts.forEach(pt=>{ p(10,f(pt.x));p(20,f(pt.y));p(30,0); });
+                break;
+            }
+            case 'TEXT':
+                p(0,'TEXT'); p(5,h); p(330,0); p(100,'AcDbEntity'); p(8,layer);
+                p(100,'AcDbText');
+                p(10,f(e.x)); p(20,f(e.y)); p(30,0);
+                p(40,f(Math.abs(e.height)||5)); p(1,e.content||''); p(7,e.font||'Standard');
+                p(100,'AcDbText');
+                break;
+        }
+    });
+    p(0,'ENDSEC');
+    p(0,'EOF');
+
+    const text = L.join('\r\n') + '\r\n';
+    const blob = new Blob([text], { type:'application/dxf' });
+    const url  = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'), {
+        href: url,
+        download: 'foglesting_edit.dxf'
+    });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// ── Background animation ──────────────────────────────────────────
+function initBgAnim(){
+    const bg=document.getElementById('bg-canvas');
+    const c=bg.getContext('2d');
+    function rsz(){bg.width=innerWidth;bg.height=innerHeight;}
+    rsz(); window.addEventListener('resize',rsz);
+    let t=0;
+    (function loop(){
+        c.clearRect(0,0,bg.width,bg.height);
+        c.fillStyle='rgba(232,91,46,0.04)';
+        for(let i=0;i<12;i++){
+            c.beginPath();
+            c.arc((Math.sin(t+i*0.8)*0.5+0.5)*bg.width,(Math.cos(t*0.5+i*1.1)*0.5+0.5)*bg.height,55,0,Math.PI*2);
+            c.fill();
+        }
+        t+=0.007; requestAnimationFrame(loop);
+    })();
+}
+</script>
+</body>
+</html>

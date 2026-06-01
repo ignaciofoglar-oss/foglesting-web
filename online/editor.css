@@ -1,0 +1,131 @@
+/* Editor CSS */
+
+.editor-container {
+    max-width: 1400px; /* Make it wide for drawing */
+    height: 100vh;
+    padding: 1.5rem;
+}
+
+.editor-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: calc(100vh - 120px);
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+}
+
+.tool-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.tool-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,223,184,0.15);
+    background: rgba(17,17,17,0.5);
+    color: var(--cream);
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tool-btn:hover {
+    border-color: var(--fire);
+    background: rgba(232,91,46,0.15);
+}
+
+.tool-btn.active {
+    background: var(--fire);
+    color: white;
+    border-color: var(--fire-dark);
+}
+
+.tool-btn.delete-btn {
+    background: rgba(232,46,46,0.15);
+    border-color: rgba(232,46,46,0.3);
+    color: #ff8888;
+}
+
+.tool-btn.delete-btn:hover {
+    background: rgba(232,46,46,0.3);
+    border-color: rgba(232,46,46,0.5);
+    color: white;
+}
+
+.editor-canvas-wrapper {
+    flex-grow: 1;
+    display: flex;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    cursor: crosshair;
+}
+
+#dxf-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+}
+
+/* File tabs bar */
+.file-tabs-bar {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-height: 0;
+}
+
+.file-tab {
+    padding: 5px 14px;
+    border-radius: 7px;
+    border: 1px solid rgba(255,223,184,0.15);
+    background: rgba(17,17,17,0.6);
+    color: rgba(255,223,184,0.6);
+    font-size: 0.82rem;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: all 0.2s;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-tab:hover { border-color: var(--fire); color: var(--cream); }
+.file-tab.active { background: rgba(232,91,46,0.18); color: var(--fire); border-color: var(--fire); }
+
+/* Canvas hint overlay */
+.canvas-hint {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(17,17,17,0.75);
+    border: 1px solid rgba(255,223,184,0.1);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 0.76rem;
+    color: rgba(255,223,184,0.4);
+    pointer-events: none;
+    white-space: nowrap;
+}
+.canvas-hint kbd {
+    background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-family: monospace;
+}
+
