@@ -7,7 +7,7 @@
       "file": "foglesting_windows.zip",
       "download_url": "/downloads/foglesting_windows.zip",
       "source_path": "/downloads/foglesting_windows.zip",
-      "public_listed": true,
+      "public_listed": false,
       "sha256": "B98217C1288FB068629635A764FA9AA366DE6C7699CBA7207834EB030E4BC36E",
       "size_bytes": 758731,
       "created_at": "2026-05-27",
