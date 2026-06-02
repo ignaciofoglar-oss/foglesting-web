@@ -139,11 +139,10 @@ header h1 {
 /* ---- Upload ---- */
 .upload-section {
     display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
-    border: 2px dashed rgba(255,223,184,0.15);
     transition: all 0.3s; cursor: pointer;
 }
-.upload-section:hover { border-color: rgba(232,91,46,0.3); }
-.upload-section.dragover { border-color: var(--fire); background: rgba(232,91,46,0.06); }
+.upload-section:hover { background: rgba(255,255,255,0.03); }
+.upload-section.dragover { background: rgba(232,91,46,0.06); }
 .upload-section svg { color: rgba(255,223,184,0.35); }
 .upload-text { color: rgba(255,223,184,0.55); }
 .or { color: rgba(255,223,184,0.25); font-size: 0.85rem; }
@@ -384,4 +383,123 @@ footer a { color: var(--fire); text-decoration: none; }
 }
 
 .lang-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--cream); padding: 6px 12px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; min-width: 44px; margin-left: auto; } .lang-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--fire); color: var(--fire); }
+
+/* =============================================
+   PREMIUM UI REFRESH (2026)
+   Layered depth, refined glass, soft glows
+   ============================================= */
+:root {
+    --radius: 22px;
+    --radius-sm: 12px;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --shadow-soft: 0 24px 60px -28px rgba(0,0,0,0.85);
+}
+
+/* Layered background depth + warm/forest glows */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background:
+        radial-gradient(1100px 600px at 50% -8%, rgba(232,91,46,0.12), transparent 60%),
+        radial-gradient(900px 520px at 110% 5%, rgba(46,101,71,0.10), transparent 55%),
+        linear-gradient(180deg, #0d0d0d 0%, #090909 100%);
+    pointer-events: none;
+}
+#bg-canvas { opacity: 0.4; }
+
+.container { max-width: 960px; padding: 2.75rem 1.5rem 3rem; gap: 1.25rem; }
+
+/* Header */
+header { padding-bottom: 0.4rem; }
+header h1 { text-shadow: 0 2px 34px rgba(232,91,46,0.28); }
+.header-logo { filter: drop-shadow(0 6px 18px rgba(232,91,46,0.38)); }
+
+/* Premium glass cards */
+.glass-panel {
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.038), rgba(255,255,255,0.012)),
+        rgba(16,16,18,0.55);
+    border: 1px solid rgba(255,223,184,0.10);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255,255,255,0.05);
+    backdrop-filter: blur(18px) saturate(125%);
+    -webkit-backdrop-filter: blur(18px) saturate(125%);
+    transition: border-color 0.35s var(--ease), box-shadow 0.35s var(--ease), transform 0.35s var(--ease);
+}
+.glass-panel:hover { border-color: rgba(255,223,184,0.16); }
+
+/* Upload zone — refined dashed border + glowing icon chip */
+.upload-section {
+    border: 1.5px dashed rgba(255,223,184,0.18);
+    border-radius: var(--radius);
+    padding: 2.75rem 1.75rem;
+    transition: border-color 0.35s var(--ease), background 0.35s var(--ease), transform 0.35s var(--ease);
+}
+.upload-section:hover {
+    border-color: rgba(232,91,46,0.55);
+    background:
+        linear-gradient(180deg, rgba(232,91,46,0.06), rgba(255,255,255,0.012)),
+        rgba(16,16,18,0.55);
+    transform: translateY(-2px);
+}
+.upload-section.dragover { border-color: var(--fire); background: rgba(232,91,46,0.09); }
+.upload-section > svg {
+    width: 58px; height: 58px;
+    padding: 14px;
+    border-radius: 18px;
+    color: var(--fire);
+    background: radial-gradient(circle at 50% 30%, rgba(232,91,46,0.20), rgba(232,91,46,0.04));
+    box-shadow: inset 0 0 0 1px rgba(232,91,46,0.28);
+}
+.upload-text { color: rgba(255,223,184,0.72); font-size: 1.05rem; }
+.upload-text strong { color: var(--fire-light); }
+
+/* Inputs & selects — inset depth + focus glow ring */
+input[type="number"], select {
+    background: rgba(0,0,0,0.32);
+    border: 1px solid rgba(255,223,184,0.12);
+    border-radius: var(--radius-sm);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.45);
+    transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+input[type="number"]:focus, select:focus {
+    border-color: var(--fire);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.45), 0 0 0 3px rgba(232,91,46,0.18);
+}
+
+/* Buttons — gradient + top highlight */
+.btn { border-radius: var(--radius-sm); }
+.btn-primary {
+    background: linear-gradient(135deg, var(--fire-light), var(--fire) 50%, var(--fire-dark));
+    box-shadow: 0 10px 26px -12px rgba(232,91,46,0.6), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.btn-primary:hover { box-shadow: 0 16px 34px -12px rgba(232,91,46,0.7), inset 0 1px 0 rgba(255,255,255,0.3); }
+
+.run-btn {
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--fire-light), var(--fire) 45%, var(--fire-dark));
+    box-shadow: 0 12px 32px -12px rgba(232,91,46,0.6), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.run-btn:hover:not(:disabled) {
+    box-shadow: 0 18px 42px -12px rgba(232,91,46,0.72), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+/* Stat boxes — gradient value + soft fill */
+.stat-box {
+    background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.006)), rgba(0,0,0,0.22);
+    border: 1px solid rgba(255,223,184,0.08);
+    border-radius: var(--radius-sm);
+}
+.stat-value {
+    background: linear-gradient(135deg, var(--fire-light), var(--fire));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Misc radius polish */
+.wasm-status, .loader-container, .canvas-wrapper, .stop-btn, .btn-success { border-radius: var(--radius-sm); }
+.lang-btn { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 
