@@ -1546,3 +1546,168 @@ img { max-width: 100%; height: auto; display: block; }
     .form-row { grid-template-columns: 1fr; }
     .feedback-form { padding: 24px; }
 }
+
+/* =====================================================================
+   PREMIUM REDESIGN LAYER — 2026
+   Cohesive ambient depth, refined surfaces & tactile components.
+   Appended last so it cascades over the base styles above.
+   ===================================================================== */
+:root {
+    --dark-deep: #0d0d0f;
+    --dark-mid:  #141417;
+    --dark:      #17171a;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --ring: rgba(255,223,184,0.10);
+    --surface: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012));
+}
+
+/* ── Ambient layered background (revealed by transparent sections) ── */
+body { background: #0a0a0c; }
+body::before {
+    content: ""; position: fixed; inset: 0; z-index: -3; pointer-events: none;
+    background:
+        radial-gradient(1200px 720px at 50% -12%, rgba(232,91,46,0.11), transparent 60%),
+        radial-gradient(1000px 620px at 100% 6%,  rgba(46,101,71,0.10), transparent 55%),
+        radial-gradient(950px 760px at 0% 58%,    rgba(232,91,46,0.055), transparent 60%),
+        radial-gradient(900px 700px at 100% 100%, rgba(46,101,71,0.07), transparent 60%),
+        linear-gradient(180deg, #0c0c0e 0%, #0a0a0b 100%);
+}
+/* Subtle film grain for richness */
+body::after {
+    content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none; opacity: 0.03;
+    background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    background-size: 180px 180px;
+}
+
+/* Let the ambient gradient flow through the major flat sections */
+.section.features,
+.section.how-it-works,
+#algoritmo { background: transparent !important; }
+
+/* ── Premium custom scrollbar ── */
+* { scrollbar-color: var(--fire-dark) #0a0a0b; }
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: #0a0a0b; }
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--fire-dark), #38211a);
+    border-radius: 10px; border: 2px solid #0a0a0b;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--fire); }
+
+/* ── Navbar refinement ── */
+.navbar.scrolled {
+    background: rgba(13,13,15,0.68) !important;
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    border-bottom: 1px solid var(--ring);
+    box-shadow: 0 8px 30px -16px rgba(0,0,0,0.8);
+}
+
+/* ── Section labels → refined glowing pills ── */
+.section-label {
+    background: linear-gradient(180deg, rgba(232,91,46,0.16), rgba(232,91,46,0.05));
+    border: 1px solid rgba(232,91,46,0.24);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 14px -8px rgba(232,91,46,0.5);
+    backdrop-filter: blur(6px);
+}
+
+/* ── Buttons → tactile gradient + sheen ── */
+.btn-primary {
+    background: linear-gradient(135deg, var(--fire-light), var(--fire) 52%, var(--fire-dark));
+    box-shadow: 0 12px 30px -12px rgba(232,91,46,0.65), inset 0 1px 0 rgba(255,255,255,0.28);
+}
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--fire-light), var(--fire) 45%, var(--fire-dark));
+    filter: brightness(1.05);
+    box-shadow: 0 20px 46px -14px rgba(232,91,46,0.72), inset 0 1px 0 rgba(255,255,255,0.32);
+}
+.btn-outline {
+    border: 1px solid var(--ring);
+    background: rgba(255,255,255,0.025);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.btn-outline:hover {
+    border-color: rgba(232,91,46,0.75);
+    color: var(--fire-light);
+    background: rgba(232,91,46,0.07);
+}
+
+/* ── Stats bar → raised band with gradient numerals ── */
+.stats-bar {
+    background: linear-gradient(180deg, rgba(24,24,28,0.92), rgba(14,14,16,0.92));
+    border-top: 1px solid var(--ring);
+    border-bottom: 1px solid var(--ring);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.stat-item .stat-number {
+    background: linear-gradient(135deg, var(--fire-light), var(--fire));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 18px rgba(232,91,46,0.35));
+}
+
+/* ── Feature cards → glassy surface, glow on hover, gradient icon chip ── */
+.feature-card {
+    background: var(--surface), rgba(18,18,20,0.5);
+    border: 1px solid var(--ring);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 48px -32px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.04);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.4s var(--ease), border-color 0.4s var(--ease), box-shadow 0.4s var(--ease);
+}
+.feature-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(232,91,46,0.38);
+    box-shadow: 0 34px 64px -30px rgba(0,0,0,0.9), 0 0 56px -12px rgba(232,91,46,0.28), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.feature-icon {
+    background: radial-gradient(circle at 50% 28%, rgba(232,91,46,0.22), rgba(232,91,46,0.045));
+    box-shadow: inset 0 0 0 1px rgba(232,91,46,0.28);
+    border-radius: 18px;
+}
+.feature-card:hover .feature-icon {
+    background: linear-gradient(135deg, var(--fire), var(--forest));
+    transform: translateY(-2px) scale(1.06);
+}
+
+/* ── How-it-works steps → richer image tiles ── */
+.step-image {
+    border-radius: var(--radius-lg);
+    background: var(--surface), rgba(18,18,20,0.6);
+    border: 1px solid var(--ring);
+    box-shadow: 0 20px 40px -28px rgba(0,0,0,0.85);
+}
+.step-card:hover .step-image {
+    box-shadow: 0 30px 56px -28px rgba(0,0,0,0.9), 0 0 44px -12px rgba(232,91,46,0.25);
+    border-color: rgba(232,91,46,0.3);
+}
+.step-number {
+    background: linear-gradient(135deg, var(--fire-light), var(--fire-dark));
+    box-shadow: 0 6px 20px -6px rgba(232,91,46,0.6), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+/* ── Algorithm pipeline steps → subtle cards ── */
+.pipe-step {
+    border-radius: var(--radius-md);
+    transition: background 0.3s var(--ease), transform 0.3s var(--ease);
+}
+.pipe-step:hover { transform: translateX(4px); }
+.pipe-step .pipe-icon {
+    background: radial-gradient(circle at 50% 30%, rgba(232,91,46,0.2), rgba(232,91,46,0.04));
+    box-shadow: inset 0 0 0 1px rgba(232,91,46,0.22);
+}
+
+/* ── Algorithm visual frame ── */
+.algo-visual img {
+    border-radius: var(--radius-lg);
+    box-shadow: 0 40px 80px -40px rgba(0,0,0,0.9), 0 0 60px -20px rgba(232,91,46,0.18);
+}
+
+/* ── Footer ── */
+.footer {
+    background: linear-gradient(180deg, transparent, rgba(8,8,10,0.7));
+    border-top: 1px solid var(--ring);
+}
+
+/* Smooth out reveal transitions for a more refined feel */
+.reveal, .reveal-left, .reveal-right { transition-timing-function: var(--ease); }
