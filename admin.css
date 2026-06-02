@@ -278,6 +278,20 @@ header h1 {
     gap: 15px;
 }
 
+.messages-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.messages-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 .message-card {
     background-color: rgba(26, 26, 26, 0.8);
     padding: 20px;
@@ -289,9 +303,16 @@ header h1 {
 .message-header {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
     margin-bottom: 15px;
     color: var(--text-muted);
     font-size: 14px;
+}
+
+.message-name,
+.message-date {
+    display: block;
 }
 
 .message-header strong {

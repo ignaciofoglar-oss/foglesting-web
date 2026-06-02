@@ -13,10 +13,12 @@ import {
     doc, 
     getDoc, 
     setDoc, 
+    deleteDoc,
     addDoc, 
     updateDoc, 
     query, 
     orderBy, 
+    writeBatch,
     serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -42,6 +44,7 @@ const dashboardScreen = document.getElementById('dashboard-screen');
 const loginForm = document.getElementById('login-form');
 const loginError = document.getElementById('login-error');
 const logoutBtn = document.getElementById('logout-btn');
+const deleteOldMessagesBtn = document.getElementById('delete-old-messages-btn');
 
 const navItems = document.querySelectorAll('.nav-item');
 const views = document.querySelectorAll('.view');
@@ -289,24 +292,98 @@ async function loadMessages() {
         }
         
         let html = '';
-        querySnapshot.forEach((doc) => {
-            const msg = doc.data();
+        querySnapshot.forEach((docSnap) => {
+            const msg = docSnap.data();
             const date = msg.timestamp ? msg.timestamp.toDate().toLocaleString('es-AR') : 'Fecha desconocida';
             html += `
-                <div class="message-card">
+                <div class="message-card" data-id="${docSnap.id}">
                     <div class="message-header">
-                        <span class="message-name">${msg.name} (${msg.email})</span>
-                        <span class="message-date">${date}</span>
+                        <div>
+                            <span class="message-name">${msg.name || 'Sin nombre'} (${msg.email || 'sin email'})</span>
+                            <span class="message-date">${date}</span>
+                        </div>
+                        <button class="btn-danger delete-message-btn" data-id="${docSnap.id}" style="padding: 6px 12px; font-size: 13px;">Borrar</button>
                     </div>
-                    <div class="message-body">${msg.message}</div>
+                    <div class="message-body">${msg.message || ''}</div>
                 </div>
             `;
         });
         container.innerHTML = html;
+
+        document.querySelectorAll('.delete-message-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const messageId = e.target.dataset.id;
+                if (!messageId) return;
+                if (!confirm('Borrar este mensaje?')) return;
+
+                try {
+                    e.target.disabled = true;
+                    e.target.textContent = 'Borrando...';
+                    await deleteDoc(doc(db, 'messages', messageId));
+                    loadMessages();
+                } catch (error) {
+                    console.error('Error deleting message:', error);
+                    alert('No se pudo borrar el mensaje.');
+                    e.target.disabled = false;
+                    e.target.textContent = 'Borrar';
+                }
+            });
+        });
     } catch (e) {
         console.error("Error loading messages:", e);
         container.innerHTML = '<p class="error-msg">Error al cargar mensajes (requiere crear índices o reglas).</p>';
     }
+}
+
+async function deleteOldMessages(days) {
+    const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
+    const snapshot = await getDocs(collection(db, 'messages'));
+    const docsToDelete = [];
+
+    snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (!data.timestamp || !data.timestamp.toDate) return;
+        if (data.timestamp.toDate().getTime() < cutoff) docsToDelete.push(docSnap.ref);
+    });
+
+    for (let i = 0; i < docsToDelete.length; i += 450) {
+        const batch = writeBatch(db);
+        docsToDelete.slice(i, i + 450).forEach((ref) => batch.delete(ref));
+        await batch.commit();
+    }
+
+    return docsToDelete.length;
+}
+
+if (deleteOldMessagesBtn) {
+    deleteOldMessagesBtn.addEventListener('click', async () => {
+        const rawDays = prompt('Borrar mensajes con mas de cuantos dias?', '30');
+        if (rawDays === null) return;
+
+        const days = Number.parseInt(rawDays, 10);
+        if (!Number.isFinite(days) || days < 1) {
+            alert('Ingresa una cantidad de dias valida. Ejemplo: 30');
+            return;
+        }
+
+        if (!confirm(`Esto va a borrar todos los mensajes con mas de ${days} dias. Continuar?`)) return;
+
+        const previousText = deleteOldMessagesBtn.textContent;
+        deleteOldMessagesBtn.disabled = true;
+        deleteOldMessagesBtn.textContent = 'Limpiando...';
+
+        try {
+            const deletedCount = await deleteOldMessages(days);
+            alert(`Listo. Se borraron ${deletedCount} mensaje(s) antiguo(s).`);
+            loadMessages();
+        } catch (error) {
+            console.error('Error deleting old messages:', error);
+            alert('No se pudieron borrar los mensajes antiguos.');
+        } finally {
+            deleteOldMessagesBtn.disabled = false;
+            deleteOldMessagesBtn.textContent = previousText;
+        }
+    });
 }
 
 // 5c. Load Users
