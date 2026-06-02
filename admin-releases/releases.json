@@ -31,7 +31,7 @@
       "file": "foglesting_windows_v3.zip",
       "download_url": "/downloads/foglesting_windows_v3.zip",
       "source_path": "/downloads/foglesting_windows_v3.zip",
-      "public_listed": true,
+      "public_listed": false,
       "sha256": "9B1255B78FDC8292DD5EB25DF8FC3A7161EB13071DEAD63C8442AFE039C5D02B",
       "size_bytes": 763683,
       "created_at": "2026-05-28",
