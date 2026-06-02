@@ -25,6 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Save preference
         localStorage.setItem('foglesting_lang', lang);
+
+        document.dispatchEvent(new CustomEvent('foglesting:i18n-applied', {
+            detail: { lang }
+        }));
     }
 
     // Initial apply

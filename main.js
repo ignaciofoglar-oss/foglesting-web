@@ -235,6 +235,8 @@ function init() {
     }
 
     // --- Public release history controlled from admin ---
+    let currentActiveRelease = null;
+
     function releaseDownloadUrl(release) {
         if (!release) return '';
         return release.download_url || (release.file ? `/downloads/${release.file}` : '');
@@ -259,6 +261,10 @@ function init() {
         downloadBtn.setAttribute('aria-label', `Descargar Foglesting ${label}`);
     }
 
+    document.addEventListener('foglesting:i18n-applied', () => {
+        updateMainDownloadButton(currentActiveRelease);
+    });
+
     async function loadPublicReleases() {
         const list = document.getElementById('old-versions-list');
 
@@ -270,6 +276,7 @@ function init() {
             const releases = Array.isArray(data.candidates) ? data.candidates : [];
             const activeRelease = releases.find((release) => release.version === activeVersion);
 
+            currentActiveRelease = activeRelease || null;
             updateMainDownloadButton(activeRelease);
 
             if (!list) return;
