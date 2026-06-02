@@ -734,7 +734,7 @@ downloadBtn.addEventListener('click', () => {
 const bgCanvas = document.getElementById('bg-canvas');
 const bgCtx = bgCanvas.getContext('2d');
 let particles = [];
-const numParticles = 30;
+const numParticles = 80;
 
 function resizeBg() {
     bgCanvas.width = window.innerWidth;
@@ -793,8 +793,8 @@ function animateBg() {
             const dy = particles[i].y - particles[j].y;
             const dist = Math.sqrt(dx * dx + dy * dy);
 
-            if (dist < 150) {
-                const alpha = 1 - (dist / 150);
+            if (dist < 200) {
+                const alpha = 1 - (dist / 200);
                 bgCtx.beginPath();
                 bgCtx.moveTo(particles[i].x, particles[i].y);
                 bgCtx.lineTo(particles[j].x, particles[j].y);
