@@ -67,7 +67,7 @@
       "file": "foglesting_windows_v5_1.exe",
       "download_url": "/admin-releases/foglesting_windows_v5_1.exe",
       "source_path": "/admin-releases/foglesting_windows_v5_1.exe",
-      "public_listed": false,
+      "public_listed": true,
       "sha256": "B97618280C00893D0287B579A6A4FF79FCFE879B101DE5C7E9D36DBB530158E6",
       "size_bytes": 1738752,
       "created_at": "2026-06-01",
