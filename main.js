@@ -235,9 +235,32 @@ function init() {
     }
 
     // --- Public release history controlled from admin ---
-    async function loadPublicReleaseHistory() {
+    function releaseDownloadUrl(release) {
+        if (!release) return '';
+        return release.download_url || (release.file ? `/downloads/${release.file}` : '');
+    }
+
+    function releaseVersionText(release) {
+        const label = release?.name || `FOGLESTING V${release?.version || ''}`;
+        return label.replace(/^FOGLESTING\s*/i, '').trim();
+    }
+
+    function updateMainDownloadButton(activeRelease) {
+        if (!downloadBtn || !activeRelease) return;
+
+        const url = releaseDownloadUrl(activeRelease);
+        if (url) downloadBtn.href = url;
+
+        const label = releaseVersionText(activeRelease);
+        const textSpan = downloadBtn.querySelector('span:not(.beta-badge)');
+        if (textSpan) {
+            textSpan.innerHTML = `DESCARGAR <span class="fire-text">FOGL</span><span class="forest-text">ESTING</span> ${label}`;
+        }
+        downloadBtn.setAttribute('aria-label', `Descargar Foglesting ${label}`);
+    }
+
+    async function loadPublicReleases() {
         const list = document.getElementById('old-versions-list');
-        if (!list) return;
 
         try {
             const response = await fetch('/admin-releases/releases.json', { cache: 'no-store' });
@@ -245,6 +268,12 @@ function init() {
             const data = await response.json();
             const activeVersion = data.active_public_version;
             const releases = Array.isArray(data.candidates) ? data.candidates : [];
+            const activeRelease = releases.find((release) => release.version === activeVersion);
+
+            updateMainDownloadButton(activeRelease);
+
+            if (!list) return;
+
             const publicHistory = releases
                 .filter((release) => release.public_listed === true && release.version !== activeVersion)
                 .sort((a, b) => String(b.version || '').localeCompare(String(a.version || ''), undefined, { numeric: true }));
@@ -256,9 +285,8 @@ function init() {
             }
 
             list.innerHTML = publicHistory.map((release) => {
-                const url = release.download_url || `/downloads/${release.file}`;
-                const label = release.name || `FOGLESTING V${release.version}`;
-                const versionText = label.replace(/^FOGLESTING\s*/i, '');
+                const url = releaseDownloadUrl(release);
+                const versionText = releaseVersionText(release);
                 return `
                     <a class="btn btn-outline" href="${url}" rel="noopener" style="font-family: var(--font-display);" target="_blank">
                         <span>DESCARGAR <span class="fire-text">FOGL</span><span class="forest-text">ESTING</span> ${versionText}</span>
@@ -270,7 +298,7 @@ function init() {
         }
     }
 
-    loadPublicReleaseHistory();
+    loadPublicReleases();
 
     // --- Page View Tracking ---
     async function trackPageView() {
