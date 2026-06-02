@@ -17,39 +17,47 @@
 
         /* ─ Header ─ */
         .editor-header {
-            display:flex; align-items:center; gap:12px; padding:8px 16px;
-            background:rgba(10,10,10,0.92); border-bottom:1px solid rgba(255,223,184,0.07);
-            flex-shrink:0; flex-wrap:wrap;
+            display:flex; align-items:center; gap:12px; padding:10px 18px;
+            background:linear-gradient(180deg, rgba(20,20,22,0.96), rgba(12,12,13,0.92));
+            border-bottom:1px solid rgba(255,223,184,0.08);
+            box-shadow:0 1px 0 rgba(255,255,255,0.03), 0 6px 18px -10px rgba(0,0,0,0.8);
+            backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+            flex-shrink:0; flex-wrap:wrap; position:relative; z-index:5;
         }
         .editor-header h1 {
             font-family:var(--font-display); font-size:1.5rem; color:var(--cream);
             margin:0; display:flex; align-items:center; gap:6px;
+            text-shadow:0 2px 22px rgba(232,91,46,0.22);
         }
 
         /* ─ Toolbar ─ */
         .toolbar {
-            display:flex; align-items:center; gap:6px; padding:7px 16px;
-            background:rgba(15,15,15,0.88); border-bottom:1px solid rgba(255,223,184,0.05);
-            flex-shrink:0; flex-wrap:wrap;
+            display:flex; align-items:center; gap:6px; padding:9px 18px;
+            background:linear-gradient(180deg, rgba(17,17,18,0.9), rgba(12,12,13,0.85));
+            border-bottom:1px solid rgba(255,223,184,0.06);
+            backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+            flex-shrink:0; flex-wrap:wrap; position:relative; z-index:4;
         }
-        .tb-sep { width:1px; height:26px; background:rgba(255,223,184,0.1); margin:0 3px; }
+        .tb-sep { width:1px; height:26px; background:rgba(255,223,184,0.1); margin:0 5px; }
 
         .btn-tool {
-            height:32px; padding:0 11px; border-radius:6px;
-            border:1px solid rgba(255,223,184,0.12); background:rgba(28,28,28,0.9);
-            color:rgba(255,223,184,0.7); cursor:pointer; font-size:0.8rem;
-            font-family:var(--font-body); display:flex; align-items:center; gap:5px;
-            transition:all 0.15s; white-space:nowrap; user-select:none;
+            height:34px; padding:0 13px; border-radius:9px;
+            border:1px solid rgba(255,223,184,0.12);
+            background:linear-gradient(180deg, rgba(40,40,42,0.9), rgba(26,26,28,0.9));
+            color:rgba(255,223,184,0.72); cursor:pointer; font-size:0.8rem; font-weight:500;
+            font-family:var(--font-body); display:flex; align-items:center; gap:6px;
+            transition:all 0.16s var(--ease, ease); white-space:nowrap; user-select:none;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);
         }
-        .btn-tool:hover  { border-color:var(--fire); color:var(--cream); background:rgba(232,91,46,0.1); }
-        .btn-tool.active { background:rgba(232,91,46,0.2); border-color:var(--fire); color:var(--fire); }
-        .btn-tool.primary{ background:var(--fire); color:#fff; border-color:var(--fire-dark); }
-        .btn-tool.primary:hover { background:var(--fire-dark); }
-        .btn-tool.success{ background:var(--forest); color:#fff; border-color:var(--forest); }
-        .btn-tool.success:hover { background:var(--forest-light); }
-        .btn-tool.danger { border-color:rgba(220,50,50,0.3); color:#ff8888; }
-        .btn-tool.danger:hover { background:rgba(220,50,50,0.18); border-color:#ff6666; color:#fff; }
-        .btn-tool:disabled { opacity:.3; cursor:not-allowed; pointer-events:none; }
+        .btn-tool:hover  { border-color:rgba(232,91,46,0.7); color:var(--cream); background:linear-gradient(180deg, rgba(232,91,46,0.16), rgba(232,91,46,0.06)); transform:translateY(-1px); }
+        .btn-tool.active { background:linear-gradient(180deg, rgba(232,91,46,0.28), rgba(232,91,46,0.14)); border-color:var(--fire); color:var(--fire-light); box-shadow:0 4px 14px -4px rgba(232,91,46,0.5), inset 0 1px 0 rgba(255,255,255,0.08); }
+        .btn-tool.primary{ background:linear-gradient(135deg, var(--fire-light), var(--fire) 55%, var(--fire-dark)); color:#fff; border-color:var(--fire-dark); box-shadow:0 6px 18px -8px rgba(232,91,46,0.6), inset 0 1px 0 rgba(255,255,255,0.25); }
+        .btn-tool.primary:hover { filter:brightness(1.06); transform:translateY(-1px); }
+        .btn-tool.success{ background:linear-gradient(135deg, var(--forest-light), var(--forest)); color:#fff; border-color:var(--forest); box-shadow:0 6px 18px -8px rgba(46,101,71,0.6), inset 0 1px 0 rgba(255,255,255,0.18); }
+        .btn-tool.success:hover { filter:brightness(1.08); transform:translateY(-1px); }
+        .btn-tool.danger { border-color:rgba(220,50,50,0.32); color:#ff8888; background:linear-gradient(180deg, rgba(60,24,24,0.6), rgba(34,18,18,0.6)); }
+        .btn-tool.danger:hover { background:linear-gradient(180deg, rgba(220,50,50,0.28), rgba(120,30,30,0.2)); border-color:#ff6666; color:#fff; transform:translateY(-1px); }
+        .btn-tool:disabled { opacity:.3; cursor:not-allowed; pointer-events:none; box-shadow:none; transform:none; }
 
         /* Text tool options panel */
         .text-opts {
@@ -604,7 +612,11 @@ function toWorld(sx, sy) {
 
 // ── Render loop ───────────────────────────────────────────────────
 function renderLoop() {
-    ctx.fillStyle = '#111';
+    // Subtle vertical gradient backdrop for depth
+    const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    bg.addColorStop(0, '#171718');
+    bg.addColorStop(1, '#0e0e0f');
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawGrid();
     drawAllEntities();
@@ -1048,24 +1060,59 @@ function moveE(e, dx, dy) {
 }
 
 // ── Hit test ──────────────────────────────────────────────────────
+// Two passes so deleting is forgiving:
+//   1) precise proximity to the outline (topmost entity wins)
+//   2) "inside" of any closed/filled shape (click within a part to grab it)
 function hitTest(wx, wy) {
-    const thr=8/view.scale;
-    for(let i=entities.length-1;i>=0;i--) {
-        if(hitEntity(entities[i],wx,wy,thr)) return entities[i];
-    }
+    const thr = 10 / view.scale;
+    for (let i = entities.length-1; i>=0; i--)
+        if (hitOutline(entities[i], wx, wy, thr)) return entities[i];
+    for (let i = entities.length-1; i>=0; i--)
+        if (hitInside(entities[i], wx, wy)) return entities[i];
     return null;
 }
 
-function hitEntity(e,wx,wy,thr) {
+// Is the cursor angle inside the arc's drawn sweep?
+function angleInArc(wx, wy, e) {
+    if (Math.abs(e.ea - e.sa) >= 360) return true;
+    let a  = Math.atan2(wy-e.cy, wx-e.cx) * 180/Math.PI; if (a < 0) a += 360;
+    let sa = ((e.sa % 360) + 360) % 360;
+    let ea = ((e.ea % 360) + 360) % 360;
+    return sa <= ea ? (a >= sa && a <= ea) : (a >= sa || a <= ea);
+}
+
+// Map a world point into ellipse-local space; d==1 is on the curve, <1 is inside
+function ellipseLocal(e, wx, wy) {
+    const a = Math.hypot(e.ex, e.ey) || 1e-6;
+    const b = a * (e.ratio || 1);
+    const rot = Math.atan2(e.ey, e.ex);
+    const cos = Math.cos(-rot), sin = Math.sin(-rot);
+    const dx = wx - e.cx, dy = wy - e.cy;
+    const lx = dx*cos - dy*sin;
+    const ly = dx*sin + dy*cos;
+    return { a, b, d: Math.hypot(lx/a, ly/b) };
+}
+
+function hitOutline(e, wx, wy, thr) {
     switch(e.type){
         case 'LINE':   return segDist(wx,wy,e.x1,e.y1,e.x2,e.y2)<thr;
         case 'CIRCLE': return Math.abs(Math.hypot(wx-e.cx,wy-e.cy)-e.r)<thr;
-        case 'ARC':    return Math.abs(Math.hypot(wx-e.cx,wy-e.cy)-e.r)<thr;
+        case 'ARC':    return Math.abs(Math.hypot(wx-e.cx,wy-e.cy)-e.r)<thr && angleInArc(wx,wy,e);
         case 'LWPOLYLINE':case 'POLYLINE':{
             const v=e.verts;
             for(let i=0;i<v.length-1;i++) if(segDist(wx,wy,v[i].x,v[i].y,v[i+1].x,v[i+1].y)<thr) return true;
             if(e.closed&&v.length>1) return segDist(wx,wy,v[v.length-1].x,v[v.length-1].y,v[0].x,v[0].y)<thr;
             return false;
+        }
+        case 'SPLINE':{
+            const p=e.pts;
+            for(let i=0;i<p.length-1;i++) if(segDist(wx,wy,p[i].x,p[i].y,p[i+1].x,p[i+1].y)<thr) return true;
+            if(e.closed&&p.length>1) return segDist(wx,wy,p[p.length-1].x,p[p.length-1].y,p[0].x,p[0].y)<thr;
+            return false;
+        }
+        case 'ELLIPSE':{
+            const L=ellipseLocal(e,wx,wy);
+            return Math.abs(L.d-1)*Math.min(L.a,L.b) < thr;
         }
         case 'TEXT': {
             ctx.font=`${e.height*view.scale}px '${e.font||'Arial'}'`;
@@ -1075,6 +1122,26 @@ function hitEntity(e,wx,wy,thr) {
         }
         default: return false;
     }
+}
+
+function hitInside(e, wx, wy) {
+    switch(e.type){
+        case 'CIRCLE':  return Math.hypot(wx-e.cx,wy-e.cy) <= e.r;
+        case 'ELLIPSE': return ellipseLocal(e,wx,wy).d <= 1;
+        case 'LWPOLYLINE':case 'POLYLINE': return e.closed && pointInPoly(wx,wy,e.verts);
+        case 'SPLINE':   return e.closed && pointInPoly(wx,wy,e.pts);
+        default: return false;
+    }
+}
+
+// Ray-casting point-in-polygon
+function pointInPoly(x, y, pts) {
+    let inside=false;
+    for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+        const xi=pts[i].x, yi=pts[i].y, xj=pts[j].x, yj=pts[j].y;
+        if(((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/((yj-yi)||1e-12)+xi)) inside=!inside;
+    }
+    return inside;
 }
 
 function segDist(px,py,ax,ay,bx,by){
