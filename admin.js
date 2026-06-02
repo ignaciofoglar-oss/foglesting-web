@@ -50,6 +50,79 @@ const navItems = document.querySelectorAll('.nav-item');
 const views = document.querySelectorAll('.view');
 let currentAdminUid = null;
 
+const adminTranslations = {
+    es: {
+        'messages.nav': 'Mensajes',
+        'messages.title': 'Mensajes de Contacto',
+        'messages.loading': 'Cargando mensajes...',
+        'messages.empty': 'No hay mensajes todavía.',
+        'messages.unknownDate': 'Fecha desconocida',
+        'messages.noName': 'Sin nombre',
+        'messages.noEmail': 'sin email',
+        'messages.delete': 'Borrar',
+        'messages.deleting': 'Borrando...',
+        'messages.deleteConfirm': '¿Borrar este mensaje?',
+        'messages.deleteError': 'No se pudo borrar el mensaje.',
+        'messages.loadError': 'Error al cargar mensajes (requiere crear índices o reglas).',
+        'messages.deleteOld': 'Borrar mensajes antiguos',
+        'messages.deleteOldPrompt': '¿Borrar mensajes con más de cuántos días?',
+        'messages.deleteOldInvalid': 'Ingresá una cantidad de días válida. Ejemplo: 30',
+        'messages.deleteOldConfirm': 'Esto va a borrar todos los mensajes con más de {days} días. ¿Continuar?',
+        'messages.cleaning': 'Limpiando...',
+        'messages.deleteOldDone': 'Listo. Se borraron {count} mensaje(s) antiguo(s).',
+        'messages.deleteOldError': 'No se pudieron borrar los mensajes antiguos.'
+    },
+    en: {
+        'messages.nav': 'Messages',
+        'messages.title': 'Contact Messages',
+        'messages.loading': 'Loading messages...',
+        'messages.empty': 'No messages yet.',
+        'messages.unknownDate': 'Unknown date',
+        'messages.noName': 'No name',
+        'messages.noEmail': 'no email',
+        'messages.delete': 'Delete',
+        'messages.deleting': 'Deleting...',
+        'messages.deleteConfirm': 'Delete this message?',
+        'messages.deleteError': 'Could not delete the message.',
+        'messages.loadError': 'Error loading messages (indexes or rules may be required).',
+        'messages.deleteOld': 'Delete old messages',
+        'messages.deleteOldPrompt': 'Delete messages older than how many days?',
+        'messages.deleteOldInvalid': 'Enter a valid number of days. Example: 30',
+        'messages.deleteOldConfirm': 'This will delete all messages older than {days} days. Continue?',
+        'messages.cleaning': 'Cleaning...',
+        'messages.deleteOldDone': 'Done. Deleted {count} old message(s).',
+        'messages.deleteOldError': 'Could not delete old messages.'
+    }
+};
+
+function getAdminLang() {
+    return localStorage.getItem('foglesting_lang') === 'en' ? 'en' : 'es';
+}
+
+function adminT(key, vars = {}) {
+    const pack = adminTranslations[getAdminLang()] || adminTranslations.es;
+    let text = pack[key] || adminTranslations.es[key] || key;
+    Object.entries(vars).forEach(([name, value]) => {
+        text = text.replaceAll(`{${name}}`, String(value));
+    });
+    return text;
+}
+
+function applyAdminTranslations() {
+    document.documentElement.lang = getAdminLang();
+    document.querySelectorAll('[data-admin-i18n]').forEach((el) => {
+        el.textContent = adminT(el.dataset.adminI18n);
+    });
+}
+
+applyAdminTranslations();
+window.addEventListener('storage', (event) => {
+    if (event.key === 'foglesting_lang') {
+        applyAdminTranslations();
+        if (document.getElementById('view-messages')?.classList.contains('active')) loadMessages();
+    }
+});
+
 async function isAuthorizedAdmin(user) {
     if (!user) return false;
 
@@ -287,22 +360,23 @@ async function loadMessages() {
         const querySnapshot = await getDocs(q);
         
         if (querySnapshot.empty) {
-            container.innerHTML = '<p class="loading">No hay mensajes todavía.</p>';
+            container.innerHTML = `<p class="loading">${adminT('messages.empty')}</p>`;
             return;
         }
         
         let html = '';
         querySnapshot.forEach((docSnap) => {
             const msg = docSnap.data();
-            const date = msg.timestamp ? msg.timestamp.toDate().toLocaleString('es-AR') : 'Fecha desconocida';
+            const dateLocale = getAdminLang() === 'en' ? 'en-US' : 'es-AR';
+            const date = msg.timestamp ? msg.timestamp.toDate().toLocaleString(dateLocale) : adminT('messages.unknownDate');
             html += `
                 <div class="message-card" data-id="${docSnap.id}">
                     <div class="message-header">
                         <div>
-                            <span class="message-name">${msg.name || 'Sin nombre'} (${msg.email || 'sin email'})</span>
+                            <span class="message-name">${msg.name || adminT('messages.noName')} (${msg.email || adminT('messages.noEmail')})</span>
                             <span class="message-date">${date}</span>
                         </div>
-                        <button class="btn-danger delete-message-btn" data-id="${docSnap.id}" style="padding: 6px 12px; font-size: 13px;">Borrar</button>
+                        <button class="btn-danger delete-message-btn" data-id="${docSnap.id}" style="padding: 6px 12px; font-size: 13px;">${adminT('messages.delete')}</button>
                     </div>
                     <div class="message-body">${msg.message || ''}</div>
                 </div>
@@ -314,24 +388,24 @@ async function loadMessages() {
             btn.addEventListener('click', async (e) => {
                 const messageId = e.target.dataset.id;
                 if (!messageId) return;
-                if (!confirm('Borrar este mensaje?')) return;
+                if (!confirm(adminT('messages.deleteConfirm'))) return;
 
                 try {
                     e.target.disabled = true;
-                    e.target.textContent = 'Borrando...';
+                    e.target.textContent = adminT('messages.deleting');
                     await deleteDoc(doc(db, 'messages', messageId));
                     loadMessages();
                 } catch (error) {
                     console.error('Error deleting message:', error);
-                    alert('No se pudo borrar el mensaje.');
+                    alert(adminT('messages.deleteError'));
                     e.target.disabled = false;
-                    e.target.textContent = 'Borrar';
+                    e.target.textContent = adminT('messages.delete');
                 }
             });
         });
     } catch (e) {
         console.error("Error loading messages:", e);
-        container.innerHTML = '<p class="error-msg">Error al cargar mensajes (requiere crear índices o reglas).</p>';
+        container.innerHTML = `<p class="error-msg">${adminT('messages.loadError')}</p>`;
     }
 }
 
@@ -357,28 +431,28 @@ async function deleteOldMessages(days) {
 
 if (deleteOldMessagesBtn) {
     deleteOldMessagesBtn.addEventListener('click', async () => {
-        const rawDays = prompt('Borrar mensajes con mas de cuantos dias?', '30');
+        const rawDays = prompt(adminT('messages.deleteOldPrompt'), '30');
         if (rawDays === null) return;
 
         const days = Number.parseInt(rawDays, 10);
         if (!Number.isFinite(days) || days < 1) {
-            alert('Ingresa una cantidad de dias valida. Ejemplo: 30');
+            alert(adminT('messages.deleteOldInvalid'));
             return;
         }
 
-        if (!confirm(`Esto va a borrar todos los mensajes con mas de ${days} dias. Continuar?`)) return;
+        if (!confirm(adminT('messages.deleteOldConfirm', { days }))) return;
 
         const previousText = deleteOldMessagesBtn.textContent;
         deleteOldMessagesBtn.disabled = true;
-        deleteOldMessagesBtn.textContent = 'Limpiando...';
+        deleteOldMessagesBtn.textContent = adminT('messages.cleaning');
 
         try {
             const deletedCount = await deleteOldMessages(days);
-            alert(`Listo. Se borraron ${deletedCount} mensaje(s) antiguo(s).`);
+            alert(adminT('messages.deleteOldDone', { count: deletedCount }));
             loadMessages();
         } catch (error) {
             console.error('Error deleting old messages:', error);
-            alert('No se pudieron borrar los mensajes antiguos.');
+            alert(adminT('messages.deleteOldError'));
         } finally {
             deleteOldMessagesBtn.disabled = false;
             deleteOldMessagesBtn.textContent = previousText;

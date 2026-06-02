@@ -58,7 +58,7 @@
             </div>
             <nav>
                 <a href="#" class="nav-item active" data-target="metrics">Métricas</a>
-                <a href="#" class="nav-item" data-target="messages">Mensajes</a>
+                <a href="#" class="nav-item" data-target="messages" data-admin-i18n="messages.nav">Mensajes</a>
                 <a href="#" class="nav-item" data-target="users">Usuarios & Licencias</a>
                 <a href="#" class="nav-item" data-target="releases">Versiones</a>
             </nav>
@@ -121,13 +121,13 @@
             <!-- Messages View -->
             <section id="view-messages" class="view">
                 <header class="messages-header">
-                    <h1>Mensajes de Contacto</h1>
+                    <h1 data-admin-i18n="messages.title">Mensajes de Contacto</h1>
                     <div class="messages-actions">
-                        <button class="btn-secondary" id="delete-old-messages-btn" type="button">Borrar mensajes antiguos</button>
+                        <button class="btn-secondary" id="delete-old-messages-btn" type="button" data-admin-i18n="messages.deleteOld">Borrar mensajes antiguos</button>
                     </div>
                 </header>
                 <div class="messages-list" id="messages-container">
-                    <p class="loading">Cargando mensajes...</p>
+                    <p class="loading" data-admin-i18n="messages.loading">Cargando mensajes...</p>
                     <!-- Messages will be populated here -->
                 </div>
             </section>
@@ -216,7 +216,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="admin.js?v=3"></script>
+    <script type="module" src="admin.js?v=4"></script>
     <script>
         // Mobile hamburger menu logic
         (function() {
