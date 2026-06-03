@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foglesting Online | Nesting de Chapa en tu Navegador</title>
+    <meta name="description" content="Optimizá el corte de chapa metálica directamente desde tu navegador con el motor C++ de Foglesting compilado a WebAssembly.">
+    <link rel="icon" href="assets/favicon.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=header-back-20260528">
+</head>
+<body>
+    <!-- Background Canvas for Neural Network & Fire Effect -->
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="container">
+        <header>
+            <a href="../" class="back-home" aria-label="Volver a la pagina principal" title="Volver a la pagina principal">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 18l-6-6 6-6"></path>
+                    <path d="M18 12H6"></path>
+                </svg>
+            </a>
+            <div class="logo-row">
+                <img src="assets/nuevo_logo_beige.png" alt="Foglesting" class="header-logo">
+                <div>
+                    <h1 style="display: flex; align-items: center; gap: 10px; margin: 0;"><span style="display: flex; align-items: center;"><span class="fire-text">Fogl</span><span class="forest-text">esting</span></span> <span class="accent">Online</span></h1>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Upload Zone -->
+            <div class="glass-panel upload-section" id="drop-zone">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <p class="upload-text">Arrastrá tus archivos <strong>.dxf</strong> aquí</p>
+                <span class="or">o</span>
+                <label for="file-input" class="btn btn-primary">Seleccionar Archivos</label>
+                <input type="file" id="file-input" accept=".dxf" multiple hidden>
+                <div id="file-list" class="file-list"></div>
+            </div>
+
+            <!-- Input Parts Preview -->
+            <div class="glass-panel preview-panel" id="input-preview-panel" style="display:none;">
+                <h3>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--fire)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px; margin-bottom: 4px;">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                        <path d="M2 17l10 5 10-5"></path>
+                        <path d="M2 12l10 5 10-5"></path>
+                    </svg>
+                    Piezas Cargadas
+                </h3>
+                <div id="input-parts-grid" class="parts-grid"></div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls glass-panel">
+                <div class="control-group">
+                    <label>Tamaño de Chapa (mm)</label>
+                    <div class="input-row">
+                        <input type="number" id="sheet-width" value="2500" placeholder="Ancho">
+                        <span class="x-divider">×</span>
+                        <input type="number" id="sheet-height" value="1250" placeholder="Alto">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Separación (mm)</label>
+                    <input type="number" id="spacing" value="5" step="0.5" min="0">
+                </div>
+
+                <div class="control-group">
+                    <label>Iteraciones (Velocidad vs Calidad)</label>
+                    <input type="number" id="iterations-input" value="50" min="1" max="1000">
+                </div>
+                <div class="control-group">
+                    <label>Población (Algoritmo Genético)</label>
+                    <input type="number" id="population-input" value="4" min="1" max="20">
+                </div>
+
+                <div class="control-group">
+                    <label>Rotaciones</label>
+                    <select id="rotations">
+                        <option value="1">Sin rotación</option>
+                        <option value="2">0° y 180°</option>
+                        <option value="4" selected>4 (cada 90°)</option>
+                        <option value="8">8 (cada 45°)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Run Button -->
+            <div style="display: flex; gap: 10px;">
+                    <button id="run-btn" class="run-btn" disabled>
+                        <span>🧬 Iniciar Nesting</span>
+                    </button>
+                    <button id="stop-btn" class="stop-btn" style="display: none;">
+                        <span>⏹ Detener</span>
+                    </button>
+                </div>
+                
+                <div id="loader" class="loader-container" style="display: none;">
+                    <div class="dna-spinner"></div>
+                    <p id="loader-text">Evolucionando layouts...</p>
+                    <p id="loader-stats" style="font-size: 0.9em; opacity: 0.8; margin-top: 5px;">Iteración 0 - Uso: 0%</p>
+                </div>
+
+            <!-- Output Preview -->
+            <div class="glass-panel preview-panel" id="results-panel" style="display: none;">
+                <h3>🔬 Resultado de Optimización</h3>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <span class="stat-label">Utilización</span>
+                        <span class="stat-value" id="res-util">0%</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Chapas</span>
+                        <span class="stat-value" id="res-sheets">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Piezas</span>
+                        <span class="stat-value" id="res-placed">0</span>
+                    </div>
+                </div>
+
+                <!-- Sheet tabs -->
+                <div id="sheet-tabs" class="sheet-tabs"></div>
+
+                <!-- Canvas Preview -->
+                <div class="canvas-wrapper">
+                    <canvas id="nesting-canvas"></canvas>
+                </div>
+
+                <button id="download-btn" class="btn btn-success">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Descargar DXF Optimizado
+                </button>
+            </div>
+
+            <!-- WASM Status -->
+            <div class="wasm-status glass-panel" id="wasm-status">
+                <div class="status-dot loading"></div>
+                <span>Cargando motor C++ (WebAssembly)...</span>
+            </div>
+        </main>
+
+        <footer>
+            <p>Powered by <a href="https://foglar.com.ar" target="_blank" rel="noopener">Foglar</a> · Motor C++ compilado a WebAssembly</p>
+        </footer>
+    </div>
+
+    <script type="module" src="app.js?v=dxf-orientation-fix-20260528"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+.claude/
+.env
+.env.*
+*.log
+
+# Local dependency/build folders
+node_modules/
+build/
+build_*/
+dist/
+outputs/
+emsdk/
+__pycache__/
+.pytest_cache/
+.venv/
+
+# Generated binaries are ignored by default.
+# Public website releases are intentionally versioned through these folders.
+*.exe
+*.zip
+*.pdb
+*.a
+*.obj
+*.ilk
+*.res
+*.wasm
+!downloads/*.exe
+!downloads/*.zip
+!admin-releases/*.exe
+!admin-releases/*.zip
+!online/nesting.wasm
+
+# CAD/test outputs
+*.dxf
+*.csv
+*.xlsx
