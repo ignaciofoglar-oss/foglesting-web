@@ -80,10 +80,10 @@
       "download_url": "/admin-releases/foglesting_windows_v5_2.exe",
       "source_path": "/admin-releases/foglesting_windows_v5_2.exe",
       "public_listed": false,
-      "sha256": "FE2CDBCFA27316DB02E2EAC76FA819AB1A73C8EBF939D2F6B93E2FBDBFE73F6A",
+      "sha256": "436F15202B3BF7B065CC17A599055989B1528226E66FD9ABA00420EDB5A2FCB5",
       "size_bytes": 4460655,
       "created_at": "2026-06-04",
-      "notes": "Candidato (no publico). Nuevo: importar STEP y desplegar chapa a DXF con selector de espesores (checkboxes) y verificacion contra el solido; aviso cuando una pieza no entra en la chapa; envio de DXF para diagnostico. Requiere Python + carpeta step2dxf para la funcion STEP."
+      "notes": "Candidato (no publico). Nuevo: importar STEP y desplegar chapa a DXF con selector de espesores (checkboxes) y verificacion contra el solido; aviso cuando una pieza no entra en la chapa; envio de DXF para diagnostico (corregido: ahora apunta a www.foglesting.com, antes el redirect 307 del dominio apex hacia que no se subiera). Requiere Python + carpeta step2dxf para la funcion STEP."
     }
   ]
 }
