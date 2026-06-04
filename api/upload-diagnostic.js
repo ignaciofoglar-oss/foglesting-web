@@ -14,8 +14,8 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(204).end();
     if (req.method !== 'POST') return json(res, 405, { error: 'Method Not Allowed' });
 
-    const key = req.headers['x-fogl-key'] || '';
-    const expected = process.env.DIAGNOSTIC_UPLOAD_KEY || '';
+    const key = String(req.headers['x-fogl-key'] || '').trim();
+    const expected = String(process.env.DIAGNOSTIC_UPLOAD_KEY || '').trim();
     if (!expected || key !== expected) return json(res, 401, { error: 'No autorizado.' });
 
     const body = req.body || {};
