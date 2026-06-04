@@ -61,6 +61,7 @@
                 <a href="#" class="nav-item" data-target="messages" data-admin-i18n="messages.nav">Mensajes</a>
                 <a href="#" class="nav-item" data-target="users">Usuarios & Licencias</a>
                 <a href="#" class="nav-item" data-target="releases">Versiones</a>
+                <a href="#" class="nav-item" data-target="diagnostics">Diagnósticos DXF</a>
             </nav>
             <button id="logout-btn" class="btn-secondary">Cerrar Sesión</button>
         </aside>
@@ -210,6 +211,22 @@
                     <p class="release-muted">
                         Por seguridad, esta pantalla no cambia automaticamente el archivo publico viejo mientras estas probando.
                     </p>
+                </div>
+            </section>
+
+            <section id="view-diagnostics" class="view">
+                <header>
+                    <h1>Diagnósticos DXF</h1>
+                    <p class="view-subtitle">
+                        Archivos DXF cargados por los usuarios en el programa (para diagnosticar piezas que fallan).
+                        Podés descargar cada uno y abrirlo para revisar el problema.
+                    </p>
+                </header>
+                <div class="release-selector-row" style="margin-bottom:16px;">
+                    <button class="btn-primary" id="diagnostics-refresh-btn" type="button">Actualizar</button>
+                </div>
+                <div id="diagnostics-container">
+                    <p class="loading">Cargando diagnósticos...</p>
                 </div>
             </section>
         </main>

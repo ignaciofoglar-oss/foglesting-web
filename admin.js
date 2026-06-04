@@ -217,7 +217,93 @@ function loadDashboardData() {
     loadUsers();
     loadGlobalSettings();
     loadReleaseCandidates();
+    loadDiagnostics();
 }
+
+// ---- Diagnósticos DXF ----
+function escapeHtmlDiag(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+}
+
+async function loadDiagnostics() {
+    const container = document.getElementById('diagnostics-container');
+    if (!container) return;
+    container.innerHTML = '<p class="loading">Cargando diagnósticos...</p>';
+    try {
+        const idToken = await auth.currentUser.getIdToken(true);
+        const resp = await fetch('/api/list-diagnostics', {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        if (!resp.ok) {
+            const e = await resp.json().catch(() => ({}));
+            throw new Error(e.error || `HTTP ${resp.status}`);
+        }
+        const { items } = await resp.json();
+        if (!items || items.length === 0) {
+            container.innerHTML = '<p class="loading">Todavía no hay DXF cargados.</p>';
+            return;
+        }
+        let rows = '';
+        for (const it of items) {
+            const m = it.meta || {};
+            const kb = (it.sizeBytes / 1024).toFixed(1);
+            const bbox = (m.bboxW && m.bboxH) ? `${Math.round(m.bboxW)} × ${Math.round(m.bboxH)} mm` : '—';
+            const date = it.createdAt ? new Date(it.createdAt).toLocaleString('es-AR') : '—';
+            const dl = it.truncated
+                ? '<span class="release-muted">muy grande</span>'
+                : `<button class="btn-primary diag-dl" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" style="padding:6px 12px;font-size:13px;">Descargar</button>`;
+            rows += `
+                <tr>
+                    <td>${escapeHtmlDiag(it.filename)}</td>
+                    <td>${bbox}</td>
+                    <td>${kb} KB</td>
+                    <td>${escapeHtmlDiag(m.appVersion || '—')}</td>
+                    <td>${escapeHtmlDiag(m.machine || '—')}</td>
+                    <td>${escapeHtmlDiag(date)}</td>
+                    <td>${dl}</td>
+                </tr>`;
+        }
+        container.innerHTML = `
+            <table class="diag-table" style="width:100%;border-collapse:collapse;">
+                <thead><tr style="text-align:left;">
+                    <th>Archivo</th><th>Tamaño pieza</th><th>Peso</th><th>Versión</th><th>Equipo</th><th>Fecha</th><th></th>
+                </tr></thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+        container.querySelectorAll('.diag-dl').forEach((btn) => {
+            btn.addEventListener('click', () => downloadDiagnostic(btn.dataset.id, btn.dataset.name));
+        });
+    } catch (e) {
+        console.error('Error loading diagnostics:', e);
+        container.innerHTML = `<p class="error-msg">No se pudieron cargar los diagnósticos: ${escapeHtmlDiag(e.message)}</p>`;
+    }
+}
+
+async function downloadDiagnostic(id, filename) {
+    try {
+        const idToken = await auth.currentUser.getIdToken(true);
+        const resp = await fetch(`/api/get-diagnostic?id=${encodeURIComponent(id)}`, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        if (!resp.ok) { alert('No se pudo descargar el DXF.'); return; }
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename || 'pieza.dxf';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        console.error('Error downloading diagnostic:', e);
+        alert('Error al descargar el DXF.');
+    }
+}
+
+document.getElementById('diagnostics-refresh-btn')?.addEventListener('click', loadDiagnostics);
 
 // 5a. Load Metrics and draw Chart
 let metricsChartInstance = null;
