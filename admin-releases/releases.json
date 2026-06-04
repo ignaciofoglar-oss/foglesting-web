@@ -72,6 +72,18 @@
       "size_bytes": 1738752,
       "created_at": "2026-06-01",
       "notes": "Build de prueba con lista DXF grande, divisor visible y nombre unico para evitar cache del navegador/CDN."
+    },
+    {
+      "version": "5.2.0",
+      "name": "FOGLESTING V5.2",
+      "file": "foglesting_windows_v5_2.exe",
+      "download_url": "/admin-releases/foglesting_windows_v5_2.exe",
+      "source_path": "/admin-releases/foglesting_windows_v5_2.exe",
+      "public_listed": false,
+      "sha256": "FE2CDBCFA27316DB02E2EAC76FA819AB1A73C8EBF939D2F6B93E2FBDBFE73F6A",
+      "size_bytes": 4460655,
+      "created_at": "2026-06-04",
+      "notes": "Candidato (no publico). Nuevo: importar STEP y desplegar chapa a DXF con selector de espesores (checkboxes) y verificacion contra el solido; aviso cuando una pieza no entra en la chapa; envio de DXF para diagnostico. Requiere Python + carpeta step2dxf para la funcion STEP."
     }
   ]
 }
