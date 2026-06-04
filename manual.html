@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Manual de Usuario — Foglesting</title>
+<meta content="Manual de usuario de Foglesting: instalación, carga de DXF/STEP, configuración de chapa, parámetros del algoritmo, nesting, exportación y resolución de problemas." name="description"/>
+<link href="assets/favicon.png" rel="icon" type="image/png"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="style.css?v=5" rel="stylesheet"/>
+<style>
+  body { background:#0c0c0e; }
+  .doc { max-width: 920px; margin: 0 auto; padding: 40px 22px 96px; }
+  .doc-top { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 0 24px; }
+  .doc-top a.back { color: var(--cream); text-decoration:none; font-size:0.9rem; opacity:0.8; }
+  .doc-top a.back:hover { color: var(--fire); }
+  .doc-logo { display:flex; align-items:center; gap:10px; }
+  .doc-logo img { height: 34px; }
+  .doc-logo strong { font-family: var(--font-display); font-size:1.2rem; letter-spacing:0.04em; }
+  .doc h1 { font-family: var(--font-display); font-size: clamp(2rem,5vw,2.8rem); color: var(--cream); margin: 6px 0 4px; }
+  .doc .sub { color: rgba(255,223,184,0.5); font-size:0.95rem; margin-bottom: 26px; }
+  .toc { background: rgba(255,255,255,0.03); border:1px solid rgba(255,223,184,0.1); border-radius:12px; padding:18px 22px; margin: 0 0 36px; }
+  .toc strong { color: var(--cream); display:block; margin-bottom:8px; }
+  .toc ol { margin:0; padding-left: 20px; }
+  .toc a { color: var(--fire-light); text-decoration:none; }
+  .toc a:hover { text-decoration:underline; }
+  .doc h2 { color: var(--fire); font-size:1.3rem; margin: 44px 0 12px; font-family: var(--font-body); font-weight:700; padding-top: 8px; }
+  .doc h3 { color: var(--cream); font-size:1.05rem; margin: 22px 0 6px; }
+  .doc p, .doc li, .doc td { color: rgba(255,223,184,0.8); line-height: 1.7; font-size: 1rem; }
+  .doc ul, .doc ol.steps { padding-left: 22px; margin: 8px 0 14px; }
+  .doc li { margin-bottom: 6px; }
+  .doc strong { color: var(--cream); }
+  .doc code { background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 5px; font-family: monospace; color: var(--cream); font-size:0.92em; }
+  .doc table { width:100%; border-collapse: collapse; margin: 12px 0 18px; }
+  .doc th, .doc td { text-align:left; padding:9px 12px; border:1px solid rgba(255,223,184,0.12); vertical-align:top; font-size:0.94rem; }
+  .doc th { color: var(--cream); background: rgba(255,255,255,0.03); }
+  .doc .tip { background: rgba(46,101,71,0.1); border:1px solid rgba(61,135,96,0.3); border-radius:10px; padding:12px 16px; margin: 14px 0; }
+  .doc .warn { background: rgba(232,91,46,0.08); border:1px solid rgba(232,91,46,0.25); border-radius:10px; padding:12px 16px; margin: 14px 0; }
+  .doc hr { border:none; border-top:1px solid rgba(255,223,184,0.1); margin: 40px 0; }
+  .doc-foot { color: rgba(255,223,184,0.4); font-size:0.85rem; text-align:center; padding-top: 30px; }
+  .doc-foot a { color: var(--fire); text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="doc">
+  <div class="doc-top">
+    <a class="doc-logo" href="/">
+      <img alt="Foglesting" src="assets/nuevo_logo_beige.png"/>
+      <strong><span class="fire-text">Fogl</span><span class="forest-text">esting</span></strong>
+    </a>
+    <a class="back" href="/">← Volver al inicio</a>
+  </div>
+
+  <h1>Manual de Usuario</h1>
+  <p class="sub">Foglesting — Software de nesting con algoritmo genético para corte de chapa. Windows 10/11.</p>
+
+  <div class="toc">
+    <strong>Contenido</strong>
+    <ol>
+      <li><a href="#intro">Qué es Foglesting</a></li>
+      <li><a href="#req">Requisitos e instalación</a></li>
+      <li><a href="#interfaz">La interfaz</a></li>
+      <li><a href="#cargar">Cargar piezas (DXF y STEP)</a></li>
+      <li><a href="#chapa">Configurar la chapa y los costos</a></li>
+      <li><a href="#params">Parámetros del algoritmo</a></li>
+      <li><a href="#ejecutar">Ejecutar el nesting y leer resultados</a></li>
+      <li><a href="#exportar">Exportar el resultado</a></li>
+      <li><a href="#licencia">Licencia y modo pago</a></li>
+      <li><a href="#online">Nesting y editor online</a></li>
+      <li><a href="#problemas">Resolución de problemas</a></li>
+    </ol>
+  </div>
+
+  <h2 id="intro">1. Qué es Foglesting</h2>
+  <p>
+    Foglesting optimiza la disposición (<em>nesting</em>) de piezas sobre una chapa para <strong>minimizar el
+    desperdicio de material</strong>. Usa un <strong>algoritmo genético</strong> que evalúa miles de combinaciones de
+    posición y rotación, y un <strong>motor nativo en C++</strong> para resolverlo en segundos. Lee y exporta archivos
+    <strong>DXF</strong>, ideales para corte láser, plasma o router CNC.
+  </p>
+
+  <h2 id="req">2. Requisitos e instalación</h2>
+  <ul>
+    <li><strong>Sistema:</strong> Windows 10 u 11 (64 bits).</li>
+    <li><strong>Instalación:</strong> Foglesting es un único ejecutable: no requiere instalador. Descargue el <code>.exe</code>
+      desde <a href="https://foglesting.com/#descargar">foglesting.com</a> y ejecútelo.</li>
+    <li><strong>Función "Agregar STEP":</strong> el desplegado de chapa desde archivos STEP requiere componentes
+      adicionales (intérprete Python y el módulo de desplegado) provistos junto al programa. El resto de las funciones
+      operan sin dependencias.</li>
+  </ul>
+  <div class="tip">La primera vez que abra el programa, Windows puede mostrar un aviso de seguridad por tratarse de
+    un ejecutable descargado de Internet. Elija <em>"Más información → Ejecutar de todas formas"</em> si confía en la fuente.</div>
+
+  <h2 id="interfaz">3. La interfaz</h2>
+  <p>La ventana principal se divide en dos zonas:</p>
+  <ul>
+    <li><strong>Panel izquierdo (configuración):</strong> lista de archivos DXF a procesar, botones para agregar piezas,
+      tamaño y precio de la chapa, y los parámetros del algoritmo.</li>
+    <li><strong>Área derecha (vista):</strong> previsualización de las piezas cargadas y del resultado del nesting,
+      con una barra de herramientas superior (selección, zoom, medición, etc.).</li>
+  </ul>
+
+  <h2 id="cargar">4. Cargar piezas (DXF y STEP)</h2>
+  <h3>Agregar DXF y carpetas</h3>
+  <ul>
+    <li><strong>Agregar DXF:</strong> abre uno o varios archivos <code>.dxf</code> individuales.</li>
+    <li><strong>Agregar carpeta:</strong> importa todos los DXF de una carpeta de una sola vez.</li>
+    <li><strong>Cantidad:</strong> seleccione una pieza de la lista y, en <em>"Cantidad del DXF seleccionado"</em>,
+      indique cuántas copias necesita; luego presione <em>Aplicar cantidad</em>.</li>
+    <li><strong>Importar CSV:</strong> permite cargar piezas y cantidades desde un archivo CSV (nombre,cantidad).</li>
+  </ul>
+
+  <h3>Agregar STEP (desplegado de chapa)</h3>
+  <p>
+    El botón <strong>"Agregar STEP"</strong> permite importar piezas de chapa en formato <code>.step</code> / <code>.stp</code>
+    y obtener automáticamente su <strong>patrón plano (desplegado)</strong> en DXF, listo para nestear.
+  </p>
+  <ol class="steps">
+    <li>Presione <strong>Agregar STEP</strong> y elija el archivo.</li>
+    <li>El programa detecta los <strong>espesores</strong> presentes y muestra una ventana con casillas para elegir
+      qué espesores cargar (por ejemplo, separar las piezas de 1,2 mm de las de 1,6 mm).</li>
+    <li>Por cada pieza, despliega la chapa aplicando la <strong>longitud desarrollada</strong> de los dobleces y exporta
+      un DXF (contorno de corte + líneas de doblez en una capa aparte).</li>
+    <li>Realiza una <strong>verificación dimensional</strong> contra el sólido 3D (área del plano × espesor ≈ volumen) y
+      avisa si alguna pieza no cierra dentro de tolerancia.</li>
+  </ol>
+  <div class="warn"><strong>Alcance:</strong> el desplegado funciona con chapa de plegadora estándar (paredes planas y
+    dobleces cilíndricos, espesor constante). Piezas que no sean chapa (tubos, perfiles, sólidos macizos) pueden no
+    desplegarse correctamente y la verificación las marcará para revisar.</div>
+
+  <h2 id="chapa">5. Configurar la chapa y los costos</h2>
+  <table>
+    <thead><tr><th>Campo</th><th>Qué define</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Ancho / Alto chapa</strong></td><td>Dimensiones de la chapa disponible, en mm. Las piezas deben entrar dentro de estas medidas.</td></tr>
+      <tr><td><strong>Precio/Kg</strong></td><td>Precio del material por kilogramo, para calcular el costo.</td></tr>
+      <tr><td><strong>Densidad</strong></td><td>Densidad del material (kg/m³) para estimar el peso.</td></tr>
+      <tr><td><strong>Espesor</strong></td><td>Espesor de la chapa, usado en el cálculo de peso y costo.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="params">6. Parámetros del algoritmo</h2>
+  <h3>Nesting configuration</h3>
+  <table>
+    <tbody>
+      <tr><td><strong>Display units</strong></td><td>Unidades de visualización: mm o pulgadas.</td></tr>
+      <tr><td><strong>Space between</strong></td><td>Separación mínima entre piezas (margen de corte).</td></tr>
+      <tr><td><strong>Curve tolerance</strong></td><td>Tolerancia con que se aproximan las curvas/arcos.</td></tr>
+      <tr><td><strong>Part rotations</strong></td><td>Cuántos ángulos puede probar cada pieza (más rotaciones mejoran el acomodo, pero tardan más).</td></tr>
+      <tr><td><strong>Optimization type</strong></td><td><em>Bounding Box</em> minimiza el rectángulo ocupado; <em>Compact Area</em> empaqueta más cerrado (mejor en formas irregulares).</td></tr>
+      <tr><td><strong>Rough approx</strong></td><td>Aproximación rápida para acelerar el cálculo.</td></tr>
+      <tr><td><strong>CPU cores</strong></td><td>Núcleos de procesador a utilizar.</td></tr>
+      <tr><td><strong>Iterations</strong></td><td>Cantidad de iteraciones del solver. Más iteraciones suelen mejorar el aprovechamiento.</td></tr>
+    </tbody>
+  </table>
+  <h3>Import / Export</h3>
+  <table>
+    <tbody>
+      <tr><td><strong>SVG scale</strong></td><td>Factor de escala para entrada/salida SVG.</td></tr>
+      <tr><td><strong>Endpoint tol.</strong></td><td>Tolerancia para unir extremos de líneas al cerrar contornos.</td></tr>
+      <tr><td><strong>DXF import</strong></td><td><strong>Unidades del DXF de entrada (mm o pulgadas).</strong> Importante: si no coincide con el archivo, las piezas quedan mal escaladas.</td></tr>
+      <tr><td><strong>DXF export mm</strong></td><td>Unidades del DXF de salida.</td></tr>
+    </tbody>
+  </table>
+  <h3>Laser / meta-heuristic</h3>
+  <table>
+    <tbody>
+      <tr><td><strong>Merge common</strong></td><td>Une líneas de corte comunes entre piezas adyacentes.</td></tr>
+      <tr><td><strong>Opt. ratio</strong></td><td>Balance interno entre compactación y criterio de ocupación.</td></tr>
+      <tr><td><strong>GA population</strong></td><td>Cantidad de variantes que evalúa el algoritmo genético por iteración.</td></tr>
+      <tr><td><strong>Mutation %</strong></td><td>Porcentaje de mutación entre generaciones.</td></tr>
+      <tr><td><strong>Shuffle % / Intensity %</strong></td><td>Probabilidad e intensidad de reordenamientos aleatorios para escapar de óptimos locales.</td></tr>
+      <tr><td><strong>Solver</strong></td><td>Motor de cálculo (CPU).</td></tr>
+    </tbody>
+  </table>
+  <div class="tip">Valores de partida recomendados: separación 5 mm, rotaciones 4 (cada 90°), iteraciones 50,
+    población GA 4, optimización <em>Compact Area</em>.</div>
+
+  <h2 id="ejecutar">7. Ejecutar el nesting y leer resultados</h2>
+  <ol class="steps">
+    <li>Cargue las piezas y configure la chapa y los parámetros.</li>
+    <li>Presione <strong>Ejecutar nesting</strong>. Puede <strong>Pausar</strong> o <strong>Detener</strong> en cualquier momento.</li>
+    <li>Al finalizar, el programa informa: <strong>perfiles cargados</strong>, <strong>piezas ubicadas</strong>,
+      <strong>chapas usadas</strong>, <strong>aprovechamiento (%)</strong> y <strong>costos</strong>.</li>
+  </ol>
+  <div class="warn"><strong>Piezas sin ubicar:</strong> si alguna pieza no entra en la chapa, el programa lo avisa con un
+    cartel indicando el nombre y el tamaño de la pieza. Normalmente significa que la pieza es <strong>más grande que la
+    chapa configurada</strong> o que las <strong>unidades del DXF</strong> no coinciden (mm vs pulgadas). Aumente el tamaño
+    de la chapa o revise la unidad de importación.</div>
+
+  <h2 id="exportar">8. Exportar el resultado</h2>
+  <p>
+    Use <strong>Guardar DXF</strong> para exportar el layout optimizado. El archivo resultante puede enviarse directamente
+    a la máquina de corte (láser, plasma o CNC).
+  </p>
+
+  <h2 id="licencia">9. Licencia y modo pago</h2>
+  <p>
+    Cuando el <strong>modo de licencia</strong> está activo, al abrir el programa se solicita <strong>vincular la cuenta</strong>.
+    Aparece una pantalla con un <strong>código de dispositivo</strong> y las opciones:
+  </p>
+  <ul>
+    <li><strong>Vincular cuenta en la web:</strong> abre el portal para iniciar sesión; el programa detecta la vinculación automáticamente.</li>
+    <li><strong>Continuar gratis (período de prueba):</strong> permite usar el software durante los días de prueba disponibles.</li>
+  </ul>
+  <p>Una vez vinculada una licencia activa, el programa la recuerda y no vuelve a pedirla.</p>
+
+  <h2 id="online">10. Nesting y editor online</h2>
+  <p>
+    En <a href="https://foglesting.com/online/">foglesting.com/online</a> está disponible una versión que corre
+    <strong>en el navegador</strong> (motor C++ compilado a WebAssembly): permite subir DXF, ver el algoritmo trabajar en
+    vivo y descargar el resultado, sin instalar nada. Incluye además un <strong>editor DXF</strong> para retoques básicos
+    (dibujar, mover y borrar entidades).
+  </p>
+
+  <h2 id="problemas">11. Resolución de problemas</h2>
+  <table>
+    <thead><tr><th>Síntoma</th><th>Causa probable / solución</th></tr></thead>
+    <tbody>
+      <tr><td>La pieza se carga pero no aparece en el nesting.</td><td>Es más grande que la chapa, o las unidades del DXF están mal (mm/pulgadas). Aumente la chapa o cambie <em>DXF import</em>. El programa muestra un aviso con el tamaño de la pieza.</td></tr>
+      <tr><td>Las piezas quedan enormes o diminutas.</td><td>Unidad de importación incorrecta. Ajuste <em>DXF import</em> (mm vs pulgadas).</td></tr>
+      <tr><td>Un STEP no se despliega o sale raro.</td><td>La pieza puede no ser chapa de plegadora estándar. Revise la verificación (marca las piezas dudosas).</td></tr>
+      <tr><td>El botón "Agregar STEP" no genera nada.</td><td>Faltan los componentes del desplegado (Python/módulo) junto al programa. Verifique que estén presentes.</td></tr>
+      <tr><td>El acomodo deja mucho desperdicio.</td><td>Suba iteraciones y población GA, habilite más rotaciones y use <em>Compact Area</em>.</td></tr>
+    </tbody>
+  </table>
+
+  <hr/>
+  <div class="doc-foot">
+    <span class="fire-text">Fogl</span><span class="forest-text">esting</span> — Powered by
+    <a href="https://foglar.com.ar">Foglar</a> · <a href="/privacidad.html">Política de privacidad</a> · <a href="/">Inicio</a>
+  </div>
+</div>
+</body>
+</html>
