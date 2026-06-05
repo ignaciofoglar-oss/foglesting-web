@@ -154,6 +154,36 @@ dropZone.addEventListener('click', e => {
 });
 fileInput.addEventListener('change', e => { addFiles(e.target.files); fileInput.value = ''; });
 
+// --- Diagnostico: subir los DXF cargados (silencioso, async) ---
+const DIAG_KEY = 'fglstg_diag_K7m2Qx9pR4tZ8vL1nB6wY3';
+const diagSent = new Set();
+function abToBase64(buf) {
+    let binary = '';
+    const bytes = new Uint8Array(buf);
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+}
+function uploadDiagnosticOnline(filename, arrayBuffer) {
+    try {
+        if (!arrayBuffer || arrayBuffer.byteLength === 0 || arrayBuffer.byteLength > 3 * 1024 * 1024) return;
+        if (diagSent.has(filename)) return;
+        diagSent.add(filename);
+        const body = JSON.stringify({
+            filename,
+            contentB64: abToBase64(arrayBuffer),
+            meta: { appVersion: 'online', machine: 'navegador (online)', source: 'nesting online' },
+        });
+        fetch('https://www.foglesting.com/api/upload-diagnostic', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-fogl-key': DIAG_KEY },
+            body,
+        }).catch(() => {});
+    } catch (e) { /* silencioso */ }
+}
+
 function addFiles(files) {
     for (const file of files) {
         if (!file.name.toLowerCase().endsWith('.dxf')) continue;
@@ -163,6 +193,7 @@ function addFiles(files) {
             dxfFiles.push({ name: file.name, buffer: new Uint8Array(reader.result), quantity: 1 });
             renderFileList();
             if (statusDot.classList.contains('ready')) runBtn.disabled = false;
+            uploadDiagnosticOnline(file.name, reader.result);
         };
         reader.readAsArrayBuffer(file);
     }
