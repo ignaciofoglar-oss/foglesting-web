@@ -1,5 +1,5 @@
 {
-  "active_public_version": "5.2.1",
+  "active_public_version": "5.2.2",
   "candidates": [
     {
       "version": "1.0.0",
@@ -74,16 +74,16 @@
       "notes": "Build de prueba con lista DXF grande, divisor visible y nombre unico para evitar cache del navegador/CDN."
     },
     {
-      "version": "5.2.1",
-      "name": "FOGLESTING V5.2.1",
+      "version": "5.2.2",
+      "name": "FOGLESTING V5.2.2",
       "file": "foglesting_windows_v5_2.exe",
       "download_url": "/downloads/foglesting_windows_v5_2.exe",
       "source_path": "/downloads/foglesting_windows_v5_2.exe",
       "public_listed": true,
-      "sha256": "781A6177374C302D56B09EAF6F4300D28AD9215B8F83CED875D09CFF1E58270B",
+      "sha256": "25101399BFE31441358B16E620ADE0927D32379BB5EEE73FD0E89C0625519952",
       "size_bytes": 4460655,
       "created_at": "2026-06-04",
-      "notes": "Version publica 5.2.1. Importar STEP y desplegar chapa a DXF con selector de espesores y verificacion; aviso cuando una pieza no entra en la chapa; envio de DXF para diagnostico. 5.2.1: al cargar una carpeta ignora los archivos de resultado (nesting_result_*) para que un layout previo no se cargue como pieza gigante; version interna alineada (no pide actualizar de mas). Requiere Python + carpeta step2dxf para la funcion STEP."
+      "notes": "Version publica 5.2.2. 5.2.2: nuevo campo 'Margen borde' para elegir la distancia minima de las piezas al borde de la chapa. 5.2.1: ignora archivos de resultado (nesting_result_*) al cargar carpetas. Tambien: importar STEP y desplegar chapa con selector de espesores y verificacion; aviso cuando una pieza no entra en la chapa; envio de DXF para diagnostico. Requiere Python + carpeta step2dxf para la funcion STEP."
     }
   ]
 }
