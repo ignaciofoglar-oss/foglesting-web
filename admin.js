@@ -254,6 +254,7 @@ async function loadDiagnostics() {
             const dl = it.truncated
                 ? '<span class="release-muted">muy grande</span>'
                 : `<button class="btn-primary diag-dl" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" style="padding:6px 12px;font-size:13px;">Descargar</button>`;
+            const del = `<button class="btn-danger diag-del" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" style="padding:6px 12px;font-size:13px;margin-left:6px;">Borrar</button>`;
             rows += `
                 <tr>
                     <td>${escapeHtmlDiag(it.filename)}</td>
@@ -262,7 +263,7 @@ async function loadDiagnostics() {
                     <td>${escapeHtmlDiag(m.appVersion || '—')}</td>
                     <td>${escapeHtmlDiag(m.machine || '—')}</td>
                     <td>${escapeHtmlDiag(date)}</td>
-                    <td>${dl}</td>
+                    <td style="white-space:nowrap;">${dl}${del}</td>
                 </tr>`;
         }
         container.innerHTML = `
@@ -275,9 +276,54 @@ async function loadDiagnostics() {
         container.querySelectorAll('.diag-dl').forEach((btn) => {
             btn.addEventListener('click', () => downloadDiagnostic(btn.dataset.id, btn.dataset.name));
         });
+        container.querySelectorAll('.diag-del').forEach((btn) => {
+            btn.addEventListener('click', () => deleteDiagnostic(btn.dataset.id, btn.dataset.name));
+        });
     } catch (e) {
         console.error('Error loading diagnostics:', e);
         container.innerHTML = `<p class="error-msg">No se pudieron cargar los diagnósticos: ${escapeHtmlDiag(e.message)}</p>`;
+    }
+}
+
+async function deleteDiagnostic(id, filename) {
+    if (!confirm(`¿Borrar el diagnóstico "${filename || id}"?`)) return;
+    try {
+        const idToken = await auth.currentUser.getIdToken(true);
+        const resp = await fetch('/api/delete-diagnostic', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+            body: JSON.stringify({ id }),
+        });
+        if (!resp.ok) {
+            const e = await resp.json().catch(() => ({}));
+            alert('No se pudo borrar: ' + (e.error || resp.status));
+            return;
+        }
+        loadDiagnostics();
+    } catch (e) {
+        console.error('Error deleting diagnostic:', e);
+        alert('Error al borrar el diagnóstico.');
+    }
+}
+
+async function deleteAllDiagnostics() {
+    if (!confirm('¿Borrar TODOS los DXF de diagnóstico? Esta acción no se puede deshacer.')) return;
+    try {
+        const idToken = await auth.currentUser.getIdToken(true);
+        const resp = await fetch('/api/delete-diagnostic', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+            body: JSON.stringify({ all: true }),
+        });
+        if (!resp.ok) {
+            const e = await resp.json().catch(() => ({}));
+            alert('No se pudo borrar: ' + (e.error || resp.status));
+            return;
+        }
+        loadDiagnostics();
+    } catch (e) {
+        console.error('Error deleting all diagnostics:', e);
+        alert('Error al borrar los diagnósticos.');
     }
 }
 
@@ -304,6 +350,7 @@ async function downloadDiagnostic(id, filename) {
 }
 
 document.getElementById('diagnostics-refresh-btn')?.addEventListener('click', loadDiagnostics);
+document.getElementById('diagnostics-delete-all-btn')?.addEventListener('click', deleteAllDiagnostics);
 
 // 5a. Load Metrics and draw Chart
 let metricsChartInstance = null;
