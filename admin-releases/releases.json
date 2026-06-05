@@ -80,7 +80,7 @@
       "download_url": "/downloads/foglesting_windows_v5_2.exe",
       "source_path": "/downloads/foglesting_windows_v5_2.exe",
       "public_listed": true,
-      "sha256": "61DA90FB11FADE536558C99373F457880FC8286B913DA3C1326B3F355B020024",
+      "sha256": "35D103E075C120FA0986DF2986B17BC6C18738E7805968F550586B8549C0216F",
       "size_bytes": 4460655,
       "created_at": "2026-06-04",
       "notes": "Version publica. Nuevo: importar STEP y desplegar chapa a DXF con selector de espesores (checkboxes) y verificacion contra el solido; aviso cuando una pieza no entra en la chapa; envio de DXF para diagnostico. Corregido: version interna a 5.2.0 (ya no pide actualizar de mas) y subida de diagnostico a www.foglesting.com. Requiere Python + carpeta step2dxf para la funcion STEP."
