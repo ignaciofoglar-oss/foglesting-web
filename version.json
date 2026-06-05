@@ -1,6 +1,6 @@
 {
-  "version": "5.2.0",
-  "name": "FOGLESTING V5.2",
+  "version": "5.2.1",
+  "name": "FOGLESTING V5.2.1",
   "download_url": "https://foglesting.com/downloads/foglesting_windows_v5_2.exe",
-  "notes": "FOGLESTING V5.2 disponible. Descarga directa del ejecutable."
+  "notes": "FOGLESTING V5.2.1: ignora archivos de resultado al cargar carpetas (evita que un nesting previo se cargue como pieza) y corrige el aviso de actualizacion."
 }
