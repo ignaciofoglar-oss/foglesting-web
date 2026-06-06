@@ -84,6 +84,18 @@
       "size_bytes": 4460655,
       "created_at": "2026-06-04",
       "notes": "Version publica 5.2.2. 5.2.2: nuevo campo 'Margen borde' para elegir la distancia minima de las piezas al borde de la chapa. 5.2.1: ignora archivos de resultado (nesting_result_*) al cargar carpetas. Tambien: importar STEP y desplegar chapa con selector de espesores y verificacion; aviso cuando una pieza no entra en la chapa; envio de DXF para diagnostico. Requiere Python + carpeta step2dxf para la funcion STEP."
+    },
+    {
+      "version": "5.2.3",
+      "name": "FOGLESTING V5.2.3",
+      "file": "foglesting_windows_v5_2_3.exe",
+      "download_url": "/admin-releases/foglesting_windows_v5_2_3.exe",
+      "source_path": "/admin-releases/foglesting_windows_v5_2_3.exe",
+      "public_listed": false,
+      "sha256": "35F531F02EB1D925F17B0BA16AAD08146F3DE8ABEA583A347739E52210A73F76",
+      "size_bytes": 4475519,
+      "created_at": "2026-06-06",
+      "notes": "Version guardada para pruebas. Corrige el bloqueo visual durante el nesting, agrupa las actualizaciones de la previsualizacion para que los botones no desaparezcan y permite detener el solver dentro de una iteracion, incluso usando Area compacta. Probada con 100 iteraciones en Bounding Box y Area compacta sobre los DXF de test 2."
     }
   ]
 }
