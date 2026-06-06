@@ -1,5 +1,5 @@
 {
-  "active_public_version": "5.2.4",
+  "active_public_version": "5.2.5",
   "candidates": [
     {
       "version": "1.0.0",
@@ -103,11 +103,23 @@
       "file": "foglesting_windows_v5_2_4.exe",
       "download_url": "/downloads/foglesting_windows_v5_2_4.exe",
       "source_path": "/downloads/foglesting_windows_v5_2_4.exe",
-      "public_listed": true,
+      "public_listed": false,
       "sha256": "6238FCDC1D8F3170E5B6246EEE218989D1BB3C6FDF55E623061C4D3E12D2F6BC",
       "size_bytes": 4477908,
       "created_at": "2026-06-06",
-      "notes": "Version guardada para pruebas (no publica). Corrige que la interfaz del panel izquierdo se desacomodara al hacer scroll: ahora al scrollear, arrastrar el divisor de la lista o redimensionar la ventana se repintan tambien los controles hijos (RDW_ALLCHILDREN), evitando los pixeles fantasma sobre los botones Ejecutar/Pausar/Guardar. Ademas los controles se recortan al area de contenido para no montarse sobre el encabezado."
+      "notes": "Reemplazada por 5.2.5. Corrige que el panel izquierdo se desacomodara al hacer scroll (repinta los controles hijos y los recorta al area de contenido)."
+    },
+    {
+      "version": "5.2.5",
+      "name": "FOGLESTING V5.2.5",
+      "file": "foglesting_windows_v5_2_5.exe",
+      "download_url": "/downloads/foglesting_windows_v5_2_5.exe",
+      "source_path": "/downloads/foglesting_windows_v5_2_5.exe",
+      "public_listed": true,
+      "sha256": "1383D4777377084A6DAD57F51A7BFE01BB3B0F8DB999F8E635DAE687E5C82853",
+      "size_bytes": 4478420,
+      "created_at": "2026-06-06",
+      "notes": "Version publica. Incluye el fix de scroll del panel izquierdo (5.2.4) y ademas restaura la animacion del preview: vuelve a mostrar el acomodo de CADA iteracion en vivo, manteniendo que Guardar exporta el mejor resultado. Probado en vivo con 220 piezas / 3000 iteraciones: preview animando y botones Detener/Pausar/Guardar estables."
     }
   ]
 }
