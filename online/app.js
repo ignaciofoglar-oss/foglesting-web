@@ -349,23 +349,23 @@ function handleWorkerDone(msg) {
         return;
     }
 
-    // Map names back
-    let nameMap = {};
-    let fileIndex = 0;
-    dxfFiles.forEach(f => {
-        const qty = f.quantity || 1;
-        for (let q = 0; q < qty; q++) {
-            nameMap[`input_${fileIndex}`] = f.name;
-            fileIndex++;
-        }
-    });
+    // Map internal names (input_0, input_1, ...) back to real filenames.
+    // IMPORTANTE: el indice es por ARCHIVO, no por la cantidad expandida.
+    // Una pieza puede llamarse "input_2" o "input_2-3" (varios perfiles en un DXF).
+    const nameMap = {};
+    dxfFiles.forEach((f, i) => { nameMap[`input_${i}`] = f.name; });
+    const mapPartName = (raw) => {
+        if (!raw) return raw;
+        const m = /^input_(\d+)(-\d+)?$/.exec(raw);
+        if (m && nameMap[`input_${m[1]}`]) return nameMap[`input_${m[1]}`] + (m[2] || '');
+        return raw;
+    };
 
     if (stats.input_parts) {
-        stats.input_parts.forEach(p => {
-            if (nameMap[p.name]) {
-                p.name = nameMap[p.name];
-            }
-        });
+        stats.input_parts.forEach(p => { p.name = mapPartName(p.name); });
+    }
+    if (stats.placements) {
+        stats.placements.forEach(p => { p.name = mapPartName(p.name); });
     }
 
     lastResult = stats;
@@ -436,6 +436,30 @@ function updateResultStats(stats) {
         ? String(sheets)
         : '0';
     document.getElementById('res-placed').textContent = `${placed} / ${placed + unplaced}`;
+
+    // Aviso cuando hay piezas que no entraron en la chapa.
+    // Solo en el resultado final real (trae sheet_width); no en el placeholder inicial ni en los previews.
+    const warn = document.getElementById('res-warning');
+    if (warn && stats.sheet_width === undefined) {
+        warn.style.display = 'none';   // placeholder inicial / preview: todavia no sabemos
+    } else if (warn) {
+        const sw = Number(stats.sheet_width ?? 0);
+        const sh = Number(stats.sheet_height ?? 0);
+        const dims = (sw > 0 && sh > 0) ? ` de ${Math.round(sw)} × ${Math.round(sh)} mm` : '';
+        if (unplaced > 0 && placed === 0) {
+            warn.style.display = 'block';
+            warn.innerHTML = `⚠️ <strong>Ninguna pieza entró en la chapa${dims}.</strong> ` +
+                `Probablemente son más grandes que la chapa. Agrandá el tamaño de la chapa, ` +
+                `o revisá las unidades del DXF (mm vs. pulgadas).`;
+        } else if (unplaced > 0) {
+            warn.style.display = 'block';
+            warn.innerHTML = `⚠️ <strong>${unplaced} pieza(s) no entraron en la chapa${dims}.</strong> ` +
+                `Se acomodaron ${placed}. Para las que faltan, agrandá la chapa o revisá las unidades del DXF.`;
+        } else {
+            warn.style.display = 'none';
+            warn.innerHTML = '';
+        }
+    }
 }
 
 function countSheets(placements) {
