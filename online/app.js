@@ -277,8 +277,19 @@ runBtn.addEventListener('click', async () => {
             date: new Date().toISOString().split('T')[0],
             timestamp: serverTimestamp(),
             dxf_count: totalQty,
+            file_count: dxfFiles.length,
+            sheet_width: parseFloat(document.getElementById('sheet-width').value) || 0,
+            sheet_height: parseFloat(document.getElementById('sheet-height').value) || 0,
+            iterations: parseInt(document.getElementById('iterations-input').value) || 0,
+            population: parseInt(document.getElementById('population-input').value) || 0,
+            optimization_type: document.getElementById('optimization-type').value || '',
+            source: 'online',
             best_solution_time_sec: 0,
             total_time_to_save_sec: 0,
+            final_utilization: 0,
+            sheets_used: 0,
+            placed_count: 0,
+            unplaced_count: 0,
             saved: false
         });
     } catch (e) {
@@ -362,11 +373,21 @@ function handleWorkerDone(msg) {
     activeSheet = 0;
     downloadBtn.disabled = !(lastDxfBuffer || (stats.placements && stats.placements.length > 0));
 
-    // Firebase: update with best_solution_time
+    // Firebase: update with best_solution_time + metricas del resultado final
     if (currentRunDocRef) {
         try {
+            const placedN = Number(stats.placed ?? (stats.placements ? stats.placements.length : 0)) || 0;
+            const unplacedN = Number(stats.unplaced ?? 0) || 0;
+            let sheetsN = Number(stats.sheets ?? 0);
+            if ((!Number.isFinite(sheetsN) || sheetsN <= 0) && stats.placements && stats.placements.length > 0) {
+                sheetsN = countSheets(stats.placements);
+            }
             updateDoc(currentRunDocRef, {
-                best_solution_time_sec: bestSolutionTime
+                best_solution_time_sec: bestSolutionTime,
+                final_utilization: Number(stats.utilization ?? 0) || 0,
+                sheets_used: Number.isFinite(sheetsN) ? sheetsN : 0,
+                placed_count: placedN,
+                unplaced_count: unplacedN
             }).catch(console.error);
         } catch (e) { console.error(e); }
     }

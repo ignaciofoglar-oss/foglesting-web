@@ -245,6 +245,7 @@ async function loadDiagnostics() {
             container.innerHTML = '<p class="loading">Todavía no hay DXF cargados.</p>';
             return;
         }
+        const btnStyle = 'padding:6px 12px;font-size:13px;width:auto;display:inline-block;';
         let rows = '';
         for (const it of items) {
             const m = it.meta || {};
@@ -253,10 +254,11 @@ async function loadDiagnostics() {
             const date = it.createdAt ? new Date(it.createdAt).toLocaleString('es-AR') : '—';
             const dl = it.truncated
                 ? '<span class="release-muted">muy grande</span>'
-                : `<button class="btn-primary diag-dl" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" style="padding:6px 12px;font-size:13px;">Descargar</button>`;
-            const del = `<button class="btn-danger diag-del" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" style="padding:6px 12px;font-size:13px;margin-left:6px;">Borrar</button>`;
+                : `<button class="btn-primary diag-dl" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" style="${btnStyle}">Descargar</button>`;
+            const del = `<button class="btn-danger diag-del" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" style="${btnStyle}margin-left:6px;">Borrar</button>`;
             rows += `
                 <tr>
+                    <td style="text-align:center;"><input type="checkbox" class="diag-check" data-id="${escapeHtmlDiag(it.id)}"></td>
                     <td>${escapeHtmlDiag(it.filename)}</td>
                     <td>${bbox}</td>
                     <td>${kb} KB</td>
@@ -267,18 +269,52 @@ async function loadDiagnostics() {
                 </tr>`;
         }
         container.innerHTML = `
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+                <button class="btn-danger" id="diag-delete-selected" type="button" style="width:auto;" disabled>
+                    Borrar seleccionados (<span id="diag-selected-count">0</span>)
+                </button>
+                <span class="release-muted" id="diag-total-count">${items.length} archivo(s)</span>
+            </div>
+            <div style="overflow-x:auto;">
             <table class="diag-table" style="width:100%;border-collapse:collapse;">
                 <thead><tr style="text-align:left;">
+                    <th style="width:34px;text-align:center;"><input type="checkbox" id="diag-check-all" title="Seleccionar todos"></th>
                     <th>Archivo</th><th>Tamaño pieza</th><th>Peso</th><th>Versión</th><th>Equipo</th><th>Fecha</th><th></th>
                 </tr></thead>
                 <tbody>${rows}</tbody>
-            </table>`;
+            </table>
+            </div>`;
         container.querySelectorAll('.diag-dl').forEach((btn) => {
             btn.addEventListener('click', () => downloadDiagnostic(btn.dataset.id, btn.dataset.name));
         });
         container.querySelectorAll('.diag-del').forEach((btn) => {
             btn.addEventListener('click', () => deleteDiagnostic(btn.dataset.id, btn.dataset.name));
         });
+
+        // --- Casillas de seleccion + borrado multiple ---
+        const checks = Array.from(container.querySelectorAll('.diag-check'));
+        const checkAll = container.querySelector('#diag-check-all');
+        const selBtn = container.querySelector('#diag-delete-selected');
+        const countEl = container.querySelector('#diag-selected-count');
+        const refreshSelection = () => {
+            const selected = checks.filter((c) => c.checked);
+            if (countEl) countEl.textContent = String(selected.length);
+            if (selBtn) selBtn.disabled = selected.length === 0;
+            if (checkAll) checkAll.checked = selected.length > 0 && selected.length === checks.length;
+        };
+        checks.forEach((c) => c.addEventListener('change', refreshSelection));
+        if (checkAll) {
+            checkAll.addEventListener('change', () => {
+                checks.forEach((c) => { c.checked = checkAll.checked; });
+                refreshSelection();
+            });
+        }
+        if (selBtn) {
+            selBtn.addEventListener('click', () => {
+                const ids = checks.filter((c) => c.checked).map((c) => c.dataset.id);
+                deleteSelectedDiagnostics(ids);
+            });
+        }
     } catch (e) {
         console.error('Error loading diagnostics:', e);
         container.innerHTML = `<p class="error-msg">No se pudieron cargar los diagnósticos: ${escapeHtmlDiag(e.message)}</p>`;
@@ -327,6 +363,28 @@ async function deleteAllDiagnostics() {
     }
 }
 
+async function deleteSelectedDiagnostics(ids) {
+    if (!ids || ids.length === 0) return;
+    if (!confirm(`¿Borrar ${ids.length} DXF de diagnóstico seleccionado(s)? Esta acción no se puede deshacer.`)) return;
+    try {
+        const idToken = await auth.currentUser.getIdToken(true);
+        const resp = await fetch('/api/delete-diagnostic', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+            body: JSON.stringify({ ids }),
+        });
+        if (!resp.ok) {
+            const e = await resp.json().catch(() => ({}));
+            alert('No se pudo borrar: ' + (e.error || resp.status));
+            return;
+        }
+        loadDiagnostics();
+    } catch (e) {
+        console.error('Error deleting selected diagnostics:', e);
+        alert('Error al borrar los diagnósticos seleccionados.');
+    }
+}
+
 async function downloadDiagnostic(id, filename) {
     try {
         const idToken = await auth.currentUser.getIdToken(true);
@@ -354,6 +412,57 @@ document.getElementById('diagnostics-delete-all-btn')?.addEventListener('click',
 
 // 5a. Load Metrics and draw Chart
 let metricsChartInstance = null;
+let solverUsageChartInstance = null;
+let solverUtilChartInstance = null;
+
+function renderSolverUsageChart(labels, runs, saves) {
+    const canvas = document.getElementById('solverUsageChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    const ctx = canvas.getContext('2d');
+    if (solverUsageChartInstance) solverUsageChartInstance.destroy();
+    solverUsageChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                { label: 'Corridas', data: runs, backgroundColor: 'rgba(232,91,46,0.6)', borderColor: '#e85b2e', borderWidth: 1 },
+                { label: 'Guardadas', data: saves, backgroundColor: 'rgba(40,167,69,0.6)', borderColor: '#28a745', borderWidth: 1 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#333' }, ticks: { color: '#a0a8a3', precision: 0 } },
+                x: { grid: { color: '#333' }, ticks: { color: '#a0a8a3' } }
+            },
+            plugins: { legend: { labels: { color: '#f0f0f0' } } }
+        }
+    });
+}
+
+function renderSolverUtilChart(labels, util) {
+    const canvas = document.getElementById('solverUtilChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    const ctx = canvas.getContext('2d');
+    if (solverUtilChartInstance) solverUtilChartInstance.destroy();
+    solverUtilChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                { label: 'Aprovechamiento %', data: util, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', borderWidth: 2, tension: 0.3, fill: true, spanGaps: true }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, max: 100, grid: { color: '#333' }, ticks: { color: '#a0a8a3', callback: (v) => v + '%' } },
+                x: { grid: { color: '#333' }, ticks: { color: '#a0a8a3' } }
+            },
+            plugins: { legend: { labels: { color: '#f0f0f0' } } }
+        }
+    });
+}
 
 async function loadMetrics() {
     try {
@@ -407,29 +516,103 @@ async function loadMetrics() {
         let bestTimeCount = 0;
         let saveTimeSum = 0;
         let saveTimeCount = 0;
+        let savedCount = 0;
+        let utilSum = 0, utilCount = 0;
+        let sheetsSum = 0, sheetsCount = 0;
+        let unplacedSum = 0, runsWithUnplaced = 0, runsWithResult = 0;
+        const optCounts = {};
+        const sheetSizeCounts = {};
+        const runsByDay = {};
+        const savesByDay = {};
+        const utilByDay = {}; // day -> { sum, count }
 
-        solverSnapshot.forEach(doc => {
-            const data = doc.data();
+        solverSnapshot.forEach(docSnap => {
+            const data = docSnap.data();
             totalSolverUses++;
             totalDxfs += (data.dxf_count || 0);
+            const day = data.date || (data.timestamp && data.timestamp.toDate ? data.timestamp.toDate().toISOString().split('T')[0] : null);
+            if (day) runsByDay[day] = (runsByDay[day] || 0) + 1;
+
             if (data.best_solution_time_sec > 0) {
                 bestTimeSum += data.best_solution_time_sec;
                 bestTimeCount++;
             }
-            if (data.saved && data.total_time_to_save_sec > 0) {
-                saveTimeSum += data.total_time_to_save_sec;
-                saveTimeCount++;
+            if (data.saved) {
+                savedCount++;
+                if (day) savesByDay[day] = (savesByDay[day] || 0) + 1;
+                if (data.total_time_to_save_sec > 0) {
+                    saveTimeSum += data.total_time_to_save_sec;
+                    saveTimeCount++;
+                }
+            }
+            if (typeof data.final_utilization === 'number' && data.final_utilization > 0) {
+                utilSum += data.final_utilization;
+                utilCount++;
+                if (day) {
+                    if (!utilByDay[day]) utilByDay[day] = { sum: 0, count: 0 };
+                    utilByDay[day].sum += data.final_utilization;
+                    utilByDay[day].count++;
+                }
+            }
+            if (typeof data.sheets_used === 'number' && data.sheets_used > 0) {
+                sheetsSum += data.sheets_used;
+                sheetsCount++;
+            }
+            // Piezas sin ubicar: solo contamos corridas que dejaron un resultado
+            if (data.placed_count !== undefined || data.unplaced_count !== undefined) {
+                runsWithResult++;
+                const up = Number(data.unplaced_count || 0);
+                unplacedSum += up;
+                if (up > 0) runsWithUnplaced++;
+            }
+            if (data.optimization_type) {
+                optCounts[data.optimization_type] = (optCounts[data.optimization_type] || 0) + 1;
+            }
+            if (data.sheet_width && data.sheet_height) {
+                const key = `${Math.round(data.sheet_width)}×${Math.round(data.sheet_height)}`;
+                sheetSizeCounts[key] = (sheetSizeCounts[key] || 0) + 1;
             }
         });
 
         document.getElementById('stat-solver-uses').textContent = totalSolverUses;
         document.getElementById('stat-solver-dxfs').textContent = totalDxfs;
-        
+
         const avgBestTime = bestTimeCount > 0 ? (bestTimeSum / bestTimeCount).toFixed(1) : 0;
         const avgSaveTime = saveTimeCount > 0 ? (saveTimeSum / saveTimeCount).toFixed(1) : 0;
-        
         document.getElementById('stat-solver-best-time').textContent = `${avgBestTime}s`;
         document.getElementById('stat-solver-save-time').textContent = `${avgSaveTime}s`;
+
+        // --- Metricas diferenciadas nuevas ---
+        const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        const pct = (num, den) => den > 0 ? Math.round((num / den) * 100) : 0;
+
+        setText('stat-solver-save-rate', `${pct(savedCount, totalSolverUses)}%`);
+        setText('stat-solver-save-rate-sub', `${savedCount} de ${totalSolverUses} corridas terminó en Guardar`);
+        setText('stat-solver-avg-util', utilCount > 0 ? `${(utilSum / utilCount).toFixed(1)}%` : '—');
+        setText('stat-solver-avg-sheets', sheetsCount > 0 ? (sheetsSum / sheetsCount).toFixed(1) : '—');
+        setText('stat-solver-avg-dxfs', totalSolverUses > 0 ? (totalDxfs / totalSolverUses).toFixed(1) : '—');
+        setText('stat-solver-avg-unplaced', runsWithResult > 0 ? (unplacedSum / runsWithResult).toFixed(1) : '—');
+        setText('stat-solver-fail-rate', runsWithResult > 0 ? `${pct(runsWithUnplaced, runsWithResult)}%` : '—');
+
+        // Optimizacion mas usada + desglose
+        const optEntries = Object.entries(optCounts).sort((a, b) => b[1] - a[1]);
+        const optLabel = (k) => k === 'compact-area' ? 'Área compacta' : (k === 'bounding-box' ? 'Bounding box' : k);
+        if (optEntries.length > 0) {
+            setText('stat-solver-top-opt', optLabel(optEntries[0][0]));
+            setText('stat-solver-opt-breakdown', optEntries.map(([k, v]) => `${optLabel(k)}: ${v}`).join('  ·  '));
+        }
+        const sheetEntries = Object.entries(sheetSizeCounts).sort((a, b) => b[1] - a[1]);
+        if (sheetEntries.length > 0) {
+            setText('stat-solver-top-sheet', `${sheetEntries[0][0]} mm`);
+        }
+
+        // --- Graficos por dia (ordenados) ---
+        const solverDays = Array.from(new Set([...Object.keys(runsByDay), ...Object.keys(utilByDay)])).sort();
+        const runsSeries = solverDays.map(d => runsByDay[d] || 0);
+        const savesSeries = solverDays.map(d => savesByDay[d] || 0);
+        const utilSeries = solverDays.map(d => utilByDay[d] ? +(utilByDay[d].sum / utilByDay[d].count).toFixed(1) : null);
+        renderSolverUsageChart(solverDays, runsSeries, savesSeries);
+        renderSolverUtilChart(solverDays, utilSeries);
 
         // Render Chart
         const ctx = document.getElementById('metricsChart').getContext('2d');

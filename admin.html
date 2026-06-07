@@ -109,11 +109,75 @@
                     </div>
                 </div>
 
+                <div class="stats-grid" style="margin-top: 16px;">
+                    <div class="stat-card">
+                        <h3>Tasa de Guardado</h3>
+                        <div class="stat-value" id="stat-solver-save-rate">0%</div>
+                        <p class="stat-sub" id="stat-solver-save-rate-sub">de las corridas terminó en Guardar</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Aprovechamiento Promedio</h3>
+                        <div class="stat-value" id="stat-solver-avg-util">0%</div>
+                        <p class="stat-sub">uso de chapa por corrida</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Chapas Promedio</h3>
+                        <div class="stat-value" id="stat-solver-avg-sheets">0</div>
+                        <p class="stat-sub">chapas por corrida</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Piezas Promedio / Corrida</h3>
+                        <div class="stat-value" id="stat-solver-avg-dxfs">0</div>
+                        <p class="stat-sub">piezas cargadas por corrida</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid" style="margin-top: 16px;">
+                    <div class="stat-card">
+                        <h3>Piezas Sin Ubicar (prom.)</h3>
+                        <div class="stat-value" id="stat-solver-avg-unplaced">0</div>
+                        <p class="stat-sub">piezas que no entraron, por corrida</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Corridas con Piezas Sin Ubicar</h3>
+                        <div class="stat-value" id="stat-solver-fail-rate">0%</div>
+                        <p class="stat-sub">corridas donde algo no entró</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Optimización Más Usada</h3>
+                        <div class="stat-value" id="stat-solver-top-opt" style="font-size: 22px;">—</div>
+                        <p class="stat-sub" id="stat-solver-opt-breakdown">—</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Chapa Más Usada</h3>
+                        <div class="stat-value" id="stat-solver-top-sheet" style="font-size: 22px;">—</div>
+                        <p class="stat-sub">tamaño de chapa más frecuente</p>
+                    </div>
+                </div>
+
                 <div class="charts-container" style="margin-top: 40px;">
                     <div class="chart-card" style="background: var(--bg-panel); padding: 20px; border-radius: 12px;">
                         <h3 style="margin-bottom: 20px; font-weight: 500;">Rendimiento de los últimos 30 días</h3>
                         <div style="position: relative; height: 300px; width: 100%;">
                             <canvas id="metricsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-container" style="margin-top: 24px;">
+                    <div class="chart-card" style="background: var(--bg-panel); padding: 20px; border-radius: 12px;">
+                        <h3 style="margin-bottom: 20px; font-weight: 500;">Uso del solver por día (corridas vs. guardadas)</h3>
+                        <div style="position: relative; height: 280px; width: 100%;">
+                            <canvas id="solverUsageChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-container" style="margin-top: 24px;">
+                    <div class="chart-card" style="background: var(--bg-panel); padding: 20px; border-radius: 12px;">
+                        <h3 style="margin-bottom: 20px; font-weight: 500;">Aprovechamiento promedio por día</h3>
+                        <div style="position: relative; height: 280px; width: 100%;">
+                            <canvas id="solverUtilChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -234,7 +298,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="admin.js?v=4"></script>
+    <script type="module" src="admin.js?v=5"></script>
     <script>
         // Mobile hamburger menu logic
         (function() {
