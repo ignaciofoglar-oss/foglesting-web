@@ -258,7 +258,7 @@ async function loadDiagnostics() {
             const del = `<button class="btn-danger diag-del" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" style="${btnStyle}margin-left:6px;">Borrar</button>`;
             rows += `
                 <tr>
-                    <td style="text-align:center;"><input type="checkbox" class="diag-check" data-id="${escapeHtmlDiag(it.id)}"></td>
+                    <td style="text-align:center;"><input type="checkbox" class="diag-check" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" data-truncated="${it.truncated ? '1' : '0'}"></td>
                     <td>${escapeHtmlDiag(it.filename)}</td>
                     <td>${bbox}</td>
                     <td>${kb} KB</td>
@@ -270,6 +270,9 @@ async function loadDiagnostics() {
         }
         container.innerHTML = `
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+                <button class="btn-primary" id="diag-download-selected" type="button" style="width:auto;" disabled>
+                    Descargar seleccionados
+                </button>
                 <button class="btn-danger" id="diag-delete-selected" type="button" style="width:auto;" disabled>
                     Borrar seleccionados (<span id="diag-selected-count">0</span>)
                 </button>
@@ -295,11 +298,13 @@ async function loadDiagnostics() {
         const checks = Array.from(container.querySelectorAll('.diag-check'));
         const checkAll = container.querySelector('#diag-check-all');
         const selBtn = container.querySelector('#diag-delete-selected');
+        const dlBtn = container.querySelector('#diag-download-selected');
         const countEl = container.querySelector('#diag-selected-count');
         const refreshSelection = () => {
             const selected = checks.filter((c) => c.checked);
             if (countEl) countEl.textContent = String(selected.length);
             if (selBtn) selBtn.disabled = selected.length === 0;
+            if (dlBtn) dlBtn.disabled = selected.length === 0;
             if (checkAll) checkAll.checked = selected.length > 0 && selected.length === checks.length;
         };
         checks.forEach((c) => c.addEventListener('change', refreshSelection));
@@ -313,6 +318,12 @@ async function loadDiagnostics() {
             selBtn.addEventListener('click', () => {
                 const ids = checks.filter((c) => c.checked).map((c) => c.dataset.id);
                 deleteSelectedDiagnostics(ids);
+            });
+        }
+        if (dlBtn) {
+            dlBtn.addEventListener('click', () => {
+                const sel = checks.filter((c) => c.checked && c.dataset.truncated !== '1');
+                downloadManyDiagnostics(sel.map((c) => ({ id: c.dataset.id, name: c.dataset.name })));
             });
         }
     } catch (e) {
@@ -383,6 +394,19 @@ async function deleteSelectedDiagnostics(ids) {
         console.error('Error deleting selected diagnostics:', e);
         alert('Error al borrar los diagnósticos seleccionados.');
     }
+}
+
+async function downloadManyDiagnostics(list) {
+    if (!list || list.length === 0) return;
+    const btn = document.getElementById('diag-download-selected');
+    if (btn) { btn.disabled = true; btn.textContent = `Descargando 0/${list.length}...`; }
+    for (let i = 0; i < list.length; i++) {
+        await downloadDiagnostic(list[i].id, list[i].name);
+        if (btn) btn.textContent = `Descargando ${i + 1}/${list.length}...`;
+        // Pausa para que el navegador no bloquee descargas multiples.
+        await new Promise((r) => setTimeout(r, 350));
+    }
+    if (btn) { btn.textContent = 'Descargar seleccionados'; btn.disabled = false; }
 }
 
 async function downloadDiagnostic(id, filename) {
