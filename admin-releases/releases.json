@@ -144,6 +144,18 @@
       "size_bytes": 4491057,
       "created_at": "2026-06-08",
       "notes": "Candidata (no publica). Traduccion completa de la interfaz al ingles: ahora se traducen tambien los carteles que estaban fijos en espanol (Ancho/Alto chapa, Precio/Kg, Densidad, Espesor, Margen borde, titulos de secciones, vista previa, graficos y estados). El panel queda totalmente bilingue ES/EN. Probada en vivo: al pasar a English muestra Sheet width / Sheet height / Edge margin, etc."
+    },
+    {
+      "version": "5.2.8",
+      "name": "FOGLESTING V5.2.8",
+      "file": "foglesting_windows_v5_2_8.exe",
+      "download_url": "/admin-releases/foglesting_windows_v5_2_8.exe",
+      "source_path": "/admin-releases/foglesting_windows_v5_2_8.exe",
+      "public_listed": false,
+      "sha256": "D1AA0AFAF691276766D47EDD030750E18220B21D5E5848295E9D8422A5044CBF",
+      "size_bytes": 4511918,
+      "created_at": "2026-06-08",
+      "notes": "Candidata (no publica). Incluye lo de 5.2.7 (traduccion completa ES/EN) y agrega el boton REPORTE: al terminar un nesting se habilita y abre un informe con la estetica de Foglesting (fondo oscuro, marca, fuente monoespaciada) con detalle de piezas (cantidad, area, medidas, peso, costo), totales, resumen (piezas ubicadas/sin ubicar, chapas, area de chapa, aprovechamiento, scrap %), peso y costo (piezas/chapas/scrap) y tiempos. Se puede Copiar o Guardar como .txt. Probado en vivo."
     }
   ]
 }
