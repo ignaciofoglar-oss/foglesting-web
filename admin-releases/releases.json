@@ -1,5 +1,5 @@
 {
-  "active_public_version": "5.2.9",
+  "active_public_version": "5.2.10",
   "candidates": [
     {
       "version": "1.0.0",
@@ -163,11 +163,23 @@
       "file": "foglesting_windows_v5_2_9.exe",
       "download_url": "/downloads/foglesting_windows_v5_2_9.exe",
       "source_path": "/downloads/foglesting_windows_v5_2_9.exe",
-      "public_listed": true,
+      "public_listed": false,
       "sha256": "B3957D6B15F892D1C03843B8AC7D6998A24C534AD3228A1F675D7C8504B1EEEE",
       "size_bytes": 4516592,
       "created_at": "2026-06-08",
-      "notes": "Candidata. Igual a 5.2.8 pero el REPORTE de nesting ahora es bilingue y se arma en el idioma actual al abrirlo (antes quedaba en espanol). Probado en vivo: en English muestra Nesting Report / Parts detail / Placed parts / etc."
+      "notes": "Reemplazada por 5.2.10. El REPORTE de nesting es bilingue y se arma en el idioma actual al abrirlo."
+    },
+    {
+      "version": "5.2.10",
+      "name": "FOGLESTING V5.2.10",
+      "file": "foglesting_windows_v5_2_10.exe",
+      "download_url": "/downloads/foglesting_windows_v5_2_10.exe",
+      "source_path": "/downloads/foglesting_windows_v5_2_10.exe",
+      "public_listed": true,
+      "sha256": "3F2EF6AF47C4FF3C86C927238B8B3232D94800972D5C0D6F8899D4F1239006A3",
+      "size_bytes": 4516929,
+      "created_at": "2026-06-08",
+      "notes": "Version publica. El REPORTE de nesting ahora se actualiza solo al reabrirlo cuando cambias el espesor, la densidad o el precio/kg, sin necesidad de correr el nesting de nuevo (estos valores solo afectan masa y costo, no el acomodo). Probado en vivo: con el mismo acomodo (iteracion 30), a 6500 $/kg costo piezas $1452, a 8000 $/kg $1787, y el espesor cambia el peso. Incluye lo de 5.2.9 (reporte bilingue)."
     }
   ]
 }
