@@ -152,7 +152,7 @@
       "download_url": "/admin-releases/foglesting_windows_v5_2_8.exe",
       "source_path": "/admin-releases/foglesting_windows_v5_2_8.exe",
       "public_listed": false,
-      "sha256": "89B84D2533FD31BCC5BFE64832F143FD2301C236AD2C3A3D9B3F361045A1606D",
+      "sha256": "3DF6DAB1D0B6D6597508E7A077935D8B4CC67AFE6A850DA08108098B9728340A",
       "size_bytes": 4514038,
       "created_at": "2026-06-08",
       "notes": "Candidata (no publica). Incluye: (1) traduccion completa ES/EN; (2) boton REPORTE con estetica Foglesting (detalle de piezas con cantidad/area/medidas/peso/costo, totales, resumen con aprovechamiento y scrap %, peso y costo, tiempos; copiar o guardar .txt); (3) cotas del rectangulo minimo que encierra todas las piezas (ancho y alto en mm con flechas) sobre el resultado final en el preview, que NO se exportan al guardar el DXF. Todo probado en vivo."
