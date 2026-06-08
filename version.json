@@ -1,6 +1,6 @@
 {
-  "version": "5.2.5",
-  "name": "FOGLESTING V5.2.5",
-  "download_url": "https://foglesting.com/downloads/foglesting_windows_v5_2_5.exe",
-  "notes": "FOGLESTING V5.2.5 disponible. Mejora visual: el panel no se desacomoda al hacer scroll y la previsualizacion vuelve a animar cada iteracion del nesting."
+  "version": "5.2.6",
+  "name": "FOGLESTING V5.2.6",
+  "download_url": "https://foglesting.com/downloads/foglesting_windows_v5_2_6.exe",
+  "notes": "FOGLESTING V5.2.6 disponible. Mejoras internas de métricas de uso del programa."
 }
