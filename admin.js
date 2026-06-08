@@ -507,6 +507,49 @@ document.getElementById('audit-refresh-btn')?.addEventListener('click', loadAudi
 let metricsChartInstance = null;
 let solverUsageChartInstance = null;
 let solverUtilChartInstance = null;
+let solverSourceChartInstance = null;
+let solverCountryChartInstance = null;
+
+function renderSolverSourceChart(onlineN, desktopN) {
+    const canvas = document.getElementById('solverSourceChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    const ctx = canvas.getContext('2d');
+    if (solverSourceChartInstance) solverSourceChartInstance.destroy();
+    solverSourceChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Online', 'Descargable'],
+            datasets: [{ data: [onlineN, desktopN], backgroundColor: ['#e85b2e', '#3d8760'], borderColor: '#1a1a1a', borderWidth: 2 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { color: '#f0f0f0' } } }
+        }
+    });
+}
+
+function renderSolverCountryChart(labels, counts) {
+    const canvas = document.getElementById('solverCountryChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    const ctx = canvas.getContext('2d');
+    if (solverCountryChartInstance) solverCountryChartInstance.destroy();
+    solverCountryChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{ label: 'Corridas', data: counts, backgroundColor: 'rgba(232,91,46,0.6)', borderColor: '#e85b2e', borderWidth: 1 }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { beginAtZero: true, grid: { color: '#333' }, ticks: { color: '#a0a8a3', precision: 0 } },
+                y: { grid: { color: '#333' }, ticks: { color: '#a0a8a3' } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+}
 
 function renderSolverUsageChart(labels, runs, saves) {
     const canvas = document.getElementById('solverUsageChart');
@@ -618,11 +661,19 @@ async function loadMetrics() {
         const runsByDay = {};
         const savesByDay = {};
         const utilByDay = {}; // day -> { sum, count }
+        const bySource = { online: 0, desktop: 0 };
+        const byCountry = {};
 
         solverSnapshot.forEach(docSnap => {
             const data = docSnap.data();
             totalSolverUses++;
             totalDxfs += (data.dxf_count || 0);
+            // Origen: online vs descargable
+            const src = (data.source === 'desktop') ? 'desktop' : 'online';
+            bySource[src] = (bySource[src] || 0) + 1;
+            // Pais (geo)
+            const cc = (data.country || '').toUpperCase();
+            if (cc) byCountry[cc] = (byCountry[cc] || 0) + 1;
             const day = data.date || (data.timestamp && data.timestamp.toDate ? data.timestamp.toDate().toISOString().split('T')[0] : null);
             if (day) runsByDay[day] = (runsByDay[day] || 0) + 1;
 
@@ -706,6 +757,25 @@ async function loadMetrics() {
         const utilSeries = solverDays.map(d => utilByDay[d] ? +(utilByDay[d].sum / utilByDay[d].count).toFixed(1) : null);
         renderSolverUsageChart(solverDays, runsSeries, savesSeries);
         renderSolverUtilChart(solverDays, utilSeries);
+
+        // --- Origen del uso (online vs descargable) ---
+        const onlineN = bySource.online || 0;
+        const desktopN = bySource.desktop || 0;
+        setText('stat-solver-online', String(onlineN));
+        setText('stat-solver-desktop', String(desktopN));
+        renderSolverSourceChart(onlineN, desktopN);
+
+        // --- Países (de dónde usan el solver) ---
+        const countryEntries = Object.entries(byCountry).sort((a, b) => b[1] - a[1]);
+        const flag = (cc) => cc.length === 2 ? cc.replace(/./g, c => String.fromCodePoint(127397 + c.charCodeAt(0))) : '';
+        if (countryEntries.length > 0) {
+            setText('stat-solver-top-country', `${flag(countryEntries[0][0])} ${countryEntries[0][0]}`);
+            setText('stat-solver-countries-count', `${countryEntries.length} país(es)`);
+        } else {
+            setText('stat-solver-top-country', '—');
+        }
+        const topCountries = countryEntries.slice(0, 10);
+        renderSolverCountryChart(topCountries.map(([k]) => `${flag(k)} ${k}`), topCountries.map(([, v]) => v));
 
         // Render Chart
         const ctx = document.getElementById('metricsChart').getContext('2d');

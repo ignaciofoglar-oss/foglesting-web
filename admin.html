@@ -182,6 +182,42 @@
                         </div>
                     </div>
                 </div>
+
+                <header style="margin-top: 40px;">
+                    <h2>Origen y Geografía del Uso</h2>
+                </header>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Usos Online</h3>
+                        <div class="stat-value" id="stat-solver-online">0</div>
+                        <p class="stat-sub">corridas desde el navegador</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Usos Descargable</h3>
+                        <div class="stat-value" id="stat-solver-desktop">0</div>
+                        <p class="stat-sub">corridas desde el programa instalado</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>País Más Activo</h3>
+                        <div class="stat-value" id="stat-solver-top-country" style="font-size: 26px;">—</div>
+                        <p class="stat-sub" id="stat-solver-countries-count">—</p>
+                    </div>
+                </div>
+
+                <div class="charts-container" style="margin-top: 24px; display:grid; grid-template-columns: 1fr 2fr; gap:24px;">
+                    <div class="chart-card" style="background: var(--bg-panel); padding: 20px; border-radius: 12px;">
+                        <h3 style="margin-bottom: 20px; font-weight: 500;">Online vs. Descargable</h3>
+                        <div style="position: relative; height: 280px; width: 100%;">
+                            <canvas id="solverSourceChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card" style="background: var(--bg-panel); padding: 20px; border-radius: 12px;">
+                        <h3 style="margin-bottom: 20px; font-weight: 500;">Top países (para segmentar publicidad)</h3>
+                        <div style="position: relative; height: 280px; width: 100%;">
+                            <canvas id="solverCountryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- Messages View -->
@@ -315,7 +351,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="admin.js?v=6"></script>
+    <script type="module" src="admin.js?v=7"></script>
     <script>
         // Mobile hamburger menu logic
         (function() {

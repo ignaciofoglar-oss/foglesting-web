@@ -22,6 +22,13 @@ let currentRunDocRef = null;
 let currentRunStartTime = 0;
 let bestSolutionTime = 0;
 
+// Geolocalizacion aproximada (para saber desde donde usan el solver).
+let geoInfo = { country: '', city: '', region: '' };
+fetch('https://www.foglesting.com/api/geo')
+    .then(r => r.json())
+    .then(g => { if (g && typeof g === 'object') geoInfo = { country: g.country || '', city: g.city || '', region: g.region || '' }; })
+    .catch(() => {});
+
 let dxfFiles = [];           // Array of { name, buffer: Uint8Array }
 let lastResult = null;       // Last nesting result JSON
 let lastDxfBuffer = null;    // Last exported DXF
@@ -284,6 +291,9 @@ runBtn.addEventListener('click', async () => {
             population: parseInt(document.getElementById('population-input').value) || 0,
             optimization_type: document.getElementById('optimization-type').value || '',
             source: 'online',
+            country: geoInfo.country || '',
+            city: geoInfo.city || '',
+            region: geoInfo.region || '',
             best_solution_time_sec: 0,
             total_time_to_save_sec: 0,
             final_utilization: 0,
