@@ -176,10 +176,10 @@
       "download_url": "/downloads/foglesting_windows_v5_2_10.exe",
       "source_path": "/downloads/foglesting_windows_v5_2_10.exe",
       "public_listed": true,
-      "sha256": "3F2EF6AF47C4FF3C86C927238B8B3232D94800972D5C0D6F8899D4F1239006A3",
+      "sha256": "52A1D9DBCF1A4D4F815963CAD37D52DE502C800EE5C48A9FDF61E59787DBEE37",
       "size_bytes": 4516929,
       "created_at": "2026-06-08",
-      "notes": "Version publica. El REPORTE de nesting ahora se actualiza solo al reabrirlo cuando cambias el espesor, la densidad o el precio/kg, sin necesidad de correr el nesting de nuevo (estos valores solo afectan masa y costo, no el acomodo). Probado en vivo: con el mismo acomodo (iteracion 30), a 6500 $/kg costo piezas $1452, a 8000 $/kg $1787, y el espesor cambia el peso. Incluye lo de 5.2.9 (reporte bilingue)."
+      "notes": "Version publica. El REPORTE de nesting ahora se actualiza solo al reabrirlo cuando cambias el espesor, la densidad o el precio/kg, sin necesidad de correr el nesting de nuevo (estos valores solo afectan masa y costo, no el acomodo). Tambien corrige que el exe se identificaba internamente como 5.2.9 y por eso el cartel de actualizacion volvia a aparecer; ahora reporta 5.2.10. Probado en vivo: con el mismo acomodo (iteracion 30), a 6500 $/kg costo piezas $1452, a 8000 $/kg $1787, y el espesor cambia el peso. Incluye lo de 5.2.9 (reporte bilingue)."
     }
   ]
 }
