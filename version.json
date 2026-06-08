@@ -1,6 +1,6 @@
 {
-  "version": "5.2.8",
-  "name": "FOGLESTING V5.2.8",
-  "download_url": "https://foglesting.com/downloads/foglesting_windows_v5_2_8.exe",
-  "notes": "FOGLESTING V5.2.8: traducción completa ES/EN, botón Reporte de nesting, cotas del rectángulo que encierra las piezas, y mejoras de interfaz."
+  "version": "5.2.9",
+  "name": "FOGLESTING V5.2.9",
+  "download_url": "https://foglesting.com/downloads/foglesting_windows_v5_2_9.exe",
+  "notes": "FOGLESTING V5.2.9: el reporte de nesting ahora es bilingüe (ES/EN), además de traducción completa, cotas y mejoras de la 5.2.8."
 }
