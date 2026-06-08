@@ -132,6 +132,18 @@
       "size_bytes": 4487985,
       "created_at": "2026-06-08",
       "notes": "Candidata (no publica). Agrega telemetria de uso del programa descargable: al terminar una corrida (y al Guardar) envia metricas (aprovechamiento, chapas, piezas, tiempos, tipo de optimizacion) al panel, con el pais aproximado (geo por IP). Esto iguala las metricas del descargable con las del solver online y permite segmentar por origen y geografia. Probada en vivo: la corrida aparece en /admin con source=desktop y country=AR."
+    },
+    {
+      "version": "5.2.7",
+      "name": "FOGLESTING V5.2.7",
+      "file": "foglesting_windows_v5_2_7.exe",
+      "download_url": "/admin-releases/foglesting_windows_v5_2_7.exe",
+      "source_path": "/admin-releases/foglesting_windows_v5_2_7.exe",
+      "public_listed": false,
+      "sha256": "84E89D7A3FE5B62800E1C6E84E3293157DD79FA57A4AE4BEAD2768230D3139E4",
+      "size_bytes": 4491057,
+      "created_at": "2026-06-08",
+      "notes": "Candidata (no publica). Traduccion completa de la interfaz al ingles: ahora se traducen tambien los carteles que estaban fijos en espanol (Ancho/Alto chapa, Precio/Kg, Densidad, Espesor, Margen borde, titulos de secciones, vista previa, graficos y estados). El panel queda totalmente bilingue ES/EN. Probada en vivo: al pasar a English muestra Sheet width / Sheet height / Edge margin, etc."
     }
   ]
 }
