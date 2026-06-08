@@ -120,6 +120,18 @@
       "size_bytes": 4478420,
       "created_at": "2026-06-06",
       "notes": "Version publica. Incluye el fix de scroll del panel izquierdo (5.2.4) y ademas restaura la animacion del preview: vuelve a mostrar el acomodo de CADA iteracion en vivo, manteniendo que Guardar exporta el mejor resultado. Probado en vivo con 220 piezas / 3000 iteraciones: preview animando y botones Detener/Pausar/Guardar estables."
+    },
+    {
+      "version": "5.2.6",
+      "name": "FOGLESTING V5.2.6",
+      "file": "foglesting_windows_v5_2_6.exe",
+      "download_url": "/admin-releases/foglesting_windows_v5_2_6.exe",
+      "source_path": "/admin-releases/foglesting_windows_v5_2_6.exe",
+      "public_listed": false,
+      "sha256": "79585A6632F1C177A2C1FBCB7B383B3173C688CEF760B395007DA8BC691F5FAF",
+      "size_bytes": 4487985,
+      "created_at": "2026-06-08",
+      "notes": "Candidata (no publica). Agrega telemetria de uso del programa descargable: al terminar una corrida (y al Guardar) envia metricas (aprovechamiento, chapas, piezas, tiempos, tipo de optimizacion) al panel, con el pais aproximado (geo por IP). Esto iguala las metricas del descargable con las del solver online y permite segmentar por origen y geografia. Probada en vivo: la corrida aparece en /admin con source=desktop y country=AR."
     }
   ]
 }
