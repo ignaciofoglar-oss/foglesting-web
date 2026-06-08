@@ -155,7 +155,19 @@
       "sha256": "9D8260B62468A0F82392D58B3972F2799A505BB46F2A18A03865F75E1713EA93",
       "size_bytes": 4514038,
       "created_at": "2026-06-08",
-      "notes": "Candidata (no publica). Incluye: (1) traduccion completa ES/EN; (2) boton REPORTE con estetica Foglesting (detalle de piezas con cantidad/area/medidas/peso/costo, totales, resumen con aprovechamiento y scrap %, peso y costo, tiempos; copiar o guardar .txt); (3) cotas del rectangulo minimo que encierra todas las piezas (ancho y alto en mm con flechas) sobre el resultado final en el preview, que NO se exportan al guardar el DXF. Todo probado en vivo."
+      "notes": "Version publica. Traduccion completa ES/EN, boton REPORTE con estetica Foglesting (detalle de piezas, costos, aprovechamiento, scrap, tiempos; copiar/guardar .txt), cotas del rectangulo que encierra las piezas (no se exportan al DXF), botones reacomodados y cotas mas grandes/zoom."
+    },
+    {
+      "version": "5.2.9",
+      "name": "FOGLESTING V5.2.9",
+      "file": "foglesting_windows_v5_2_9.exe",
+      "download_url": "/admin-releases/foglesting_windows_v5_2_9.exe",
+      "source_path": "/admin-releases/foglesting_windows_v5_2_9.exe",
+      "public_listed": false,
+      "sha256": "B3957D6B15F892D1C03843B8AC7D6998A24C534AD3228A1F675D7C8504B1EEEE",
+      "size_bytes": 4516592,
+      "created_at": "2026-06-08",
+      "notes": "Candidata. Igual a 5.2.8 pero el REPORTE de nesting ahora es bilingue y se arma en el idioma actual al abrirlo (antes quedaba en espanol). Probado en vivo: en English muestra Nesting Report / Parts detail / Placed parts / etc."
     }
   ]
 }
