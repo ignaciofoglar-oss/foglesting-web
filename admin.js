@@ -49,6 +49,7 @@ const deleteOldMessagesBtn = document.getElementById('delete-old-messages-btn');
 const navItems = document.querySelectorAll('.nav-item');
 const views = document.querySelectorAll('.view');
 let currentAdminUid = null;
+let currentAdminEmail = null;
 
 const adminTranslations = {
     es: {
@@ -154,6 +155,7 @@ onAuthStateChanged(auth, async (user) => {
             }
 
             currentAdminUid = user.uid;
+            currentAdminEmail = user.email || '';
             loginScreen.classList.remove('active');
             dashboardScreen.classList.add('active');
             loadDashboardData();
@@ -207,6 +209,7 @@ navItems.forEach(item => {
         item.classList.add('active');
         const targetId = `view-${item.dataset.target}`;
         document.getElementById(targetId).classList.add('active');
+        if (item.dataset.target === 'audit') loadAudit();
     });
 });
 
@@ -225,6 +228,68 @@ function escapeHtmlDiag(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => (
         { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
     ));
+}
+
+// ============================================================
+//  AUDITORÍA — registro de acciones del panel
+// ============================================================
+async function logAudit(action, description, details = null) {
+    try {
+        await addDoc(collection(db, 'audit_log'), {
+            ts: serverTimestamp(),
+            dateISO: new Date().toISOString(),
+            action,
+            description,
+            admin: currentAdminEmail || '(desconocido)',
+            details: details || null,
+        });
+    } catch (e) {
+        // No bloquear la acción principal si falla el registro.
+        console.error('No se pudo registrar la auditoría:', e);
+    }
+}
+
+async function loadAudit() {
+    const container = document.getElementById('audit-container');
+    if (!container) return;
+    container.innerHTML = '<p class="loading">Cargando registro...</p>';
+    try {
+        const snap = await getDocs(query(collection(db, 'audit_log'), orderBy('ts', 'desc')));
+        const rows = [];
+        snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+        if (rows.length === 0) {
+            container.innerHTML = '<p class="loading">Todavía no hay acciones registradas.</p>';
+            return;
+        }
+        let html = '';
+        for (const r of rows) {
+            let when = '—';
+            if (r.ts && r.ts.toDate) when = r.ts.toDate().toLocaleString('es-AR');
+            else if (r.dateISO) when = new Date(r.dateISO).toLocaleString('es-AR');
+            html += `
+                <tr>
+                    <td style="white-space:nowrap;">${escapeHtmlDiag(when)}</td>
+                    <td><span class="audit-tag">${escapeHtmlDiag(r.action || '—')}</span></td>
+                    <td>${escapeHtmlDiag(r.description || '—')}</td>
+                    <td class="mono" style="font-size:12px;">${escapeHtmlDiag(r.admin || '—')}</td>
+                </tr>`;
+        }
+        container.innerHTML = `
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                <span class="release-muted">${rows.length} acción(es) registrada(s)</span>
+            </div>
+            <div style="overflow-x:auto;">
+            <table class="diag-table" style="width:100%;border-collapse:collapse;">
+                <thead><tr style="text-align:left;">
+                    <th>Fecha y hora</th><th>Acción</th><th>Descripción</th><th>Admin</th>
+                </tr></thead>
+                <tbody>${html}</tbody>
+            </table>
+            </div>`;
+    } catch (e) {
+        console.error('Error loading audit log:', e);
+        container.innerHTML = `<p class="error-msg">No se pudo cargar la auditoría: ${escapeHtmlDiag(e.message)}</p>`;
+    }
 }
 
 async function loadDiagnostics() {
@@ -346,6 +411,7 @@ async function deleteDiagnostic(id, filename) {
             alert('No se pudo borrar: ' + (e.error || resp.status));
             return;
         }
+        logAudit('Borrar diagnóstico', `Borró el diagnóstico DXF "${filename || id}".`);
         loadDiagnostics();
     } catch (e) {
         console.error('Error deleting diagnostic:', e);
@@ -367,6 +433,7 @@ async function deleteAllDiagnostics() {
             alert('No se pudo borrar: ' + (e.error || resp.status));
             return;
         }
+        logAudit('Borrar diagnósticos', 'Borró TODOS los DXF de diagnóstico.');
         loadDiagnostics();
     } catch (e) {
         console.error('Error deleting all diagnostics:', e);
@@ -389,6 +456,7 @@ async function deleteSelectedDiagnostics(ids) {
             alert('No se pudo borrar: ' + (e.error || resp.status));
             return;
         }
+        logAudit('Borrar diagnósticos', `Borró ${ids.length} DXF de diagnóstico seleccionado(s).`);
         loadDiagnostics();
     } catch (e) {
         console.error('Error deleting selected diagnostics:', e);
@@ -433,6 +501,7 @@ async function downloadDiagnostic(id, filename) {
 
 document.getElementById('diagnostics-refresh-btn')?.addEventListener('click', loadDiagnostics);
 document.getElementById('diagnostics-delete-all-btn')?.addEventListener('click', deleteAllDiagnostics);
+document.getElementById('audit-refresh-btn')?.addEventListener('click', loadAudit);
 
 // 5a. Load Metrics and draw Chart
 let metricsChartInstance = null;
@@ -734,6 +803,7 @@ async function loadMessages() {
                     e.target.disabled = true;
                     e.target.textContent = adminT('messages.deleting');
                     await deleteDoc(doc(db, 'messages', messageId));
+                    logAudit('Borrar mensaje', `Borró un mensaje de contacto (id ${messageId}).`);
                     loadMessages();
                 } catch (error) {
                     console.error('Error deleting message:', error);
@@ -766,6 +836,9 @@ async function deleteOldMessages(days) {
         await batch.commit();
     }
 
+    if (docsToDelete.length > 0) {
+        logAudit('Borrar mensajes', `Borró ${docsToDelete.length} mensaje(s) con más de ${days} días.`);
+    }
     return docsToDelete.length;
 }
 
@@ -879,6 +952,7 @@ async function loadUsers() {
                         role: nextRole,
                         isAdmin: nextRole === 'admin'
                     });
+                    logAudit('Cambiar rol', `Cambió el rol del usuario ${userId} a ${label}.`);
                     loadUsers();
                 } catch (error) {
                     console.error('Error updating role:', error);
@@ -894,10 +968,12 @@ async function loadUsers() {
                 const action = e.target.dataset.action;
                 if(confirm(action === 'revoke' ? '¿Seguro que quieres revocar esta licencia?' : '¿Otorgar licencia a este usuario?')) {
                     const status = action === 'grant' ? 'active' : 'inactive';
-                    await updateDoc(doc(db, 'users', e.target.dataset.id), { 
+                    await updateDoc(doc(db, 'users', e.target.dataset.id), {
                         'licenses.Sheet Metal Nesting.status': status,
                         hasActiveLicense: action === 'grant' // Fallback flag kept in sync just in case
                     });
+                    logAudit(action === 'grant' ? 'Otorgar licencia' : 'Revocar licencia',
+                        `${action === 'grant' ? 'Otorgó' : 'Revocó'} la licencia de Sheet Metal Nesting al usuario ${e.target.dataset.id}.`);
                     loadUsers(); // Reload
                 }
             });
@@ -911,6 +987,7 @@ async function loadUsers() {
                 if(confirm(`¿Enviar email oficial de Foglesting para restablecer la contraseña a: ${email}?`)) {
                     try {
                         await sendPasswordResetEmail(auth, email);
+                        logAudit('Reset de clave', `Envió email de restablecimiento de contraseña a ${email}.`);
                         alert(`Mail de restablecimiento enviado exitosamente a ${email}`);
                     } catch (error) {
                         console.error(error);
@@ -952,6 +1029,7 @@ async function loadUsers() {
                     if (!response.ok) {
                         throw new Error(payload.error || 'No se pudo borrar el usuario.');
                     }
+                    logAudit('Borrar usuario', `Borró el usuario ${email} del panel.`);
                     loadUsers();
                 } catch (error) {
                     console.error('Error deleting user:', error);
@@ -1122,6 +1200,7 @@ async function toggleReleaseVisibility(release, button) {
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+        logAudit('Visibilidad de versión', `${nextListed ? 'Mostró' : 'Quitó'} la versión ${release.version} ${nextListed ? 'en' : 'del'} historial público.`);
         alert('Visibilidad actualizada. Puede tardar unos minutos en reflejarse.');
         loadReleaseCandidates();
     } catch (error) {
@@ -1178,6 +1257,7 @@ async function promoteRelease(release, button) {
         if (!response.ok) {
             throw new Error(result.error || `HTTP ${response.status}`);
         }
+        logAudit('Publicar versión', `Hizo principal (pública) la versión ${version} (${file}).`);
         alert('Release publicado. Vercel puede tardar unos minutos en reflejar el cambio.');
         loadReleaseCandidates();
     } catch (error) {
