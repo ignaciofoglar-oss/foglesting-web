@@ -30,6 +30,19 @@ fetch('https://www.foglesting.com/api/geo')
     .catch(() => {});
 
 let dxfFiles = [];           // Array of { name, buffer: Uint8Array }
+
+// Mapea los nombres internos del solver (input_0, input_1, ...) al nombre real
+// del archivo. El indice es por ARCHIVO (no por la cantidad expandida) y una
+// pieza puede llamarse "input_2" o "input_2-3" (varios perfiles en un mismo DXF).
+// Usado tanto por el preview de entrada como por el resultado final, para que
+// los nombres sean consistentes en ambos.
+function mapPartName(raw) {
+    if (!raw) return raw;
+    const m = /^input_(\d+)(-\d+)?$/.exec(raw);
+    if (m && dxfFiles[Number(m[1])]) return dxfFiles[Number(m[1])].name + (m[2] || '');
+    return raw;
+}
+
 let lastResult = null;       // Last nesting result JSON
 let lastDxfBuffer = null;    // Last exported DXF
 let activeSheet = 0;         // Which sheet is displayed
@@ -72,19 +85,8 @@ function initWorker() {
             
             // Handle early input preview
             if (state.type === 'input_preview') {
-                // Map names back
-                let nameMap = {};
-                let fileIndex = 0;
-                dxfFiles.forEach(f => {
-                    const qty = f.quantity || 1;
-                    for (let q = 0; q < qty; q++) {
-                        nameMap[`input_${fileIndex}`] = f.name;
-                        fileIndex++;
-                    }
-                });
-                state.input_parts.forEach(p => {
-                    if (nameMap[p.name]) p.name = nameMap[p.name];
-                });
+                // Map names back (mismo criterio que el resultado final: por archivo + sufijo -M)
+                state.input_parts.forEach(p => { p.name = mapPartName(p.name); });
                 renderInputParts(state.input_parts);
                 inputPreviewPanel.style.display = 'block';
                 return;
@@ -360,17 +362,7 @@ function handleWorkerDone(msg) {
     }
 
     // Map internal names (input_0, input_1, ...) back to real filenames.
-    // IMPORTANTE: el indice es por ARCHIVO, no por la cantidad expandida.
-    // Una pieza puede llamarse "input_2" o "input_2-3" (varios perfiles en un DXF).
-    const nameMap = {};
-    dxfFiles.forEach((f, i) => { nameMap[`input_${i}`] = f.name; });
-    const mapPartName = (raw) => {
-        if (!raw) return raw;
-        const m = /^input_(\d+)(-\d+)?$/.exec(raw);
-        if (m && nameMap[`input_${m[1]}`]) return nameMap[`input_${m[1]}`] + (m[2] || '');
-        return raw;
-    };
-
+    // Usa el helper compartido mapPartName (indice por archivo + sufijo -M).
     if (stats.input_parts) {
         stats.input_parts.forEach(p => { p.name = mapPartName(p.name); });
     }
