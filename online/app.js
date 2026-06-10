@@ -66,6 +66,79 @@ const loaderText = document.getElementById('loader-text');
 const loaderStats = document.getElementById('loader-stats');
 const inputPreviewPanel = document.getElementById('input-preview-panel');
 
+// ====================================================
+// i18n para los textos DINÁMICOS que genera este script.
+// Los textos estáticos del HTML los maneja i18n.js (data-i18n);
+// estos son los que se arman en JS (estados del motor, avisos, etc.).
+// ====================================================
+function currentLang() {
+    return localStorage.getItem('foglesting_lang') === 'es' ? 'es' : 'en'; // default en, igual que i18n.js
+}
+const DYN = {
+    wasmReady:      { es: 'Motor WebAssembly listo ✓',                  en: 'WebAssembly engine ready ✓' },
+    engineError:    { es: 'Error en el motor: ',                        en: 'Engine error: ' },
+    errorPrefix:    { es: 'Error: ',                                    en: 'Error: ' },
+    helpDefault:    { es: 'Ayuda de configuración.',                    en: 'Settings help.' },
+    qtyShort:       { es: 'Cant:',                                      en: 'Qty:' },
+    evolving:       { es: 'Evolucionando layouts...',                   en: 'Evolving layouts...' },
+    initEngine:     { es: 'Inicializando motor genético...',            en: 'Initializing genetic engine...' },
+    stoppedCanDl:   { es: 'Motor detenido. Podés descargar el mejor acomodo disponible.', en: 'Engine stopped. You can download the best available layout.' },
+    stoppedNoDl:    { es: 'Motor detenido. Descarga DXF no disponible.', en: 'Engine stopped. DXF download not available.' },
+    sheet:          { es: 'Chapa',                                      en: 'Sheet' },
+    dxfUnavailable: { es: 'El DXF de salida no está disponible.',       en: 'The output DXF is not available.' },
+    tagBest:        { es: 'nuevo mejor',                                en: 'new best' },
+    tagCalc:        { es: 'calculando',                                 en: 'calculating' },
+};
+function t(key) { const e = DYN[key]; return e ? (e[currentLang()] || e.en) : key; }
+function loaderStatsText(iteration, tag, util) {
+    return currentLang() === 'es'
+        ? `Iteración ${iteration} - ${tag} - Mejor uso: ${util}%`
+        : `Iteration ${iteration} - ${tag} - Best use: ${util}%`;
+}
+function dimsText(sw, sh) {
+    if (!(sw > 0 && sh > 0)) return '';
+    const wh = `${Math.round(sw)} × ${Math.round(sh)} mm`;
+    return currentLang() === 'es' ? ` de ${wh}` : ` of ${wh}`;
+}
+function warnNonePlaced(dims) {
+    return currentLang() === 'es'
+        ? `⚠️ <strong>Ninguna pieza entró en la chapa${dims}.</strong> ` +
+          `Probablemente son más grandes que la chapa. Agrandá el tamaño de la chapa, ` +
+          `o revisá las unidades del DXF (mm vs. pulgadas).`
+        : `⚠️ <strong>No part fit on the sheet${dims}.</strong> ` +
+          `They are probably larger than the sheet. Increase the sheet size, ` +
+          `or check the DXF units (mm vs. inches).`;
+}
+function warnSomePlaced(unplaced, placed, dims) {
+    return currentLang() === 'es'
+        ? `⚠️ <strong>${unplaced} pieza(s) no entraron en la chapa${dims}.</strong> ` +
+          `Se acomodaron ${placed}. Para las que faltan, agrandá la chapa o revisá las unidades del DXF.`
+        : `⚠️ <strong>${unplaced} part(s) did not fit on the sheet${dims}.</strong> ` +
+          `${placed} were placed. For the rest, increase the sheet size or check the DXF units.`;
+}
+
+let lastInputParts = null;   // ultimas piezas mostradas (para re-render al cambiar idioma)
+
+// Re-renderiza los textos dinamicos ya visibles cuando se cambia el idioma.
+document.addEventListener('foglesting:i18n-applied', () => {
+    if (statusDot.classList.contains('ready')) statusText.textContent = t('wasmReady');
+    const help = document.getElementById('settings-help');
+    if (help && !help.classList.contains('active')) help.textContent = t('helpDefault');
+    // Placeholders (i18n.js solo traduce innerHTML de [data-i18n], no placeholders)
+    const swEl = document.getElementById('sheet-width');
+    const shEl = document.getElementById('sheet-height');
+    if (swEl) swEl.placeholder = currentLang() === 'es' ? 'Ancho' : 'Width';
+    if (shEl) shEl.placeholder = currentLang() === 'es' ? 'Alto' : 'Height';
+    if (dxfFiles.length) renderFileList();
+    if (lastInputParts && inputPreviewPanel.style.display !== 'none') renderInputParts(lastInputParts);
+    if (lastResult) {
+        updateResultStats(lastResult);
+        const n = lastResult.sheets > 0 ? lastResult.sheets
+                 : countSheets(lastResult.placements || []);
+        if (n > 0) { renderSheetTabs(n); drawNestingResult(lastResult, activeSheet || 0); }
+    }
+});
+
 // ---- Web Worker Init ----
 function initWorker() {
     if (nestingWorker) nestingWorker.terminate();
@@ -78,7 +151,7 @@ function initWorker() {
             statusDot.classList.remove('loading');
             statusDot.classList.add('ready');
             wasmStatus.classList.add('ready');
-            statusText.textContent = 'Motor WebAssembly listo ✓';
+            statusText.textContent = t('wasmReady');
             if (dxfFiles.length > 0) runBtn.disabled = false;
         } else if (msg.type === 'preview') {
             const state = JSON.parse(msg.data);
@@ -87,6 +160,7 @@ function initWorker() {
             if (state.type === 'input_preview') {
                 // Map names back (mismo criterio que el resultado final: por archivo + sufijo -M)
                 state.input_parts.forEach(p => { p.name = mapPartName(p.name); });
+                lastInputParts = state.input_parts;
                 renderInputParts(state.input_parts);
                 inputPreviewPanel.style.display = 'block';
                 return;
@@ -96,8 +170,8 @@ function initWorker() {
                 bestSolutionTime = (Date.now() - currentRunStartTime) / 1000;
             }
 
-            const tag = state.is_best ? 'nuevo mejor' : 'calculando';
-            loaderStats.textContent = `Iteración ${state.iteration} - ${tag} - Mejor uso: ${state.utilization.toFixed(1)}%`;
+            const tag = state.is_best ? t('tagBest') : t('tagCalc');
+            loaderStats.textContent = loaderStatsText(state.iteration, tag, state.utilization.toFixed(1));
             updateResultStats(state);
             if (state.placements && state.placements.length > 0) {
                 // Show only best-layout previews. The worker sends geometry
@@ -123,7 +197,7 @@ function initWorker() {
             handleWorkerDone(msg);
         } else if (msg.type === 'error') {
             console.error("Worker error:", msg.data);
-            alert("Error en el motor: " + msg.data);
+            alert(t('engineError') + msg.data);
             resetRunButton();
         }
     };
@@ -133,17 +207,16 @@ initWorker();
 function initSettingsHelp() {
     const help = document.getElementById('settings-help');
     if (!help) return;
-    const defaultText = help.textContent.trim() || 'Ayuda de configuración.';
     document.body.addEventListener('mouseover', (e) => {
         if (e.target.classList && e.target.classList.contains('info-tip')) {
-            help.textContent = e.target.dataset.tip || defaultText;
+            help.textContent = e.target.dataset.tip || t('helpDefault');
             help.classList.add('active');
         }
     });
 
     document.body.addEventListener('mouseout', (e) => {
         if (e.target.classList && e.target.classList.contains('info-tip')) {
-            help.textContent = defaultText;
+            help.textContent = t('helpDefault');
             help.classList.remove('active');
         }
     });
@@ -238,7 +311,7 @@ function renderFileList() {
         controlsEl.className = 'file-controls';
         
         const lbl = document.createElement('label');
-        lbl.textContent = 'Cant:';
+        lbl.textContent = t('qtyShort');
         controlsEl.appendChild(lbl);
 
         const qtyInput = document.createElement('input');
@@ -271,8 +344,8 @@ runBtn.addEventListener('click', async () => {
     runBtn.style.display = 'none';
     stopBtn.style.display = 'block';
     loader.style.display = 'block';
-    loaderText.textContent = 'Evolucionando layouts...';
-    loaderStats.textContent = 'Inicializando motor genético...';
+    loaderText.textContent = t('evolving');
+    loaderStats.textContent = t('initEngine');
     resultsPanel.style.display = 'block';
     updateResultStats({ placed: 0, unplaced: dxfFiles.length, sheets: 0, utilization: 0 });
     inputPreviewPanel.style.display = 'none';
@@ -332,9 +405,7 @@ runBtn.addEventListener('click', async () => {
 
 stopBtn.addEventListener('click', () => {
     solverRunning = false;
-    loaderText.textContent = lastResult
-        ? 'Motor detenido. Podés descargar el mejor acomodo disponible.'
-        : 'Motor detenido. Descarga DXF no disponible.';
+    loaderText.textContent = lastResult ? t('stoppedCanDl') : t('stoppedNoDl');
     loader.style.display = 'none';
     stopBtn.style.display = 'none';
     runBtn.style.display = 'block';
@@ -357,7 +428,7 @@ function handleWorkerDone(msg) {
     const stats = JSON.parse(msg.data);
     
     if (stats.error) {
-        alert("Error: " + stats.error);
+        alert(t('errorPrefix') + stats.error);
         return;
     }
 
@@ -365,6 +436,7 @@ function handleWorkerDone(msg) {
     // Usa el helper compartido mapPartName (indice por archivo + sufijo -M).
     if (stats.input_parts) {
         stats.input_parts.forEach(p => { p.name = mapPartName(p.name); });
+        lastInputParts = stats.input_parts;
     }
     if (stats.placements) {
         stats.placements.forEach(p => { p.name = mapPartName(p.name); });
@@ -447,16 +519,13 @@ function updateResultStats(stats) {
     } else if (warn) {
         const sw = Number(stats.sheet_width ?? 0);
         const sh = Number(stats.sheet_height ?? 0);
-        const dims = (sw > 0 && sh > 0) ? ` de ${Math.round(sw)} × ${Math.round(sh)} mm` : '';
+        const dims = dimsText(sw, sh);
         if (unplaced > 0 && placed === 0) {
             warn.style.display = 'block';
-            warn.innerHTML = `⚠️ <strong>Ninguna pieza entró en la chapa${dims}.</strong> ` +
-                `Probablemente son más grandes que la chapa. Agrandá el tamaño de la chapa, ` +
-                `o revisá las unidades del DXF (mm vs. pulgadas).`;
+            warn.innerHTML = warnNonePlaced(dims);
         } else if (unplaced > 0) {
             warn.style.display = 'block';
-            warn.innerHTML = `⚠️ <strong>${unplaced} pieza(s) no entraron en la chapa${dims}.</strong> ` +
-                `Se acomodaron ${placed}. Para las que faltan, agrandá la chapa o revisá las unidades del DXF.`;
+            warn.innerHTML = warnSomePlaced(unplaced, placed, dims);
         } else {
             warn.style.display = 'none';
             warn.innerHTML = '';
@@ -480,7 +549,7 @@ function renderSheetTabs(count) {
     for (let i = 0; i < count; i++) {
         const btn = document.createElement('button');
         btn.className = `sheet-tab ${i === 0 ? 'active' : ''}`;
-        btn.textContent = `Chapa ${i + 1}`;
+        btn.textContent = `${t('sheet')} ${i + 1}`;
         btn.onclick = () => {
             document.querySelectorAll('.sheet-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
@@ -614,7 +683,7 @@ function renderInputParts(parts) {
         
         const info = document.createElement('div');
         info.innerHTML = `<div class="part-name" title="${part.name}">${part.name}</div>
-                          <div class="part-dims">Cant: ${part.aggregatedQuantity}</div>
+                          <div class="part-dims">${t('qtyShort')} ${part.aggregatedQuantity}</div>
                           <div class="part-dims" style="color:rgba(255,223,184,0.35); font-weight:normal;">${part.width.toFixed(1)} x ${part.height.toFixed(1)} mm</div>`;
 
         item.appendChild(canvas);
@@ -780,7 +849,7 @@ downloadBtn.addEventListener('click', () => {
         (lastDxfBuffer && lastDxfBuffer.byteLength > 0 ? lastDxfBuffer : null);
 
     if (!dxfBuffer || dxfBuffer.byteLength === 0) {
-        alert("El DXF de salida no está disponible.");
+        alert(t('dxfUnavailable'));
         return;
     }
 
