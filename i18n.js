@@ -16,7 +16,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 el.innerHTML = translations[lang][key];
             }
         });
-        
+
+        // Tooltips (atributo title) y placeholders traducibles.
+        document.querySelectorAll('[data-i18n-title]').forEach(el => {
+            const key = el.getAttribute('data-i18n-title');
+            if (translations[lang][key]) el.title = translations[lang][key];
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (translations[lang][key]) el.placeholder = translations[lang][key];
+        });
+
         // Update document lang attribute
         document.documentElement.lang = lang;
         

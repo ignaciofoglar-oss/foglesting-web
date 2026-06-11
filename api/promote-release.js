@@ -1,6 +1,7 @@
 import { getGithubFile, putGithubFile, requireReleaseAuth } from './github-content.js';
 
-const DEFAULT_PUBLIC_BASE_URL = 'https://foglesting-web.vercel.app';
+// Dominio publico de las descargas (el mismo que usamos al publicar a mano).
+const DEFAULT_PUBLIC_BASE_URL = 'https://foglesting.com';
 
 function json(res, status, payload) {
     res.status(status).json(payload);

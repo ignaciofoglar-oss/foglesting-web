@@ -259,6 +259,17 @@ function init() {
             textSpan.innerHTML = `DESCARGAR <span class="fire-text">FOGL</span><span class="forest-text">ESTING</span> ${label}`;
         }
         downloadBtn.setAttribute('aria-label', `Descargar Foglesting ${label}`);
+
+        // Checksum de integridad (ya esta en releases.json) para usuarios tecnicos.
+        const shaEl = document.getElementById('download-sha');
+        if (shaEl) {
+            if (activeRelease.sha256) {
+                shaEl.textContent = 'SHA256: ' + String(activeRelease.sha256).toUpperCase();
+                shaEl.style.display = 'block';
+            } else {
+                shaEl.style.display = 'none';
+            }
+        }
     }
 
     document.addEventListener('foglesting:i18n-applied', () => {

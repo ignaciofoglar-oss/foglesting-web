@@ -176,7 +176,7 @@
 
     <!-- Header -->
     <div class="editor-header">
-        <a href="./" class="back-home" title="Volver" style="display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,223,184,0.7); text-decoration:none; flex-shrink:0; transition:all 0.15s; border:1px solid rgba(255,255,255,0.05);" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff';this.style.borderColor='rgba(255,255,255,0.2)';" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='rgba(255,223,184,0.7)';this.style.borderColor='rgba(255,255,255,0.05)';">
+        <a href="./" class="back-home" title="Volver" data-i18n-title="txt_169" style="display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,223,184,0.7); text-decoration:none; flex-shrink:0; transition:all 0.15s; border:1px solid rgba(255,255,255,0.05);" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff';this.style.borderColor='rgba(255,255,255,0.2)';" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='rgba(255,223,184,0.7)';this.style.borderColor='rgba(255,255,255,0.05)';">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
@@ -184,33 +184,34 @@
         </a>
         <h1><span class="fire-text">Fogl</span><span class="forest-text">esting</span>
             <span class="accent" style="font-size:.7em;">Editor DXF</span></h1>
-        <div style="flex:1;display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap;">
-            <label class="btn-tool primary" for="file-input">
+        <div style="flex:1;display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap;align-items:center;">
+            <label class="btn-tool primary" for="file-input" data-i18n="txt_140">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 Abrir DXF
             </label>
             <input type="file" id="file-input" accept=".dxf" multiple hidden>
-            <button class="btn-tool success" id="export-btn" disabled>
+            <button class="btn-tool success" id="export-btn" disabled data-i18n="txt_141">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Exportar DXF
             </button>
+            <button aria-label="Cambiar idioma" class="lang-btn" id="lang-toggle" style="margin-left:6px;">EN</button>
         </div>
     </div>
 
     <!-- Tool ribbon -->
     <div class="toolbar">
-        <button class="btn-tool active" data-tool="select" title="Seleccionar (S)">👆 Sel.</button>
-        <button class="btn-tool" data-tool="pan"    title="Pan / mover vista (P)">🖐 Pan</button>
+        <button class="btn-tool active" data-tool="select" title="Seleccionar (S)" data-i18n-title="txt_143">👆 Sel.</button>
+        <button class="btn-tool" data-tool="pan"    title="Pan / mover vista (P)" data-i18n-title="txt_145">🖐 Pan</button>
         <div class="tb-sep"></div>
-        <button class="btn-tool" data-tool="move"   title="Mover selección (M)">↔ Mover</button>
-        <button class="btn-tool" data-tool="line"   title="Línea (L)">📏 Línea</button>
-        <button class="btn-tool" data-tool="circle" title="Círculo (C)">⭕ Círculo</button>
-        <button class="btn-tool" data-tool="text"    title="Texto (T)">🔤 Texto</button>
-        <button class="btn-tool" data-tool="measure" title="Medir distancia (R)">📐 Medir</button>
+        <button class="btn-tool" data-tool="move"   title="Mover selección (M)" data-i18n="txt_146" data-i18n-title="txt_147">↔ Mover</button>
+        <button class="btn-tool" data-tool="line"   title="Línea (L)" data-i18n="txt_148" data-i18n-title="txt_149">📏 Línea</button>
+        <button class="btn-tool" data-tool="circle" title="Círculo (C)" data-i18n="txt_150" data-i18n-title="txt_151">⭕ Círculo</button>
+        <button class="btn-tool" data-tool="text"    title="Texto (T)" data-i18n="txt_152" data-i18n-title="txt_153">🔤 Texto</button>
+        <button class="btn-tool" data-tool="measure" title="Medir distancia (R)" data-i18n="txt_154" data-i18n-title="txt_155">📐 Medir</button>
 
         <!-- Text tool options (shown only when text tool is active) -->
         <div class="text-opts" id="text-opts">
-            <label>Fuente</label>
+            <label data-i18n="txt_156">Fuente</label>
             <select id="txt-font">
                 <option value="DM Sans">DM Sans</option>
                 <option value="Arial">Arial</option>
@@ -220,15 +221,15 @@
                 <option value="Times New Roman">Times New Roman</option>
                 <option value="Impact">Impact</option>
             </select>
-            <label>Tam.</label>
+            <label data-i18n="txt_157">Tam.</label>
             <input type="number" id="txt-size" value="20" min="4" max="500" step="1">
         </div>
 
         <div class="tb-sep"></div>
-        <button class="btn-tool danger" id="delete-btn" title="Eliminar selección (Supr)">🗑 Eliminar</button>
-        <button class="btn-tool" id="clear-measure-btn" title="Limpiar mediciones" style="display:none;">✕ Mediciones</button>
+        <button class="btn-tool danger" id="delete-btn" title="Eliminar selección (Supr)" data-i18n="txt_158" data-i18n-title="txt_159">🗑 Eliminar</button>
+        <button class="btn-tool" id="clear-measure-btn" title="Limpiar mediciones" style="display:none;" data-i18n="txt_160" data-i18n-title="txt_161">✕ Mediciones</button>
         <div class="tb-sep"></div>
-        <button class="btn-tool" id="fit-btn" title="Ajustar vista (F)">⊡ Fit</button>
+        <button class="btn-tool" id="fit-btn" title="Ajustar vista (F)" data-i18n-title="txt_163">⊡ Fit</button>
         <span id="sel-info"></span>
     </div>
 
@@ -241,19 +242,19 @@
 
         <!-- Text input popup -->
         <div id="text-input-popup">
-            <input type="text" id="text-content" placeholder="Escribí el texto..." autocomplete="off">
-            <button id="text-popup-ok">Colocar texto</button>
+            <input type="text" id="text-content" placeholder="Escribí el texto..." autocomplete="off" data-i18n-placeholder="txt_164">
+            <button id="text-popup-ok" data-i18n="txt_165">Colocar texto</button>
         </div>
 
         <div class="drop-overlay" id="drop-overlay">
             <div class="drop-overlay-icon">📂</div>
-            <div>Arrastrá archivos <strong>.dxf</strong> aquí</div>
-            <div style="font-size:.85rem;opacity:.55;">o usá el botón <strong>Abrir DXF</strong></div>
+            <div data-i18n="txt_166">Arrastrá archivos <strong>.dxf</strong> aquí</div>
+            <div style="font-size:.85rem;opacity:.55;" data-i18n="txt_167">o usá el botón <strong>Abrir DXF</strong></div>
         </div>
         <div class="coord-readout" id="coord-readout">X: 0.00  Y: 0.00</div>
         <!-- Measure bubble (floats near second click) -->
         <div class="measure-bubble" id="measure-bubble" style="display:none;"></div>
-        <div class="hint-bar">
+        <div class="hint-bar" data-i18n="txt_168">
             Rueda: zoom · Click medio / 🖐: pan · <kbd>F</kbd> fit · <kbd>S</kbd>/<kbd>L</kbd>/<kbd>C</kbd>/<kbd>T</kbd>/<kbd>M</kbd>/<kbd>R</kbd> herramientas · <kbd>Supr</kbd> borrar · <kbd>Esc</kbd> cancelar
         </div>
     </div>
@@ -261,12 +262,20 @@
 </div><!-- editor-wrap -->
 </div><!-- container -->
 
-<script src="../translations.js"></script>
-<script src="../i18n.js"></script>
+<script src="../translations.js?v=editor-i18n-20260609"></script>
+<script src="../i18n.js?v=editor-i18n-20260609"></script>
 <script>
 // ================================================================
 //  FOGLESTING DXF EDITOR  —  Pure Vanilla JS, zero dependencies
 // ================================================================
+
+// ── i18n de textos dinámicos (los estáticos van por data-i18n) ──
+function edLang() { return localStorage.getItem('foglesting_lang') === 'es' ? 'es' : 'en'; }
+function edT(es, en) { return edLang() === 'es' ? es : en; }
+document.addEventListener('foglesting:i18n-applied', () => {
+    document.title = edT('Foglesting — Editor DXF', 'Foglesting — DXF Editor');
+    if (typeof updateSelInfo === 'function') updateSelInfo();
+});
 
 // ── Robust DXF Parser ───────────────────────────────────────────
 function parseDXF(text) {
@@ -458,7 +467,8 @@ function parseDXF(text) {
     for (const r of ranges) parseRange(r.start, r.end);
 
     if (out.length === 0) {
-        throw new Error('No se encontraron entidades legibles. El DXF puede estar vacío o en un formato no compatible.');
+        throw new Error(edT('No se encontraron entidades legibles. El DXF puede estar vacío o en un formato no compatible.',
+                            'No readable entities found. The DXF may be empty or in an unsupported format.'));
     }
     return out;
 }
@@ -1193,7 +1203,7 @@ function entityInRect(ent, rx1,ry1,rx2,ry2) {
 
 function updateSelInfo() {
     document.getElementById('sel-info').textContent =
-        selectedSet.size>0 ? `${selectedSet.size} seleccionada(s)` : '';
+        selectedSet.size>0 ? `${selectedSet.size} ${edT('seleccionada(s)','selected')}` : '';
 }
 
 function setDirty() { document.getElementById('export-btn').disabled=false; }
@@ -1220,7 +1230,7 @@ function openFiles(files) {
             pending--;
             if(pending===0){ buildTabs(); fitToScreen(); setDirty(); }
         };
-        reader.onerror=()=>{ alert('No se pudo leer: '+file.name); pending--; };
+        reader.onerror=()=>{ alert(edT('No se pudo leer: ','Could not read: ')+file.name); pending--; };
         reader.readAsText(file);
     });
 }

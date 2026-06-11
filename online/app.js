@@ -121,6 +121,9 @@ let lastInputParts = null;   // ultimas piezas mostradas (para re-render al camb
 
 // Re-renderiza los textos dinamicos ya visibles cuando se cambia el idioma.
 document.addEventListener('foglesting:i18n-applied', () => {
+    document.title = currentLang() === 'es'
+        ? 'Foglesting Online | Nesting de Chapa en tu Navegador'
+        : 'Foglesting Online | Sheet Metal Nesting in your Browser';
     if (statusDot.classList.contains('ready')) statusText.textContent = t('wasmReady');
     const help = document.getElementById('settings-help');
     if (help && !help.classList.contains('active')) help.textContent = t('helpDefault');

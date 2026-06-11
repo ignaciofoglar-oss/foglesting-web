@@ -16,10 +16,17 @@ import {
     deleteDoc,
     addDoc, 
     updateDoc, 
-    query, 
-    orderBy, 
+    query,
+    orderBy,
+    limit,
+    where,
+    startAfter,
+    getCountFromServer,
+    getAggregateFromServer,
+    sum,
+    average,
     writeBatch,
-    serverTimestamp 
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Firebase Configuration from User
@@ -249,43 +256,84 @@ async function logAudit(action, description, details = null) {
     }
 }
 
-async function loadAudit() {
+// Paginacion de la auditoria: trae de a 300 (el registro crece para siempre y
+// leerlo completo se vuelve lento y caro en lecturas de Firestore).
+const AUDIT_PAGE = 300;
+let auditLastDoc = null;
+let auditShown = 0;
+
+function auditRowsHtml(rows) {
+    let html = '';
+    for (const r of rows) {
+        let when = '—';
+        if (r.ts && r.ts.toDate) when = r.ts.toDate().toLocaleString('es-AR');
+        else if (r.dateISO) when = new Date(r.dateISO).toLocaleString('es-AR');
+        html += `
+            <tr>
+                <td style="white-space:nowrap;">${escapeHtmlDiag(when)}</td>
+                <td><span class="audit-tag">${escapeHtmlDiag(r.action || '—')}</span></td>
+                <td>${escapeHtmlDiag(r.description || '—')}</td>
+                <td class="mono" style="font-size:12px;">${escapeHtmlDiag(r.admin || '—')}</td>
+            </tr>`;
+    }
+    return html;
+}
+
+async function loadAudit(append = false) {
     const container = document.getElementById('audit-container');
     if (!container) return;
-    container.innerHTML = '<p class="loading">Cargando registro...</p>';
+    if (!append) {
+        container.innerHTML = '<p class="loading">Cargando registro...</p>';
+        auditLastDoc = null;
+        auditShown = 0;
+    }
     try {
-        const snap = await getDocs(query(collection(db, 'audit_log'), orderBy('ts', 'desc')));
+        const base = collection(db, 'audit_log');
+        const q = (append && auditLastDoc)
+            ? query(base, orderBy('ts', 'desc'), startAfter(auditLastDoc), limit(AUDIT_PAGE))
+            : query(base, orderBy('ts', 'desc'), limit(AUDIT_PAGE));
+        const snap = await getDocs(q);
         const rows = [];
         snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
-        if (rows.length === 0) {
+        if (snap.docs.length > 0) auditLastDoc = snap.docs[snap.docs.length - 1];
+        const hasMore = rows.length === AUDIT_PAGE;
+
+        if (!append && rows.length === 0) {
             container.innerHTML = '<p class="loading">Todavía no hay acciones registradas.</p>';
             return;
         }
-        let html = '';
-        for (const r of rows) {
-            let when = '—';
-            if (r.ts && r.ts.toDate) when = r.ts.toDate().toLocaleString('es-AR');
-            else if (r.dateISO) when = new Date(r.dateISO).toLocaleString('es-AR');
-            html += `
-                <tr>
-                    <td style="white-space:nowrap;">${escapeHtmlDiag(when)}</td>
-                    <td><span class="audit-tag">${escapeHtmlDiag(r.action || '—')}</span></td>
-                    <td>${escapeHtmlDiag(r.description || '—')}</td>
-                    <td class="mono" style="font-size:12px;">${escapeHtmlDiag(r.admin || '—')}</td>
-                </tr>`;
+
+        auditShown += rows.length;
+
+        if (!append) {
+            container.innerHTML = `
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                    <span class="release-muted" id="audit-count">${auditShown} acción(es) mostrada(s)</span>
+                </div>
+                <div style="overflow-x:auto;">
+                <table class="diag-table" style="width:100%;border-collapse:collapse;">
+                    <thead><tr style="text-align:left;">
+                        <th>Fecha y hora</th><th>Acción</th><th>Descripción</th><th>Admin</th>
+                    </tr></thead>
+                    <tbody id="audit-tbody">${auditRowsHtml(rows)}</tbody>
+                </table>
+                </div>
+                <div style="margin-top:14px;text-align:center;">
+                    <button class="btn-secondary" id="audit-more-btn" style="display:${hasMore ? 'inline-block' : 'none'};">Cargar ${AUDIT_PAGE} más</button>
+                </div>`;
+            const moreBtn = document.getElementById('audit-more-btn');
+            if (moreBtn) moreBtn.addEventListener('click', () => {
+                moreBtn.disabled = true;
+                loadAudit(true).finally(() => { moreBtn.disabled = false; });
+            });
+        } else {
+            const tbody = document.getElementById('audit-tbody');
+            if (tbody) tbody.insertAdjacentHTML('beforeend', auditRowsHtml(rows));
+            const count = document.getElementById('audit-count');
+            if (count) count.textContent = `${auditShown} acción(es) mostrada(s)`;
+            const moreBtn = document.getElementById('audit-more-btn');
+            if (moreBtn) moreBtn.style.display = hasMore ? 'inline-block' : 'none';
         }
-        container.innerHTML = `
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-                <span class="release-muted">${rows.length} acción(es) registrada(s)</span>
-            </div>
-            <div style="overflow-x:auto;">
-            <table class="diag-table" style="width:100%;border-collapse:collapse;">
-                <thead><tr style="text-align:left;">
-                    <th>Fecha y hora</th><th>Acción</th><th>Descripción</th><th>Admin</th>
-                </tr></thead>
-                <tbody>${html}</tbody>
-            </table>
-            </div>`;
     } catch (e) {
         console.error('Error loading audit log:', e);
         container.innerHTML = `<p class="error-msg">No se pudo cargar la auditoría: ${escapeHtmlDiag(e.message)}</p>`;
@@ -645,7 +693,54 @@ async function loadMetrics() {
         document.getElementById('stat-time').textContent = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 
         // Load Solver Metrics
-        const solverSnapshot = await getDocs(query(collection(db, 'solver_runs')));
+        // ESCALA: antes esto descargaba la coleccion solver_runs COMPLETA en cada
+        // visita (lento y caro a medida que crece). Ahora:
+        //  - Totales exactos con consultas de agregacion (count/sum/average) que se
+        //    resuelven en el servidor sin descargar documentos.
+        //  - Una ventana con las ultimas 1000 corridas para los graficos y desgloses
+        //    (por dia, pais, tamano de chapa, tipo de optimizacion).
+        const runsCol = collection(db, 'solver_runs');
+
+        const recentDocs = [];
+        try {
+            const recentSnap = await getDocs(query(runsCol, orderBy('timestamp', 'desc'), limit(1000)));
+            recentSnap.forEach(d => recentDocs.push(d.data()));
+        } catch (e) {
+            console.error('No se pudo leer la ventana reciente de solver_runs:', e);
+        }
+
+        // Totales globales por agregacion; si algo falla (p.ej. reglas), caemos a la ventana.
+        let agg = null;
+        try {
+            const [cAll, cDesktop, cSaved, sDxf, aBest, aSave, aUtil, aSheets, cWithResult, sUnplaced, cUnplacedPos] = await Promise.all([
+                getCountFromServer(runsCol),
+                getCountFromServer(query(runsCol, where('source', '==', 'desktop'))),
+                getCountFromServer(query(runsCol, where('saved', '==', true))),
+                getAggregateFromServer(runsCol, { v: sum('dxf_count') }),
+                getAggregateFromServer(query(runsCol, where('best_solution_time_sec', '>', 0)), { v: average('best_solution_time_sec') }),
+                getAggregateFromServer(query(runsCol, where('total_time_to_save_sec', '>', 0)), { v: average('total_time_to_save_sec') }),
+                getAggregateFromServer(query(runsCol, where('final_utilization', '>', 0)), { v: average('final_utilization') }),
+                getAggregateFromServer(query(runsCol, where('sheets_used', '>', 0)), { v: average('sheets_used') }),
+                getCountFromServer(query(runsCol, where('unplaced_count', '>=', 0))),
+                getAggregateFromServer(query(runsCol, where('unplaced_count', '>=', 0)), { v: sum('unplaced_count') }),
+                getCountFromServer(query(runsCol, where('unplaced_count', '>', 0))),
+            ]);
+            agg = {
+                total: cAll.data().count,
+                desktop: cDesktop.data().count,
+                saved: cSaved.data().count,
+                dxfs: sDxf.data().v || 0,
+                avgBest: aBest.data().v || 0,
+                avgSave: aSave.data().v || 0,
+                avgUtil: aUtil.data().v || 0,
+                avgSheets: aSheets.data().v || 0,
+                withResult: cWithResult.data().count,
+                unplacedSum: sUnplaced.data().v || 0,
+                withUnplaced: cUnplacedPos.data().count,
+            };
+        } catch (e) {
+            console.error('Agregacion en servidor no disponible, usando la ventana reciente:', e);
+        }
         let totalSolverUses = 0;
         let totalDxfs = 0;
         let bestTimeSum = 0;
@@ -664,8 +759,7 @@ async function loadMetrics() {
         const bySource = { online: 0, desktop: 0 };
         const byCountry = {};
 
-        solverSnapshot.forEach(docSnap => {
-            const data = docSnap.data();
+        recentDocs.forEach(data => {
             totalSolverUses++;
             totalDxfs += (data.dxf_count || 0);
             // Origen: online vs descargable
@@ -718,25 +812,37 @@ async function loadMetrics() {
             }
         });
 
-        document.getElementById('stat-solver-uses').textContent = totalSolverUses;
-        document.getElementById('stat-solver-dxfs').textContent = totalDxfs;
+        // Totales finales: agregacion del servidor si esta disponible, si no la ventana.
+        const T = {
+            total: agg ? agg.total : totalSolverUses,
+            dxfs: agg ? agg.dxfs : totalDxfs,
+            saved: agg ? agg.saved : savedCount,
+            avgBest: agg ? agg.avgBest : (bestTimeCount > 0 ? bestTimeSum / bestTimeCount : 0),
+            avgSave: agg ? agg.avgSave : (saveTimeCount > 0 ? saveTimeSum / saveTimeCount : 0),
+            avgUtil: agg ? agg.avgUtil : (utilCount > 0 ? utilSum / utilCount : 0),
+            avgSheets: agg ? agg.avgSheets : (sheetsCount > 0 ? sheetsSum / sheetsCount : 0),
+            withResult: agg ? agg.withResult : runsWithResult,
+            unplacedSum: agg ? agg.unplacedSum : unplacedSum,
+            withUnplaced: agg ? agg.withUnplaced : runsWithUnplaced,
+        };
 
-        const avgBestTime = bestTimeCount > 0 ? (bestTimeSum / bestTimeCount).toFixed(1) : 0;
-        const avgSaveTime = saveTimeCount > 0 ? (saveTimeSum / saveTimeCount).toFixed(1) : 0;
-        document.getElementById('stat-solver-best-time').textContent = `${avgBestTime}s`;
-        document.getElementById('stat-solver-save-time').textContent = `${avgSaveTime}s`;
+        document.getElementById('stat-solver-uses').textContent = T.total;
+        document.getElementById('stat-solver-dxfs').textContent = T.dxfs;
+
+        document.getElementById('stat-solver-best-time').textContent = `${T.avgBest > 0 ? T.avgBest.toFixed(1) : 0}s`;
+        document.getElementById('stat-solver-save-time').textContent = `${T.avgSave > 0 ? T.avgSave.toFixed(1) : 0}s`;
 
         // --- Metricas diferenciadas nuevas ---
         const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
         const pct = (num, den) => den > 0 ? Math.round((num / den) * 100) : 0;
 
-        setText('stat-solver-save-rate', `${pct(savedCount, totalSolverUses)}%`);
-        setText('stat-solver-save-rate-sub', `${savedCount} de ${totalSolverUses} corridas terminó en Guardar`);
-        setText('stat-solver-avg-util', utilCount > 0 ? `${(utilSum / utilCount).toFixed(1)}%` : '—');
-        setText('stat-solver-avg-sheets', sheetsCount > 0 ? (sheetsSum / sheetsCount).toFixed(1) : '—');
-        setText('stat-solver-avg-dxfs', totalSolverUses > 0 ? (totalDxfs / totalSolverUses).toFixed(1) : '—');
-        setText('stat-solver-avg-unplaced', runsWithResult > 0 ? (unplacedSum / runsWithResult).toFixed(1) : '—');
-        setText('stat-solver-fail-rate', runsWithResult > 0 ? `${pct(runsWithUnplaced, runsWithResult)}%` : '—');
+        setText('stat-solver-save-rate', `${pct(T.saved, T.total)}%`);
+        setText('stat-solver-save-rate-sub', `${T.saved} de ${T.total} corridas terminó en Guardar`);
+        setText('stat-solver-avg-util', T.avgUtil > 0 ? `${T.avgUtil.toFixed(1)}%` : '—');
+        setText('stat-solver-avg-sheets', T.avgSheets > 0 ? T.avgSheets.toFixed(1) : '—');
+        setText('stat-solver-avg-dxfs', T.total > 0 ? (T.dxfs / T.total).toFixed(1) : '—');
+        setText('stat-solver-avg-unplaced', T.withResult > 0 ? (T.unplacedSum / T.withResult).toFixed(1) : '—');
+        setText('stat-solver-fail-rate', T.withResult > 0 ? `${pct(T.withUnplaced, T.withResult)}%` : '—');
 
         // Optimizacion mas usada + desglose
         const optEntries = Object.entries(optCounts).sort((a, b) => b[1] - a[1]);
@@ -759,8 +865,8 @@ async function loadMetrics() {
         renderSolverUtilChart(solverDays, utilSeries);
 
         // --- Origen del uso (online vs descargable) ---
-        const onlineN = bySource.online || 0;
-        const desktopN = bySource.desktop || 0;
+        const desktopN = agg ? agg.desktop : (bySource.desktop || 0);
+        const onlineN = agg ? Math.max(0, agg.total - agg.desktop) : (bySource.online || 0);
         setText('stat-solver-online', String(onlineN));
         setText('stat-solver-desktop', String(desktopN));
         renderSolverSourceChart(onlineN, desktopN);
