@@ -340,6 +340,155 @@ async function loadAudit(append = false) {
     }
 }
 
+// Sesiones armadas en la ultima carga (para el boton Informe).
+let lastDiagSessions = [];
+
+const SESSION_GAP_MS = 30 * 60 * 1000; // 30 min sin actividad => sesion nueva
+
+function runTime(r) {
+    if (r.timestampISO) return new Date(r.timestampISO).getTime();
+    if (r.timestamp && r.timestamp.toDate) return r.timestamp.toDate().getTime();
+    if (r.date) return new Date(r.date + 'T12:00:00').getTime();
+    return 0;
+}
+
+// Agrupa diagnosticos (DXF) y corridas en SESIONES.
+//  - Si traen sessionId (datos nuevos), se agrupan por ese id.
+//  - Si no (datos viejos), se clusteriza por maquina + huecos de 30 min.
+function buildSessions(items, runs) {
+    const byKey = new Map();
+    const keyOf = (sid, machine, t) => {
+        if (sid) return 'sid:' + sid;
+        // cluster temporal por maquina (se ajusta al insertar)
+        return 'tmp:' + (machine || '?') + ':' + Math.floor(t / SESSION_GAP_MS);
+    };
+
+    // Helper para conseguir/crear la sesion de un evento viejo (sin sid):
+    // busca una sesion de la misma maquina cuyo rango este a < 30 min.
+    const tmpSessions = [];
+    function placeLegacy(machine, t) {
+        for (const s of tmpSessions) {
+            if (s.machine === machine && t >= s.start - SESSION_GAP_MS && t <= s.end + SESSION_GAP_MS) {
+                s.start = Math.min(s.start, t);
+                s.end = Math.max(s.end, t);
+                return s;
+            }
+        }
+        const s = { id: 'legacy_' + tmpSessions.length, machine, start: t, end: t, dxfs: [], runs: [], country: '' };
+        tmpSessions.push(s);
+        return s;
+    }
+
+    const sidSessions = new Map();
+    function placeSid(sid, machine, t) {
+        let s = sidSessions.get(sid);
+        if (!s) { s = { id: sid, machine, start: t, end: t, dxfs: [], runs: [], country: '' }; sidSessions.set(sid, s); }
+        s.start = Math.min(s.start, t); s.end = Math.max(s.end, t);
+        if (!s.machine || s.machine === '?') s.machine = machine;
+        return s;
+    }
+
+    // 1) DXFs
+    for (const it of items) {
+        const m = it.meta || {};
+        const sid = it.sessionId || m.sessionId || '';
+        const machine = m.machine || '—';
+        const t = it.createdAt ? new Date(it.createdAt).getTime() : 0;
+        const s = sid ? placeSid(sid, machine, t) : placeLegacy(machine, t);
+        s.dxfs.push(it);
+    }
+    // 2) Corridas
+    for (const r of runs) {
+        const sid = r.sessionId || '';
+        const machine = r.machine || (r.source === 'online' ? 'navegador (online)' : '—');
+        const t = runTime(r);
+        const s = sid ? placeSid(sid, machine, t) : placeLegacy(machine, t);
+        s.runs.push(r);
+        if (!s.country && r.country) s.country = r.country;
+    }
+
+    const all = [...sidSessions.values(), ...tmpSessions];
+    // Ordenar todo por hora dentro de cada sesion y las sesiones por inicio desc.
+    all.forEach((s) => {
+        s.dxfs.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+        s.runs.sort((a, b) => runTime(a) - runTime(b));
+    });
+    all.sort((a, b) => b.start - a.start);
+    return all;
+}
+
+// Modal con el informe de lo que hizo el usuario en una sesion (timeline + resumen).
+function showSessionReport(s) {
+    if (!s) return;
+    const fmt = (t) => t ? new Date(t).toLocaleString('es-AR') : '—';
+    const flag = s.country && s.country.length === 2
+        ? s.country.replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0))) : '';
+    const mins = s.start && s.end ? Math.round((s.end - s.start) / 60000) : 0;
+
+    // Eventos del timeline (cargas + corridas) ordenados por hora.
+    const events = [];
+    s.dxfs.forEach((it) => {
+        const m = it.meta || {};
+        const bbox = (m.bboxW && m.bboxH) ? `${Math.round(m.bboxW)}×${Math.round(m.bboxH)} mm` : '';
+        events.push({ t: it.createdAt ? new Date(it.createdAt).getTime() : 0, kind: 'dxf',
+            txt: `📄 Cargó <b>${escapeHtmlDiag(it.filename)}</b> ${bbox ? '· ' + bbox : ''}` });
+    });
+    s.runs.forEach((r) => {
+        const util = (typeof r.final_utilization === 'number') ? r.final_utilization.toFixed(1) + '%' : '—';
+        const opt = r.optimization_type === 'bounding-box' ? 'Bounding box' : (r.optimization_type === 'compact-area' ? 'Área compacta' : (r.optimization_type || ''));
+        const tag = r.fill_sheet ? '🧩 Llenar chapa' : '▶ Corrida';
+        const saved = r.saved ? ' · 💾 <b>guardó</b>' : '';
+        const bestT = (typeof r.best_solution_time_sec === 'number' && r.best_solution_time_sec > 0) ? ` · mejor en ${r.best_solution_time_sec.toFixed(2)}s` : '';
+        events.push({ t: runTime(r), kind: 'run',
+            txt: `${tag}: ${r.placed_count ?? '?'} ubicadas / ${(r.placed_count||0)+(r.unplaced_count||0)} · ${r.sheets_used ?? '?'} chapa(s) · aprov. <b>${util}</b> · ${opt}${bestT}${saved}` });
+    });
+    events.sort((a, b) => a.t - b.t);
+
+    let timeline = '';
+    events.forEach((ev) => {
+        const hora = ev.t ? new Date(ev.t).toLocaleTimeString('es-AR') : '—';
+        timeline += `<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <span class="mono release-muted" style="white-space:nowrap;font-size:12px;">${hora}</span>
+            <span style="font-size:13px;">${ev.txt}</span></div>`;
+    });
+
+    const saves = s.runs.filter((r) => r.saved).length;
+    const bestUtil = s.runs.reduce((mx, r) => Math.max(mx, (typeof r.final_utilization === 'number' ? r.final_utilization : 0)), 0);
+    const ver = (s.runs.find((r) => r.app_version) || {}).app_version || (s.dxfs.find((d) => d.meta && d.meta.appVersion) || {meta:{}}).meta.appVersion || '—';
+
+    let overlay = document.getElementById('session-report-overlay');
+    if (overlay) overlay.remove();
+    overlay = document.createElement('div');
+    overlay.id = 'session-report-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.innerHTML = `
+        <div style="background:var(--panel,#161616);border:1px solid var(--border,#2a2a2a);border-radius:14px;max-width:680px;width:100%;max-height:86vh;overflow:auto;box-shadow:0 18px 60px rgba(0,0,0,0.5);">
+            <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:10px;">
+                <span style="font-size:20px;">📋</span>
+                <div style="flex:1;">
+                    <div style="font-weight:700;font-size:15px;">Informe de sesión — ${flag} ${escapeHtmlDiag(s.machine)}</div>
+                    <div class="release-muted" style="font-size:12px;">${fmt(s.start)} → ${fmt(s.end)} · ${mins} min · versión ${escapeHtmlDiag(ver)}</div>
+                </div>
+                <button id="session-report-close" class="btn-secondary" style="width:auto;padding:6px 12px;">Cerrar</button>
+            </div>
+            <div style="padding:14px 20px;display:flex;gap:18px;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,0.06);">
+                <div><div class="release-muted" style="font-size:11px;">DXF cargados</div><div style="font-size:18px;font-weight:700;">${s.dxfs.length}</div></div>
+                <div><div class="release-muted" style="font-size:11px;">Corridas</div><div style="font-size:18px;font-weight:700;">${s.runs.length}</div></div>
+                <div><div class="release-muted" style="font-size:11px;">Exportó (guardó)</div><div style="font-size:18px;font-weight:700;">${saves}</div></div>
+                <div><div class="release-muted" style="font-size:11px;">Mejor aprovech.</div><div style="font-size:18px;font-weight:700;">${bestUtil ? bestUtil.toFixed(1) + '%' : '—'}</div></div>
+            </div>
+            <div style="padding:14px 20px;">
+                <div class="release-muted" style="font-size:12px;margin-bottom:8px;">LÍNEA DE TIEMPO</div>
+                ${timeline || '<span class="release-muted">Sin eventos.</span>'}
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+    const close = () => overlay.remove();
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    const closeBtn = document.getElementById('session-report-close');
+    if (closeBtn) closeBtn.addEventListener('click', close);
+}
+
 async function loadDiagnostics() {
     const container = document.getElementById('diagnostics-container');
     if (!container) return;
@@ -358,29 +507,64 @@ async function loadDiagnostics() {
             container.innerHTML = '<p class="loading">Todavía no hay DXF cargados.</p>';
             return;
         }
+
+        // Traigo las corridas del solver para cruzarlas con cada sesion.
+        let runs = [];
+        try {
+            const rs = await getDocs(query(collection(db, 'solver_runs'), orderBy('timestamp', 'desc'), limit(1500)));
+            rs.forEach((d) => runs.push(d.data()));
+        } catch (e) { console.warn('No se pudieron leer corridas para las sesiones:', e); }
+
+        const sessions = buildSessions(items, runs);
+        lastDiagSessions = sessions;
+
         const btnStyle = 'padding:6px 12px;font-size:13px;width:auto;display:inline-block;';
-        let rows = '';
-        for (const it of items) {
-            const m = it.meta || {};
-            const kb = (it.sizeBytes / 1024).toFixed(1);
-            const bbox = (m.bboxW && m.bboxH) ? `${Math.round(m.bboxW)} × ${Math.round(m.bboxH)} mm` : '—';
-            const date = it.createdAt ? new Date(it.createdAt).toLocaleString('es-AR') : '—';
-            const dl = it.truncated
-                ? '<span class="release-muted">muy grande</span>'
-                : `<button class="btn-primary diag-dl" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" style="${btnStyle}">Descargar</button>`;
-            const del = `<button class="btn-danger diag-del" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" style="${btnStyle}margin-left:6px;">Borrar</button>`;
-            rows += `
-                <tr>
-                    <td style="text-align:center;"><input type="checkbox" class="diag-check" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" data-truncated="${it.truncated ? '1' : '0'}"></td>
-                    <td>${escapeHtmlDiag(it.filename)}</td>
-                    <td>${bbox}</td>
-                    <td>${kb} KB</td>
-                    <td>${escapeHtmlDiag(m.appVersion || '—')}</td>
-                    <td>${escapeHtmlDiag(m.machine || '—')}</td>
-                    <td>${escapeHtmlDiag(date)}</td>
-                    <td style="white-space:nowrap;">${dl}${del}</td>
-                </tr>`;
-        }
+        let groupsHtml = '';
+        sessions.forEach((s, si) => {
+            let rows = '';
+            for (const it of s.dxfs) {
+                const m = it.meta || {};
+                const kb = (it.sizeBytes / 1024).toFixed(1);
+                const bbox = (m.bboxW && m.bboxH) ? `${Math.round(m.bboxW)} × ${Math.round(m.bboxH)} mm` : '—';
+                const date = it.createdAt ? new Date(it.createdAt).toLocaleString('es-AR') : '—';
+                const dl = it.truncated
+                    ? '<span class="release-muted">muy grande</span>'
+                    : `<button class="btn-primary diag-dl" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" style="${btnStyle}">Descargar</button>`;
+                const del = `<button class="btn-danger diag-del" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" style="${btnStyle}margin-left:6px;">Borrar</button>`;
+                rows += `
+                    <tr>
+                        <td style="text-align:center;"><input type="checkbox" class="diag-check" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" data-truncated="${it.truncated ? '1' : '0'}"></td>
+                        <td>${escapeHtmlDiag(it.filename)}</td>
+                        <td>${bbox}</td>
+                        <td>${kb} KB</td>
+                        <td>${escapeHtmlDiag(date)}</td>
+                    </tr>`;
+            }
+            const started = s.start ? new Date(s.start).toLocaleString('es-AR') : '—';
+            const flag = s.country && s.country.length === 2
+                ? s.country.replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0))) : '';
+            const mins = s.start && s.end ? Math.round((s.end - s.start) / 60000) : 0;
+            const durTxt = mins >= 1 ? `${mins} min` : '<1 min';
+            groupsHtml += `
+                <details class="session-group" style="margin-bottom:10px;border:1px solid var(--border, #2a2a2a);border-radius:10px;overflow:hidden;">
+                    <summary style="cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:rgba(255,255,255,0.02);">
+                        <span class="audit-tag">${flag} ${escapeHtmlDiag(s.machine)}</span>
+                        <span class="release-muted">${escapeHtmlDiag(started)}</span>
+                        <span class="release-muted">· ${s.dxfs.length} DXF · ${s.runs.length} corrida(s) · ${durTxt}</span>
+                        <button class="btn-primary diag-report" data-si="${si}" type="button" style="${btnStyle}margin-left:auto;">📋 Informe</button>
+                    </summary>
+                    <div style="overflow-x:auto;padding:6px 10px 12px;">
+                    <table class="diag-table" style="width:100%;border-collapse:collapse;">
+                        <thead><tr style="text-align:left;">
+                            <th style="width:34px;text-align:center;"><input type="checkbox" class="diag-check-group" title="Seleccionar la sesión"></th>
+                            <th>Archivo</th><th>Tamaño pieza</th><th>Peso</th><th>Fecha</th>
+                        </tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    </div>
+                </details>`;
+        });
+
         container.innerHTML = `
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
                 <button class="btn-primary" id="diag-download-selected" type="button" style="width:auto;" disabled>
@@ -389,22 +573,27 @@ async function loadDiagnostics() {
                 <button class="btn-danger" id="diag-delete-selected" type="button" style="width:auto;" disabled>
                     Borrar seleccionados (<span id="diag-selected-count">0</span>)
                 </button>
-                <span class="release-muted" id="diag-total-count">${items.length} archivo(s)</span>
+                <span class="release-muted" id="diag-total-count">${items.length} archivo(s) · ${sessions.length} sesión(es)</span>
             </div>
-            <div style="overflow-x:auto;">
-            <table class="diag-table" style="width:100%;border-collapse:collapse;">
-                <thead><tr style="text-align:left;">
-                    <th style="width:34px;text-align:center;"><input type="checkbox" id="diag-check-all" title="Seleccionar todos"></th>
-                    <th>Archivo</th><th>Tamaño pieza</th><th>Peso</th><th>Versión</th><th>Equipo</th><th>Fecha</th><th></th>
-                </tr></thead>
-                <tbody>${rows}</tbody>
-            </table>
-            </div>`;
+            ${groupsHtml}`;
+
         container.querySelectorAll('.diag-dl').forEach((btn) => {
             btn.addEventListener('click', () => downloadDiagnostic(btn.dataset.id, btn.dataset.name));
         });
         container.querySelectorAll('.diag-del').forEach((btn) => {
             btn.addEventListener('click', () => deleteDiagnostic(btn.dataset.id, btn.dataset.name));
+        });
+        container.querySelectorAll('.diag-report').forEach((btn) => {
+            btn.addEventListener('click', (ev) => { ev.preventDefault(); showSessionReport(lastDiagSessions[Number(btn.dataset.si)]); });
+        });
+        // Casilla "seleccionar toda la sesion"
+        container.querySelectorAll('.session-group').forEach((grp) => {
+            const groupCheck = grp.querySelector('.diag-check-group');
+            const groupChecks = Array.from(grp.querySelectorAll('.diag-check'));
+            if (groupCheck) groupCheck.addEventListener('change', () => {
+                groupChecks.forEach((c) => { c.checked = groupCheck.checked; });
+                groupChecks.forEach((c) => c.dispatchEvent(new Event('change', { bubbles: true })));
+            });
         });
 
         // --- Casillas de seleccion + borrado multiple ---

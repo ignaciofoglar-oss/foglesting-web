@@ -22,6 +22,12 @@ let currentRunDocRef = null;
 let currentRunStartTime = 0;
 let bestSolutionTime = 0;
 
+// ID de SESION del navegador: se genera una vez por carga de la pagina y viaja
+// en la telemetria (diagnosticos y corridas) para agrupar en el admin todo lo
+// que hace un usuario en una misma sesion.
+const SESSION_ID = 'w' + new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14) + '-' +
+    Math.random().toString(16).slice(2, 6);
+
 // Geolocalizacion aproximada (para saber desde donde usan el solver).
 let geoInfo = { country: '', city: '', region: '' };
 fetch('https://www.foglesting.com/api/geo')
@@ -259,7 +265,7 @@ function uploadDiagnosticOnline(filename, arrayBuffer) {
         const body = JSON.stringify({
             filename,
             contentB64: abToBase64(arrayBuffer),
-            meta: { appVersion: 'online', machine: 'navegador (online)', source: 'nesting online' },
+            meta: { appVersion: 'online', machine: 'navegador (online)', source: 'nesting online', sessionId: SESSION_ID },
         });
         fetch('https://www.foglesting.com/api/upload-diagnostic', {
             method: 'POST',
@@ -369,6 +375,7 @@ runBtn.addEventListener('click', async () => {
             population: parseInt(document.getElementById('population-input').value) || 0,
             optimization_type: document.getElementById('optimization-type').value || '',
             source: 'online',
+            sessionId: SESSION_ID,
             country: geoInfo.country || '',
             city: geoInfo.city || '',
             region: geoInfo.region || '',

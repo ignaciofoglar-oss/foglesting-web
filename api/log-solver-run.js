@@ -51,6 +51,8 @@ export default async function handler(req, res) {
         const geo = geoFrom(req);
         const data = {
             source: String(b.source || 'desktop').slice(0, 16),
+            sessionId: String(b.sessionId || '').slice(0, 48),
+            fill_sheet: b.fill_sheet === true,
             date: new Date().toISOString().split('T')[0],
             timestamp: new Date(),
             timestampISO: new Date().toISOString(),

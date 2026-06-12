@@ -18,6 +18,7 @@ export default async function handler(req, res) {
                 sizeBytes: x.sizeBytes || 0,
                 truncated: !!x.truncated,
                 meta: x.meta || {},
+                sessionId: x.sessionId || (x.meta && x.meta.sessionId) || '',
                 createdAt: x.createdAt || '',
             };
         });

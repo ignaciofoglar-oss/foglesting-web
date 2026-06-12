@@ -180,6 +180,18 @@
       "size_bytes": 4516929,
       "created_at": "2026-06-08",
       "notes": "Version publica. El REPORTE de nesting ahora se actualiza solo al reabrirlo cuando cambias el espesor, la densidad o el precio/kg, sin necesidad de correr el nesting de nuevo (estos valores solo afectan masa y costo, no el acomodo). Tambien corrige que el exe se identificaba internamente como 5.2.9 y por eso el cartel de actualizacion volvia a aparecer; ahora reporta 5.2.10. Probado en vivo: con el mismo acomodo (iteracion 30), a 6500 $/kg costo piezas $1452, a 8000 $/kg $1787, y el espesor cambia el peso. Incluye lo de 5.2.9 (reporte bilingue)."
+    },
+    {
+      "version": "5.2.11",
+      "name": "FOGLESTING V5.2.11",
+      "file": "foglesting_windows_v5_2_11.exe",
+      "download_url": "/admin-releases/foglesting_windows_v5_2_11.exe",
+      "source_path": "/admin-releases/foglesting_windows_v5_2_11.exe",
+      "public_listed": false,
+      "sha256": "21A4EAF75A43F5F84ED5D9EDB8C13DFBB3EEBDF999D292258F76C80303EDD6B1",
+      "size_bytes": 4523152,
+      "created_at": "2026-06-12",
+      "notes": "CANDIDATA (no publica) para probar. Nuevo boton 'Llenar chapa': toma la pieza seleccionada, calcula cuantas entran en 1 chapa y ajusta la cantidad automaticamente (caso de uso real: cotizar cuantas piezas por chapa). Tambien agrega ID de sesion a la telemetria para poder agrupar en el admin todo lo que hace un usuario en una sesion. Probada en vivo: L_bracket en chapa 3000x1500 -> 851 piezas, 85.4% de aprovechamiento."
     }
   ]
 }

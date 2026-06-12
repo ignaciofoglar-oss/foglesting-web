@@ -41,7 +41,9 @@ export default async function handler(req, res) {
                 appVersion: String(meta.appVersion || '').slice(0, 32),
                 machine: String(meta.machine || '').slice(0, 120),
                 source: String(meta.source || '').slice(0, 200),
+                sessionId: String(meta.sessionId || '').slice(0, 48),
             },
+            sessionId: String(meta.sessionId || '').slice(0, 48),
             createdAt: new Date().toISOString(),
         };
         const ref = await db.collection('dxf_diagnostics').add(doc);
