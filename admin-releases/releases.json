@@ -215,7 +215,19 @@
       "sha256": "BB87B5236B7A60B00A581C485242DD992D269C3BF61BFBE2BC7233CB5984D429",
       "size_bytes": 4534256,
       "created_at": "2026-06-13",
-      "notes": "CANDIDATA (no publica) para probar. (1) Visor de previsualizacion mucho mas rapido con muchas piezas: las geometrias curvas se simplifican descartando puntos que caen en el mismo pixel y se dejaron de crear/destruir brushes GDI por pieza en cada frame; el zoom/pan ya no se traba. (2) Las dos ventanas auxiliares (Grafico de ahorro y Arbol evolutivo) YA NO se abren solas atras al iniciar: hay un menu nuevo 'Herramientas / Tools' para mostrarlas u ocultarlas cuando el usuario quiera (con tilde de estado; cerrarlas las oculta, no las destruye). Incluye 'Llenar chapa' v2 y telemetria por sesion."
+      "notes": "Reemplazada por 5.2.14. Preview mas rapido + menu Herramientas."
+    },
+    {
+      "version": "5.2.14",
+      "name": "FOGLESTING V5.2.14",
+      "file": "foglesting_windows_v5_2_14.exe",
+      "download_url": "/admin-releases/foglesting_windows_v5_2_14.exe",
+      "source_path": "/admin-releases/foglesting_windows_v5_2_14.exe",
+      "public_listed": false,
+      "sha256": "6CB53F44BC8EAD53A76F7A3DF7190141854B36B4D43E3189E7C714B1BD01583B",
+      "size_bytes": 4537328,
+      "created_at": "2026-06-13",
+      "notes": "CANDIDATA (no publica). IMPORTANTE: corrige la carga de SPLINES definidas por fit points (code 11/21 sin control points), comunes en DXF exportados desde Illustrator / Inkscape / CorelDRAW; antes daban 'No closed DXF profiles'. Ahora se interpolan con Catmull-Rom y cargan bien. El mismo fix se aplico al solver online (WASM). Validado con 10 DXF de prueba (R12/R2000/R2010/R2018: lineas, circulos, lwpolyline, polyline, linea+arco, spline, elipse, multi-piezas, agujeros, bloques): los 10 cargan, nestean y exportan, y el DXF de salida abre en AutoCAD 2026 y ezdxf. Incluye preview mas rapido, menu Herramientas, Llenar chapa v2 y telemetria por sesion."
     }
   ]
 }

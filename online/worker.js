@@ -3,7 +3,7 @@
 // Runs nesting in background, yields previews
 // ====================================================
 
-importScripts('nesting.js?v=solver-options-info-20260528');
+importScripts('nesting.js?v=splinefix-20260613');
 
 let nestingModule = null;
 

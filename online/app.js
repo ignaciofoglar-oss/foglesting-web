@@ -151,7 +151,7 @@ document.addEventListener('foglesting:i18n-applied', () => {
 // ---- Web Worker Init ----
 function initWorker() {
     if (nestingWorker) nestingWorker.terminate();
-    nestingWorker = new Worker('worker.js?v=solver-options-info-20260528');
+    nestingWorker = new Worker('worker.js?v=splinefix-20260613');
     
     nestingWorker.onmessage = function(e) {
         const msg = e.data;
