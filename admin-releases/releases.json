@@ -203,7 +203,19 @@
       "sha256": "C78DD7ED231FD4B5C3AD83E63992A283FA3E0AF53ECE4715FB83A9E2B062F6BB",
       "size_bytes": 4527698,
       "created_at": "2026-06-12",
-      "notes": "CANDIDATA (no publica) para probar. 'Llenar chapa' v2 con los dos arreglos reportados: (1) ahora hace una corrida final con la cantidad exacta, asi el resultado en pantalla es UNA chapa llena sin sobrantes colgando en otra chapa; (2) si todas las piezas entran (piezas que encastran mas denso que su rectangulo), duplica la cantidad y reintenta hasta encontrar el limite real, en vez de quedarse a mitad de chapa. Probada en vivo: 3000x1500 -> 851 piezas (85.4%) en una sola chapa; 600x400 -> 41 piezas (77.2%) en una sola chapa. Incluye telemetria por sesion."
+      "notes": "Reemplazada por 5.2.13. 'Llenar chapa' v2."
+    },
+    {
+      "version": "5.2.13",
+      "name": "FOGLESTING V5.2.13",
+      "file": "foglesting_windows_v5_2_13.exe",
+      "download_url": "/admin-releases/foglesting_windows_v5_2_13.exe",
+      "source_path": "/admin-releases/foglesting_windows_v5_2_13.exe",
+      "public_listed": false,
+      "sha256": "BB87B5236B7A60B00A581C485242DD992D269C3BF61BFBE2BC7233CB5984D429",
+      "size_bytes": 4534256,
+      "created_at": "2026-06-13",
+      "notes": "CANDIDATA (no publica) para probar. (1) Visor de previsualizacion mucho mas rapido con muchas piezas: las geometrias curvas se simplifican descartando puntos que caen en el mismo pixel y se dejaron de crear/destruir brushes GDI por pieza en cada frame; el zoom/pan ya no se traba. (2) Las dos ventanas auxiliares (Grafico de ahorro y Arbol evolutivo) YA NO se abren solas atras al iniciar: hay un menu nuevo 'Herramientas / Tools' para mostrarlas u ocultarlas cuando el usuario quiera (con tilde de estado; cerrarlas las oculta, no las destruye). Incluye 'Llenar chapa' v2 y telemetria por sesion."
     }
   ]
 }
