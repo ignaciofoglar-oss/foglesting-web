@@ -414,7 +414,11 @@ function buildSessions(items, runs) {
         s.runs.sort((a, b) => runTime(a) - runTime(b));
     });
     all.sort((a, b) => b.start - a.start);
-    return all;
+    // Este panel es de Diagnosticos DXF: solo mostramos sesiones que tengan al
+    // menos un archivo. Las corridas sin DXF asociado (datos viejos previos al
+    // diagnostico, subidas que fallaron, o re-corridas online sin archivos
+    // nuevos) generaban banners vacios "0 DXF" que aca no aportan nada.
+    return all.filter((s) => s.dxfs.length > 0);
 }
 
 // Modal con el informe de lo que hizo el usuario en una sesion (timeline + resumen).
