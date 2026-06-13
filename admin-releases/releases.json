@@ -191,7 +191,19 @@
       "sha256": "21A4EAF75A43F5F84ED5D9EDB8C13DFBB3EEBDF999D292258F76C80303EDD6B1",
       "size_bytes": 4523152,
       "created_at": "2026-06-12",
-      "notes": "CANDIDATA (no publica) para probar. Nuevo boton 'Llenar chapa': toma la pieza seleccionada, calcula cuantas entran en 1 chapa y ajusta la cantidad automaticamente (caso de uso real: cotizar cuantas piezas por chapa). Tambien agrega ID de sesion a la telemetria para poder agrupar en el admin todo lo que hace un usuario en una sesion. Probada en vivo: L_bracket en chapa 3000x1500 -> 851 piezas, 85.4% de aprovechamiento."
+      "notes": "Reemplazada por 5.2.12. Primera version de 'Llenar chapa': dejaba piezas sobrantes en otra chapa y con chapas chicas se quedaba corta."
+    },
+    {
+      "version": "5.2.12",
+      "name": "FOGLESTING V5.2.12",
+      "file": "foglesting_windows_v5_2_12.exe",
+      "download_url": "/admin-releases/foglesting_windows_v5_2_12.exe",
+      "source_path": "/admin-releases/foglesting_windows_v5_2_12.exe",
+      "public_listed": false,
+      "sha256": "C78DD7ED231FD4B5C3AD83E63992A283FA3E0AF53ECE4715FB83A9E2B062F6BB",
+      "size_bytes": 4527698,
+      "created_at": "2026-06-12",
+      "notes": "CANDIDATA (no publica) para probar. 'Llenar chapa' v2 con los dos arreglos reportados: (1) ahora hace una corrida final con la cantidad exacta, asi el resultado en pantalla es UNA chapa llena sin sobrantes colgando en otra chapa; (2) si todas las piezas entran (piezas que encastran mas denso que su rectangulo), duplica la cantidad y reintenta hasta encontrar el limite real, en vez de quedarse a mitad de chapa. Probada en vivo: 3000x1500 -> 851 piezas (85.4%) en una sola chapa; 600x400 -> 41 piezas (77.2%) en una sola chapa. Incluye telemetria por sesion."
     }
   ]
 }
