@@ -1,6 +1,6 @@
 {
-  "version": "5.2.10",
-  "name": "FOGLESTING V5.2.10",
-  "download_url": "https://foglesting.com/downloads/foglesting_windows_v5_2_10.exe",
-  "notes": "FOGLESTING V5.2.10: el reporte de nesting se actualiza solo al reabrirlo cuando cambias el espesor, la densidad o el precio/kg, sin tener que correr el nesting de nuevo."
+  "version": "5.2.14",
+  "name": "FOGLESTING V5.2.14",
+  "download_url": "https://foglesting.com/downloads/foglesting_windows_v5_2_14.exe",
+  "notes": "FOGLESTING V5.2.14 disponible. Descarga directa del ejecutable."
 }
