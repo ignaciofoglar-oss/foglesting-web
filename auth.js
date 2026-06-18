@@ -143,7 +143,7 @@ async function showDashboard(user) {
                     const isActive = licenseInfo.status === 'active';
                     const badgeClass = isActive ? 'status-active' : 'status-inactive';
                     const badgeText = isActive ? 'ACTIVA' : 'INACTIVA / PENDIENTE';
-                    
+
                     licensesList.innerHTML += `
                     <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border: 1px solid #333; text-align: left; display: flex; justify-content: space-between; align-items: center;">
                         <span style="color: #fff; font-weight: bold;">${productName}</span>
@@ -151,6 +151,10 @@ async function showDashboard(user) {
                     </div>`;
                 }
             }
+
+            // Plan / Suscripcion (no afecta a los usuarios actuales: solo muestra
+            // el plan y permite probar el flujo de pago cuando el modo test esta on).
+            renderSubscription(user, products).catch((e) => console.error('subscription:', e));
         } else {
             if (adminMasterLink) adminMasterLink.style.display = 'none';
             if (adminAccessBox) adminAccessBox.style.display = 'none';
@@ -163,6 +167,84 @@ async function showDashboard(user) {
     if (deviceCode) {
         dashDeviceMsg.style.display = 'block';
     }
+}
+
+// Muestra el plan del programa de escritorio y, en modo de prueba, permite
+// simular un pago para activar la licencia (sin tocar a los usuarios actuales).
+async function renderSubscription(user, products) {
+    const box = document.getElementById('subscription-box');
+    if (!box) return;
+    const PRODUCT = 'Sheet Metal Nesting';
+
+    // Config de facturacion (precio, modo prueba). La controla el admin.
+    let cfg = {};
+    try {
+        const snap = await getDoc(doc(db, 'settings', 'billing'));
+        if (snap.exists()) cfg = snap.data();
+    } catch (e) { console.error('billing cfg:', e); }
+
+    const lic = (products && products[PRODUCT]) || {};
+    const isActive = lic.status === 'active';
+    const price = Number(cfg.priceArs) || 0;
+    const priceTxt = price > 0 ? `$${price.toLocaleString('es-AR')} ARS / mes` : 'Suscripción mensual';
+    const testMode = cfg.testMode === true;
+
+    let html = `<h4 style="color: var(--cream, #ffdfb8); margin-bottom: 6px;">Plan — Programa de escritorio</h4>`;
+
+    if (isActive) {
+        const vto = lic.expiresAt ? new Date(lic.expiresAt).toLocaleDateString('es-AR') : '—';
+        html += `<p style="color:#7fce9b; margin:0 0 4px;">✅ Suscripción activa (${lic.plan || 'mensual'}).</p>
+                 <p style="color: var(--text-muted); font-size:13px; margin:0;">Vence el ${vto}.</p>`;
+    } else {
+        html += `<p style="color: var(--text-muted); margin:0 0 14px; font-size:14px;">
+                    Suscribite para usar el programa de escritorio sin límites. <strong style="color:#fff;">${priceTxt}</strong>.
+                 </p>
+                 <button class="btn-primary" id="subscribe-btn" style="width:auto;">Suscribirme</button>`;
+    }
+
+    if (testMode) {
+        html += `<div style="margin-top:14px; padding-top:14px; border-top:1px dashed rgba(255,255,255,0.12);">
+                    <p style="color:#ffd2a8; font-size:12px; margin:0 0 8px;">🧪 Modo de prueba activo</p>
+                    <button id="sim-pay-btn" style="width:auto; padding:8px 14px; font-size:13px; background:#3a4a2e; color:#cfe9b0; border:1px solid #5c7a3a; border-radius:6px; cursor:pointer;">
+                        Simular pago aprobado (TEST)
+                    </button>
+                    <span id="sim-pay-msg" style="margin-left:10px; font-size:13px;"></span>
+                 </div>`;
+    }
+
+    box.innerHTML = html;
+    box.style.display = 'block';
+
+    const subBtn = document.getElementById('subscribe-btn');
+    if (subBtn) subBtn.addEventListener('click', () => {
+        alert('La pasarela de pago se conecta en el próximo paso (Mercado Pago / Stripe). Por ahora, en modo de prueba podés usar "Simular pago aprobado".');
+    });
+
+    const simBtn = document.getElementById('sim-pay-btn');
+    if (simBtn) simBtn.addEventListener('click', async () => {
+        const msg = document.getElementById('sim-pay-msg');
+        simBtn.disabled = true;
+        if (msg) { msg.style.color = '#cfe9b0'; msg.textContent = 'Procesando...'; }
+        try {
+            const token = await user.getIdToken();
+            const r = await fetch('/api/activate-license', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ simulate: true }),
+            });
+            const data = await r.json();
+            if (r.ok && data.ok) {
+                if (msg) { msg.style.color = '#7fce9b'; msg.textContent = '✅ Licencia activada. Recargando...'; }
+                setTimeout(() => location.reload(), 1200);
+            } else {
+                if (msg) { msg.style.color = '#ff8888'; msg.textContent = data.error || ('Error ' + r.status); }
+                simBtn.disabled = false;
+            }
+        } catch (e) {
+            if (msg) { msg.style.color = '#ff8888'; msg.textContent = e.message; }
+            simBtn.disabled = false;
+        }
+    });
 }
 
 async function handleAuthSuccess(user) {

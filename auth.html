@@ -238,6 +238,9 @@
                             <p>Cargando licencias...</p>
                         </div>
 
+                        <!-- Plan / Suscripcion (inyectado desde JS) -->
+                        <div id="subscription-box" style="display:none; margin-top: 24px; padding: 20px; background: rgba(255,223,184,0.06); border: 1px solid rgba(255,223,184,0.18); border-radius: 12px;"></div>
+
                         <div id="admin-access-box" style="display:none; margin-top: 24px; padding: 20px; background: rgba(232,91,46,0.12); border: 1px solid rgba(232,91,46,0.45); border-radius: 12px;">
                             <h4 style="color: var(--accent-orange); margin-bottom: 8px;">Acceso administrador</h4>
                             <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 14px;">Tu cuenta tiene rol de administrador. Desde acÃ¡ podÃ©s gestionar usuarios, licencias, mÃ©tricas y versiones.</p>
@@ -300,7 +303,7 @@
         </main>
     </div>
     
-    <script type="module" src="auth.js?v=2"></script>
+    <script type="module" src="auth.js?v=3-billing"></script>
     <script>
         // Simple tab navigation logic for dashboard
         document.querySelectorAll('.nav-item').forEach(item => {

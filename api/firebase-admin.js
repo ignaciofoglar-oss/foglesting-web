@@ -94,6 +94,20 @@ function getAdminServices() {
     };
 }
 
+// Verifica que el request venga de un usuario logueado (cualquiera, no admin).
+// Devuelve el token decodificado (incluye uid, email).
+async function verifyUser(req) {
+    const header = req.headers.authorization || '';
+    const match = header.match(/^Bearer\s+(.+)$/i);
+    if (!match) {
+        const error = new Error('No autorizado.');
+        error.statusCode = 401;
+        throw error;
+    }
+    const { auth } = getAdminServices();
+    return auth.verifyIdToken(match[1]);
+}
+
 async function requireAdminUser(req) {
     const header = req.headers.authorization || '';
     const match = header.match(/^Bearer\s+(.+)$/i);
@@ -119,5 +133,6 @@ async function requireAdminUser(req) {
 
 export {
     getAdminServices,
+    verifyUser,
     requireAdminUser
 };
