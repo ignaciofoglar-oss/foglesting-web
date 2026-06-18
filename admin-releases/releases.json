@@ -1,5 +1,5 @@
 {
-  "active_public_version": "5.2.14",
+  "active_public_version": "5.2.15",
   "candidates": [
     {
       "version": "1.0.0",
@@ -175,7 +175,7 @@
       "file": "foglesting_windows_v5_2_10.exe",
       "download_url": "/downloads/foglesting_windows_v5_2_10.exe",
       "source_path": "/downloads/foglesting_windows_v5_2_10.exe",
-      "public_listed": true,
+      "public_listed": false,
       "sha256": "52A1D9DBCF1A4D4F815963CAD37D52DE502C800EE5C48A9FDF61E59787DBEE37",
       "size_bytes": 4516929,
       "created_at": "2026-06-08",
@@ -227,7 +227,19 @@
       "sha256": "6CB53F44BC8EAD53A76F7A3DF7190141854B36B4D43E3189E7C714B1BD01583B",
       "size_bytes": 4537328,
       "created_at": "2026-06-13",
-      "notes": "CANDIDATA (no publica). IMPORTANTE: corrige la carga de SPLINES definidas por fit points (code 11/21 sin control points), comunes en DXF exportados desde Illustrator / Inkscape / CorelDRAW; antes daban 'No closed DXF profiles'. Ahora se interpolan con Catmull-Rom y cargan bien. El mismo fix se aplico al solver online (WASM). Validado con 10 DXF de prueba (R12/R2000/R2010/R2018: lineas, circulos, lwpolyline, polyline, linea+arco, spline, elipse, multi-piezas, agujeros, bloques): los 10 cargan, nestean y exportan, y el DXF de salida abre en AutoCAD 2026 y ezdxf. Incluye preview mas rapido, menu Herramientas, Llenar chapa v2 y telemetria por sesion."
+      "notes": "Reemplazada por 5.2.15. Fix de SPLINES por fit points (Illustrator/Inkscape/Corel)."
+    },
+    {
+      "version": "5.2.15",
+      "name": "FOGLESTING V5.2.15",
+      "file": "foglesting_windows_v5_2_15.exe",
+      "download_url": "/downloads/foglesting_windows_v5_2_15.exe",
+      "source_path": "/downloads/foglesting_windows_v5_2_15.exe",
+      "public_listed": true,
+      "sha256": "CD1B52C6616D9FF39694A4FC4FD9F76D1DFD03EC8CC6C2CC2902B703F6061081",
+      "size_bytes": 4541937,
+      "created_at": "2026-06-16",
+      "notes": "Version publica. CORRIGE UN BUG IMPORTANTE: los archivos con ñ o acentos en el nombre (pestaña.dxf, diseño.dxf) hacian crashear el programa al cargarlos; ahora cargan bien (validado con 281 DXF reales de produccion: 0 crashes, 274 cargan piezas, 7 son line-art de grabado). Tambien: carga de SPLINES por fit points (Illustrator/Inkscape/Corel), nuevo boton 'Llenar chapa' (calcula cuantas piezas entran en 1 chapa), menu 'Herramientas' para mostrar/ocultar las ventanas auxiliares (ya no se abren solas), preview mucho mas rapido con muchas piezas, reporte de nesting bilingue que se recalcula al cambiar espesor/precio, telemetria por sesion y un aviso que invita a ejecutar el nesting tras cargar las piezas. Salida DXF R12 validada en AutoCAD 2026."
     }
   ]
 }

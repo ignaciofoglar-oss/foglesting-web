@@ -19,6 +19,8 @@ export default async function handler(req, res) {
                 truncated: !!x.truncated,
                 meta: x.meta || {},
                 sessionId: x.sessionId || (x.meta && x.meta.sessionId) || '',
+                country: x.country || '',
+                city: x.city || '',
                 createdAt: x.createdAt || '',
             };
         });

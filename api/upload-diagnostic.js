@@ -7,6 +7,20 @@ function json(res, status, payload) {
     res.status(status).json(payload);
 }
 
+function decode(v) {
+    try { return decodeURIComponent(String(v || '')); } catch { return String(v || ''); }
+}
+
+// Geo aproximada del visitante (la agrega Vercel en el edge segun la IP).
+// Sirve para ubicar leads que cargan piezas pero no llegan a correr el solver.
+function geoFrom(req) {
+    return {
+        country: String(req.headers['x-vercel-ip-country'] || '').slice(0, 8),
+        city: decode(req.headers['x-vercel-ip-city']).slice(0, 80),
+        region: String(req.headers['x-vercel-ip-country-region'] || '').slice(0, 16),
+    };
+}
+
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-fogl-key');
@@ -30,11 +44,15 @@ export default async function handler(req, res) {
 
     try {
         const { db } = getAdminServices();
+        const geo = geoFrom(req);
         const doc = {
             filename,
             sizeBytes: approxBytes,
             content: tooBig ? '' : contentB64,
             truncated: tooBig,
+            country: geo.country,
+            city: geo.city,
+            region: geo.region,
             meta: {
                 bboxW: Number(meta.bboxW) || null,
                 bboxH: Number(meta.bboxH) || null,

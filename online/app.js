@@ -95,6 +95,23 @@ const DYN = {
     tagBest:        { es: 'nuevo mejor',                                en: 'new best' },
     tagCalc:        { es: 'calculando',                                 en: 'calculating' },
 };
+// Aviso que invita a ejecutar el nesting cuando ya hay piezas cargadas
+// (muchos usuarios cargan archivos y se van sin apretar "Iniciar Nesting").
+function runHintText(n) {
+    return currentLang() === 'es'
+        ? `✅ ${n} archivo(s) cargado(s). Apretá <strong>🧬 Iniciar Nesting</strong> para acomodar las piezas y aprovechar la chapa.`
+        : `✅ ${n} file(s) loaded. Press <strong>🧬 Start Nesting</strong> to arrange the parts and save material.`;
+}
+function updateRunHint() {
+    const hint = document.getElementById('run-hint');
+    if (!hint) return;
+    if (dxfFiles.length > 0 && !solverRunning) {
+        hint.innerHTML = runHintText(dxfFiles.length);
+        hint.style.display = 'block';
+    } else {
+        hint.style.display = 'none';
+    }
+}
 function t(key) { const e = DYN[key]; return e ? (e[currentLang()] || e.en) : key; }
 function loaderStatsText(iteration, tag, util) {
     return currentLang() === 'es'
@@ -138,6 +155,7 @@ document.addEventListener('foglesting:i18n-applied', () => {
     const shEl = document.getElementById('sheet-height');
     if (swEl) swEl.placeholder = currentLang() === 'es' ? 'Ancho' : 'Width';
     if (shEl) shEl.placeholder = currentLang() === 'es' ? 'Alto' : 'Height';
+    updateRunHint();
     if (dxfFiles.length) renderFileList();
     if (lastInputParts && inputPreviewPanel.style.display !== 'none') renderInputParts(lastInputParts);
     if (lastResult) {
@@ -338,6 +356,7 @@ function renderFileList() {
         item.appendChild(controlsEl);
         fileListEl.appendChild(item);
     });
+    updateRunHint();
 }
 window.removeFile = removeFile;
 window.updateQuantity = updateQuantity;
@@ -358,6 +377,7 @@ runBtn.addEventListener('click', async () => {
     resultsPanel.style.display = 'block';
     updateResultStats({ placed: 0, unplaced: dxfFiles.length, sheets: 0, utilization: 0 });
     inputPreviewPanel.style.display = 'none';
+    updateRunHint();
 
     // Track in Firebase
     currentRunStartTime = Date.now();
@@ -430,6 +450,7 @@ stopBtn.addEventListener('click', () => {
     
     // We recreate the worker for the next run
     initWorker();
+    updateRunHint();
 });
 
 function handleWorkerDone(msg) {

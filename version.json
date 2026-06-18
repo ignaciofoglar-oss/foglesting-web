@@ -1,6 +1,6 @@
 {
-  "version": "5.2.14",
-  "name": "FOGLESTING V5.2.14",
-  "download_url": "https://foglesting.com/downloads/foglesting_windows_v5_2_14.exe",
-  "notes": "FOGLESTING V5.2.14 disponible. Descarga directa del ejecutable."
+  "version": "5.2.15",
+  "name": "FOGLESTING V5.2.15",
+  "download_url": "https://foglesting.com/downloads/foglesting_windows_v5_2_15.exe",
+  "notes": "FOGLESTING V5.2.15: corrige el crash con archivos que tienen ñ o acentos en el nombre, carga splines de Illustrator/Inkscape, botón Llenar chapa, menú Herramientas y mejoras de velocidad."
 }

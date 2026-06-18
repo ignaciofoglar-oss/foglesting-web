@@ -396,6 +396,9 @@ function buildSessions(items, runs) {
         const t = it.createdAt ? new Date(it.createdAt).getTime() : 0;
         const s = sid ? placeSid(sid, machine, t) : placeLegacy(machine, t);
         s.dxfs.push(it);
+        // El pais ahora tambien viene en el diagnostico (al cargar), asi ubicamos
+        // a los que cargan piezas pero nunca corren el solver.
+        if (!s.country && it.country) s.country = it.country;
     }
     // 2) Corridas
     for (const r of runs) {
