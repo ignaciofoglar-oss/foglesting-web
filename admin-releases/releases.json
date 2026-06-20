@@ -240,6 +240,18 @@
       "size_bytes": 4541937,
       "created_at": "2026-06-16",
       "notes": "Version publica. CORRIGE UN BUG IMPORTANTE: los archivos con ñ o acentos en el nombre (pestaña.dxf, diseño.dxf) hacian crashear el programa al cargarlos; ahora cargan bien (validado con 281 DXF reales de produccion: 0 crashes, 274 cargan piezas, 7 son line-art de grabado). Tambien: carga de SPLINES por fit points (Illustrator/Inkscape/Corel), nuevo boton 'Llenar chapa' (calcula cuantas piezas entran en 1 chapa), menu 'Herramientas' para mostrar/ocultar las ventanas auxiliares (ya no se abren solas), preview mucho mas rapido con muchas piezas, reporte de nesting bilingue que se recalcula al cambiar espesor/precio, telemetria por sesion y un aviso que invita a ejecutar el nesting tras cargar las piezas. Salida DXF R12 validada en AutoCAD 2026."
+    },
+    {
+      "version": "5.2.16",
+      "name": "FOGLESTING V5.2.16",
+      "file": "foglesting_windows_v5_2_16.exe",
+      "download_url": "/admin-releases/foglesting_windows_v5_2_16.exe",
+      "source_path": "/admin-releases/foglesting_windows_v5_2_16.exe",
+      "public_listed": false,
+      "sha256": "51F569CFF7C92AD8271D88464A9275EC48E6922F013B3723D1B67DEF7B885F43",
+      "size_bytes": 4547338,
+      "created_at": "2026-06-20",
+      "notes": "CANDIDATA (no publica). Caja negra de uso: el programa ahora registra TODO lo que hace el usuario en la sesion (abrir el programa, que boton toca, cargar DXF, herramientas, idioma, cerrar) con la hora de cada accion. En el admin, el Informe de sesion muestra el timeline completo (eventos + corridas) para entender el comportamiento real y donde se traban los usuarios. Igual a 5.2.15 en lo funcional."
     }
   ]
 }

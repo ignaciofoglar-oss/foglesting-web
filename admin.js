@@ -425,7 +425,47 @@ function buildSessions(items, runs) {
 }
 
 // Modal con el informe de lo que hizo el usuario en una sesion (timeline + resumen).
-function showSessionReport(s) {
+// Nombres legibles de las acciones que registra el programa (track_event).
+const ACTION_LABELS = {
+    abrir_programa: '🟢 Abrió el programa',
+    cerrar_programa: '🔴 Cerró el programa',
+    cargar_dxf: '📄 Cargó',
+    agregar_carpeta: '📁 Agregar carpeta',
+    agregar_dxf: '➕ Abrió "Agregar DXF"',
+    agregar_step: '➕ Abrió "Agregar STEP"',
+    quitar_seleccionado: '🗑️ Quitó una pieza',
+    aplicar_cantidad: '🔢 Aplicó cantidad',
+    llenar_chapa: '🧩 Llenar chapa',
+    'boton_ejecutar/detener': '▶️ Ejecutar / Detener',
+    pausar: '⏸️ Pausar',
+    guardar_dxf: '💾 Guardar DXF',
+    reporte: '📋 Abrió el reporte',
+    tool_seleccionar: '🛠️ Herramienta: Seleccionar',
+    tool_pan: '🛠️ Herramienta: Pan',
+    tool_fit: '🛠️ Herramienta: Ajustar vista',
+    tool_medir: '📐 Herramienta: Medir',
+    tool_linea: '🛠️ Dibujó: Línea',
+    tool_rectangulo: '🛠️ Dibujó: Rectángulo',
+    tool_circulo: '🛠️ Dibujó: Círculo',
+    tool_arco: '🛠️ Dibujó: Arco',
+    tool_polilinea: '🛠️ Dibujó: Polilínea',
+    tool_texto: '🛠️ Dibujó: Texto',
+    tool_borrar: '🗑️ Borró anotación',
+    tool_limpiar: '🧹 Limpió anotaciones',
+    tool_grilla: '▦ Grilla on/off',
+    tool_undo: '↩️ Deshacer',
+    feedback: '💬 Feedback',
+    idioma_es: '🌐 Cambió a Español',
+    idioma_en: '🌐 Cambió a English',
+    menu_grafico: '📊 Gráfico de ahorro',
+    menu_arbol: '🌳 Árbol evolutivo',
+};
+function eventLabel(action, detail) {
+    const base = ACTION_LABELS[action] || ('• ' + action);
+    return detail ? `${base} <b>${escapeHtmlDiag(detail)}</b>` : base;
+}
+
+async function showSessionReport(s) {
     if (!s) return;
     const fmt = (t) => t ? new Date(t).toLocaleString('es-AR') : '—';
     const flag = s.country && s.country.length === 2
@@ -485,8 +525,8 @@ function showSessionReport(s) {
                 <div><div class="release-muted" style="font-size:11px;">Mejor aprovech.</div><div style="font-size:18px;font-weight:700;">${bestUtil ? bestUtil.toFixed(1) + '%' : '—'}</div></div>
             </div>
             <div style="padding:14px 20px;">
-                <div class="release-muted" style="font-size:12px;margin-bottom:8px;">LÍNEA DE TIEMPO</div>
-                ${timeline || '<span class="release-muted">Sin eventos.</span>'}
+                <div class="release-muted" style="font-size:12px;margin-bottom:8px;">LÍNEA DE TIEMPO <span id="session-tl-note"></span></div>
+                <div id="session-timeline">${timeline || '<span class="release-muted">Sin eventos.</span>'}</div>
             </div>
         </div>`;
     document.body.appendChild(overlay);
@@ -494,6 +534,46 @@ function showSessionReport(s) {
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
     const closeBtn = document.getElementById('session-report-close');
     if (closeBtn) closeBtn.addEventListener('click', close);
+
+    // Caja negra: si la sesion tiene eventos registrados (track_event), reconstruyo
+    // el timeline COMPLETO (abrir, botones, cargas, cerrar) + las corridas. Las
+    // sesiones viejas sin eventos siguen mostrando cargas + corridas como antes.
+    const isRealSession = s.id && !String(s.id).startsWith('legacy_');
+    if (!isRealSession) return;
+    try {
+        const snap = await getDocs(query(collection(db, 'session_events'), where('sessionId', '==', s.id), limit(1000)));
+        const evs = [];
+        snap.forEach((d) => evs.push(d.data()));
+        if (evs.length === 0) return;
+
+        const evTime = (e) => (e.ts && e.ts.toDate) ? e.ts.toDate().getTime() : (e.serverISO ? new Date(e.serverISO).getTime() : 0);
+        const merged = [];
+        evs.forEach((e) => merged.push({ t: evTime(e), txt: eventLabel(e.action, e.detail) }));
+        // Las corridas (con métricas) vienen de solver_runs.
+        s.runs.forEach((r) => {
+            const util = (typeof r.final_utilization === 'number') ? r.final_utilization.toFixed(1) + '%' : '—';
+            const opt = r.optimization_type === 'bounding-box' ? 'Bounding box' : (r.optimization_type === 'compact-area' ? 'Área compacta' : (r.optimization_type || ''));
+            const tag = r.fill_sheet ? '🧩 Resultado Llenar chapa' : '🏁 Resultado corrida';
+            const saved = r.saved ? ' · 💾 <b>guardó</b>' : '';
+            merged.push({ t: runTime(r),
+                txt: `${tag}: ${r.placed_count ?? '?'} ubicadas · ${r.sheets_used ?? '?'} chapa(s) · aprov. <b>${util}</b> · ${opt}${saved}` });
+        });
+        merged.sort((a, b) => a.t - b.t);
+
+        let html = '';
+        merged.forEach((ev) => {
+            const hora = ev.t ? new Date(ev.t).toLocaleTimeString('es-AR') : '—';
+            html += `<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                <span class="mono release-muted" style="white-space:nowrap;font-size:12px;">${hora}</span>
+                <span style="font-size:13px;">${ev.txt}</span></div>`;
+        });
+        const tl = document.getElementById('session-timeline');
+        const note = document.getElementById('session-tl-note');
+        if (tl) tl.innerHTML = html;
+        if (note) note.textContent = `· ${evs.length} acción(es) registrada(s)`;
+    } catch (e) {
+        console.warn('No se pudieron cargar los eventos de la sesión:', e);
+    }
 }
 
 async function loadDiagnostics() {
