@@ -1,4 +1,4 @@
-import { getAdminServices } from './firebase-admin.js';
+import { getAdminServices } from '../lib/firebase-admin.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {

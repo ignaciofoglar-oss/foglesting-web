@@ -1,4 +1,4 @@
-import { getGithubFile, putGithubFile, requireReleaseAuth } from './github-content.js';
+import { getGithubFile, putGithubFile, requireReleaseAuth } from '../lib/github-content.js';
 
 function json(res, status, payload) {
     res.status(status).json(payload);

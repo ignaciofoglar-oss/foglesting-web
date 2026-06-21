@@ -1,4 +1,4 @@
-import { getAdminServices, requireAdminUser } from './firebase-admin.js';
+import { getAdminServices, requireAdminUser } from '../lib/firebase-admin.js';
 
 function json(res, status, payload) {
     res.status(status).json(payload);

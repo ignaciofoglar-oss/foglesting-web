@@ -1,4 +1,4 @@
-import { getAdminServices, verifyUser } from './firebase-admin.js';
+import { getAdminServices, verifyUser } from '../lib/firebase-admin.js';
 
 // Producto que se cobra (debe coincidir con lo que valida el programa de escritorio).
 const PRODUCT = 'Sheet Metal Nesting';

@@ -1,4 +1,4 @@
-import { getAdminServices } from './firebase-admin.js';
+import { getAdminServices } from '../lib/firebase-admin.js';
 
 // Registra eventos de uso del programa (caja negra de la sesion): que boton toca
 // el usuario, cuando carga, cuando corre, etc. Auth: x-fogl-key (igual que el

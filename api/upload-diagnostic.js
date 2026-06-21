@@ -1,4 +1,4 @@
-import { getAdminServices } from './firebase-admin.js';
+import { getAdminServices } from '../lib/firebase-admin.js';
 
 // Guarda contenido del DXF hasta este tamano; mas grande -> solo metadata.
 const MAX_CONTENT_BYTES = 600 * 1024;

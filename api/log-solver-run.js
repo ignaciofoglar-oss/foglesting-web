@@ -1,4 +1,4 @@
-import { getAdminServices } from './firebase-admin.js';
+import { getAdminServices } from '../lib/firebase-admin.js';
 
 function json(res, status, payload) { res.status(status).json(payload); }
 

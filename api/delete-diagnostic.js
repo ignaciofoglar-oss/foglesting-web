@@ -1,4 +1,4 @@
-import { getAdminServices, requireAdminUser } from './firebase-admin.js';
+import { getAdminServices, requireAdminUser } from '../lib/firebase-admin.js';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST' && req.method !== 'DELETE') {

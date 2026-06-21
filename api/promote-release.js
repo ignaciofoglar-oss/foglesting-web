@@ -1,4 +1,4 @@
-import { getGithubFile, putGithubFile, requireReleaseAuth } from './github-content.js';
+import { getGithubFile, putGithubFile, requireReleaseAuth } from '../lib/github-content.js';
 
 // Dominio publico de las descargas (el mismo que usamos al publicar a mano).
 const DEFAULT_PUBLIC_BASE_URL = 'https://foglesting.com';
