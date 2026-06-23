@@ -110,7 +110,25 @@
     <li><strong>Importar CSV:</strong> permite cargar piezas y cantidades desde un archivo CSV (nombre,cantidad).</li>
   </ul>
 
-  <h3>Agregar STEP (desplegado de chapa)</h3>
+  <h3>Llenar chapa</h3>
+  <p>
+    El botón <strong>"Llenar chapa"</strong> calcula automáticamente <strong>cuántas copias de una pieza entran en
+    una sola chapa</strong> y deja en pantalla esa chapa llena, lista para guardar. Es ideal cuando producís muchas
+    unidades iguales y querés aprovechar la chapa al máximo sin probar cantidades a mano.
+  </p>
+  <ul>
+    <li>Con <strong>una sola pieza</strong> cargada, usa esa pieza directamente.</li>
+    <li>Con <strong>varias piezas</strong> cargadas, abre un <strong>cuadro para elegir con cuál llenar</strong> la
+      chapa (también podés seleccionarla antes en la lista). "Llenar chapa" trabaja con <strong>una pieza por vez</strong>.</li>
+    <li>Al terminar informa cuántas piezas entraron y el aprovechamiento, y <strong>ajusta la cantidad</strong> de esa
+      pieza a ese número. Usá <strong>Guardar DXF</strong> para exportar la chapa llena.</li>
+  </ul>
+
+  <h3>Agregar STEP (desplegado de chapa) <span style="font-size:0.7rem;background:rgba(232,91,46,0.15);border:1px solid rgba(232,91,46,0.4);color:var(--fire);border-radius:6px;padding:2px 8px;vertical-align:middle;">EXPERIMENTAL</span></h3>
+  <div class="warn"><strong>Función experimental, en desarrollo.</strong> Es la última incorporación y todavía
+    tiene limitaciones (ver más abajo). En el programa, el ícono <strong>"i"</strong> junto al botón muestra estas
+    mismas advertencias al pasar el mouse. Si el desplegado falla o sale raro, exportá el DXF de la chapa desplegada
+    directamente desde tu CAD.</div>
   <p>
     El botón <strong>"Agregar STEP"</strong> permite importar piezas de chapa en formato <code>.step</code> / <code>.stp</code>
     y obtener automáticamente su <strong>patrón plano (desplegado)</strong> en DXF, listo para nestear.
@@ -136,6 +154,7 @@
       <tr><td><strong>Precio/Kg</strong></td><td>Precio del material por kilogramo, para calcular el costo.</td></tr>
       <tr><td><strong>Densidad</strong></td><td>Densidad del material (kg/m³) para estimar el peso.</td></tr>
       <tr><td><strong>Espesor</strong></td><td>Espesor de la chapa, usado en el cálculo de peso y costo.</td></tr>
+      <tr><td><strong>Margen borde</strong></td><td>Distancia mínima que se deja entre las piezas y el borde de la chapa. Útil para respetar la zona de sujeción o el área que la máquina no puede cortar.</td></tr>
     </tbody>
   </table>
 
@@ -179,14 +198,25 @@
   <h2 id="ejecutar">7. Ejecutar el nesting y leer resultados</h2>
   <ol class="steps">
     <li>Cargue las piezas y configure la chapa y los parámetros.</li>
-    <li>Presione <strong>Ejecutar nesting</strong>. Puede <strong>Pausar</strong> o <strong>Detener</strong> en cualquier momento.</li>
+    <li>Presione <strong>Ejecutar nesting</strong> <strong>una sola vez</strong> y deje que trabaje. El acomodo se va
+      mostrando en vivo en la vista previa y mejora con cada iteración; con muchas piezas puede tardar varios segundos.</li>
+    <li>Mientras corre, ese mismo botón cambia a <strong>"Detener solver"</strong>. Use <strong>Pausar</strong> para
+      frenar momentáneamente o <strong>Detener</strong> para cortar la búsqueda y quedarse con el mejor resultado hasta ese punto.</li>
     <li>Al finalizar, el programa informa: <strong>perfiles cargados</strong>, <strong>piezas ubicadas</strong>,
       <strong>chapas usadas</strong>, <strong>aprovechamiento (%)</strong> y <strong>costos</strong>.</li>
   </ol>
+  <div class="tip"><strong>El botón Ejecutar es un interruptor.</strong> Mientras el solver trabaja se convierte en
+    <em>Detener solver</em>: si lo vuelve a tocar enseguida, lo está <strong>cancelando</strong>. Si detiene la corrida
+    antes de que ubique nada, el programa ahora se lo avisa con un cartel ("Nesting detenido") en vez de quedar en blanco.
+    Para obtener un resultado, déjelo correr unos segundos.</div>
   <div class="warn"><strong>Piezas sin ubicar:</strong> si alguna pieza no entra en la chapa, el programa lo avisa con un
     cartel indicando el nombre y el tamaño de la pieza. Normalmente significa que la pieza es <strong>más grande que la
     chapa configurada</strong> o que las <strong>unidades del DXF</strong> no coinciden (mm vs pulgadas). Aumente el tamaño
     de la chapa o revise la unidad de importación.</div>
+  <div class="warn"><strong>Archivos sin piezas:</strong> si uno o más DXF cargan pero <strong>no aportan ninguna pieza</strong>
+    al nesting, el programa lo avisa y los lista por nombre. Suele pasar con dibujos de grabado / <em>line-art</em>,
+    contornos abiertos o piezas más chicas que el área mínima. Verifique que el contorno de corte sea una
+    <strong>polilínea cerrada</strong>.</div>
 
   <h2 id="exportar">8. Exportar el resultado</h2>
   <p>
@@ -217,6 +247,8 @@
   <table>
     <thead><tr><th>Síntoma</th><th>Causa probable / solución</th></tr></thead>
     <tbody>
+      <tr><td>El resultado dice 0 piezas / “no pasó nada”.</td><td>Lo más común es haber tocado <em>Ejecutar / Detener</em> dos veces seguidas y cancelar la corrida al instante. Apriete <strong>Ejecutar nesting</strong> una vez y déjelo correr unos segundos. El programa avisa "Nesting detenido" cuando se cancela antes de ubicar piezas.</td></tr>
+      <tr><td>Un DXF se carga pero no aporta ninguna pieza.</td><td>El archivo no tiene contornos <strong>cerrados</strong> (dibujo de grabado/line-art, líneas sueltas), o las piezas son más chicas que el área mínima. El programa lista estos archivos al terminar. Cierre el contorno de corte (polilínea cerrada).</td></tr>
       <tr><td>La pieza se carga pero no aparece en el nesting.</td><td>Es más grande que la chapa, o las unidades del DXF están mal (mm/pulgadas). Aumente la chapa o cambie <em>DXF import</em>. El programa muestra un aviso con el tamaño de la pieza.</td></tr>
       <tr><td>Las piezas quedan enormes o diminutas.</td><td>Unidad de importación incorrecta. Ajuste <em>DXF import</em> (mm vs pulgadas).</td></tr>
       <tr><td>Un STEP no se despliega o sale raro.</td><td>La pieza puede no ser chapa de plegadora estándar. Revise la verificación (marca las piezas dudosas).</td></tr>
