@@ -459,6 +459,13 @@ const ACTION_LABELS = {
     idioma_en: '🌐 Cambió a English',
     menu_grafico: '📊 Gráfico de ahorro',
     menu_arbol: '🌳 Árbol evolutivo',
+    // Módulo Desplegado de chapa (STEP → DXF)
+    abrir_modulo_step: '📐 Abrió módulo Desplegado de chapa',
+    volver_a_nesting: '↩️ Volvió a Nesting',
+    step_cargar: '📥 Cargó STEP',
+    step_transformar: '🔄 Transformó STEP a DXF',
+    step_enviar_nesting: '📤 Envió DXF al nesting',
+    step_quitar: '🗑️ Quitó el STEP',
 };
 function eventLabel(action, detail) {
     const base = ACTION_LABELS[action] || ('• ' + action);
