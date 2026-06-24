@@ -241,6 +241,19 @@ function initSettingsHelp() {
         }
     });
 
+    
+    document.body.addEventListener('click', (e) => {
+        if (e.target.classList && e.target.classList.contains('info-tip')) {
+            if (help.classList.contains('active') && help.textContent === (e.target.dataset.tip || t('helpDefault'))) {
+                help.textContent = t('helpDefault');
+                help.classList.remove('active');
+            } else {
+                help.textContent = e.target.dataset.tip || t('helpDefault');
+                help.classList.add('active');
+            }
+        }
+    });
+
     document.body.addEventListener('mouseout', (e) => {
         if (e.target.classList && e.target.classList.contains('info-tip')) {
             help.textContent = t('helpDefault');

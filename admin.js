@@ -770,7 +770,12 @@ async function loadDiagnostics() {
         // ultima vez que el admin apreto "Marcar como visto" (guardado en este
         // navegador). Un puntito naranja en cada archivo/sesion lo resalta.
         const SEEN_KEY = 'foglesting_diag_seen_ts';
-        const seenTs = Number(localStorage.getItem(SEEN_KEY) || 0);
+        // La PRIMERA vez (nunca se marco nada) arrancamos con TODO como visto, asi
+        // no aparecen como nuevos los archivos que ya viste. De ahi en mas, solo se
+        // resalta lo que se suba despues de la ultima vez que apretaste "Marcar visto".
+        const storedSeen = localStorage.getItem(SEEN_KEY);
+        const firstTimeSeen = storedSeen === null;
+        const seenTs = firstTimeSeen ? Infinity : Number(storedSeen || 0);
         const NEW_DOT = '<span title="Nuevo" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#ff7a18;box-shadow:0 0 6px #ff7a18;margin-right:6px;vertical-align:middle;"></span>';
         let newestTs = 0;
         let totalNew = 0;
@@ -827,6 +832,10 @@ async function loadDiagnostics() {
                     </div>
                 </details>`;
         });
+
+        // Primera vez: dejamos registrado lo mas nuevo como "visto" para que de ahora
+        // en mas solo se resalten las cargas posteriores (no aparece todo como nuevo).
+        if (firstTimeSeen) localStorage.setItem(SEEN_KEY, String(newestTs || Date.now()));
 
         container.innerHTML = `
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">

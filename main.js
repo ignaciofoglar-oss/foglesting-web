@@ -256,7 +256,8 @@ function init() {
         const label = releaseVersionText(activeRelease);
         const textSpan = downloadBtn.querySelector('span:not(.beta-badge)');
         if (textSpan) {
-            textSpan.innerHTML = `DESCARGAR <span class="fire-text">FOGL</span><span class="forest-text">ESTING</span> ${label}`;
+            const btnText = document.documentElement.lang === 'en' ? 'DOWNLOAD' : 'DESCARGAR';
+            textSpan.innerHTML = `${btnText} <span class="fire-text">FOGL</span><span class="forest-text">ESTING</span> ${label}`;
         }
         downloadBtn.setAttribute('aria-label', `Descargar Foglesting ${label}`);
 
@@ -269,6 +270,19 @@ function init() {
             } else {
                 shaEl.style.display = 'none';
             }
+        }
+
+        // Also update the old versions list if it exists
+        const list = document.getElementById('old-versions-list');
+        if (list) {
+            const oldBtns = list.querySelectorAll('a.btn-outline span');
+            oldBtns.forEach(span => {
+                const text = span.innerHTML;
+                if (text.includes('DESCARGAR') || text.includes('DOWNLOAD')) {
+                    const btnText = document.documentElement.lang === 'en' ? 'DOWNLOAD' : 'DESCARGAR';
+                    span.innerHTML = text.replace(/DESCARGAR|DOWNLOAD/, btnText);
+                }
+            });
         }
     }
 
@@ -305,9 +319,10 @@ function init() {
             list.innerHTML = publicHistory.map((release) => {
                 const url = releaseDownloadUrl(release);
                 const versionText = releaseVersionText(release);
+                const btnText = document.documentElement.lang === 'en' ? 'DOWNLOAD' : 'DESCARGAR';
                 return `
                     <a class="btn btn-outline" href="${url}" rel="noopener" style="font-family: var(--font-display);" target="_blank">
-                        <span>DESCARGAR <span class="fire-text">FOGL</span><span class="forest-text">ESTING</span> ${versionText}</span>
+                        <span>${btnText} <span class="fire-text">FOGL</span><span class="forest-text">ESTING</span> ${versionText}</span>
                     </a>
                 `;
             }).join('');
@@ -907,4 +922,29 @@ if (document.readyState === 'loading') {
     render();
 })();
 
-
+// Foglar Redirect Transition
+document.addEventListener('DOMContentLoaded', () => {
+    const poweredBadges = document.querySelectorAll('.powered-badge, .footer-powered a');
+    poweredBadges.forEach(badge => {
+        badge.addEventListener('click', (e) => {
+            const url = badge.href;
+            if (url && url.includes('foglar.com.ar')) {
+                e.preventDefault();
+                const transitionEl = document.getElementById('foglar-transition');
+                const logoEl = document.getElementById('foglar-transition-logo');
+                if (transitionEl && logoEl) {
+                    transitionEl.style.opacity = '1';
+                    transitionEl.style.pointerEvents = 'all';
+                    logoEl.style.opacity = '1';
+                    logoEl.style.transform = 'scale(1)';
+                    
+                    setTimeout(() => {
+                        window.location.href = url;
+                    }, 1200);
+                } else {
+                    window.location.href = url;
+                }
+            }
+        });
+    });
+});
