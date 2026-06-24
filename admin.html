@@ -62,6 +62,7 @@
                 <a href="#" class="nav-item" data-target="users">Usuarios & Licencias</a>
                 <a href="#" class="nav-item" data-target="releases">Versiones</a>
                 <a href="#" class="nav-item" data-target="diagnostics">Diagnósticos DXF</a>
+                <a href="#" class="nav-item" data-target="files">Archivos</a>
                 <a href="#" class="nav-item" data-target="audit">Auditoría</a>
             </nav>
             <button id="logout-btn" class="btn-secondary">Cerrar Sesión</button>
@@ -332,6 +333,26 @@
                 </div>
             </section>
 
+            <!-- Test Files View -->
+            <section id="view-files" class="view">
+                <header>
+                    <h1>Archivos de prueba</h1>
+                    <p class="view-subtitle">
+                        Subí acá DXF y STEP de prueba para descargarlos en otra PC y probar el programa.
+                        Los archivos quedan guardados y se pueden descargar desde cualquier computadora con el botón Descargar o copiando el link.
+                    </p>
+                </header>
+                <div class="release-selector-row" style="margin-bottom:16px; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <label class="btn-primary" for="files-upload-input" style="width:auto; cursor:pointer; display:inline-block;">⬆️ Subir archivos</label>
+                    <input id="files-upload-input" type="file" accept=".dxf,.step,.stp,.stl,.zip" multiple style="display:none;">
+                    <button class="btn-secondary" id="files-refresh-btn" type="button" style="width:auto;">Actualizar</button>
+                    <span id="files-upload-status" class="release-muted"></span>
+                </div>
+                <div id="files-list">
+                    <p class="loading">Cargando archivos...</p>
+                </div>
+            </section>
+
             <!-- Audit View -->
             <section id="view-audit" class="view">
                 <header>
@@ -351,7 +372,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="admin.js?v=12"></script>
+    <script type="module" src="admin.js?v=13"></script>
     <script>
         // Mobile hamburger menu logic
         (function() {

@@ -28,6 +28,15 @@ import {
     writeBatch,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+    getStorage,
+    ref as storageRef,
+    uploadBytesResumable,
+    listAll,
+    getDownloadURL,
+    getMetadata,
+    deleteObject
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 // Firebase Configuration from User
 const firebaseConfig = {
@@ -44,6 +53,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 // DOM Elements
 const loginScreen = document.getElementById('login-screen');
@@ -217,6 +227,7 @@ navItems.forEach(item => {
         const targetId = `view-${item.dataset.target}`;
         document.getElementById(targetId).classList.add('active');
         if (item.dataset.target === 'audit') loadAudit();
+        if (item.dataset.target === 'files') loadTestFiles();
     });
 });
 
@@ -236,6 +247,105 @@ function escapeHtmlDiag(s) {
         { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
     ));
 }
+
+// ============================================================
+//  ARCHIVOS DE PRUEBA — subir DXF/STEP para descargar en otra PC
+//  Usa Firebase Storage (carpeta test-files/). Las URLs de descarga
+//  llevan token y funcionan en cualquier PC sin login.
+// ============================================================
+const TEST_FILES_DIR = 'test-files';
+
+function humanSize(bytes) {
+    const b = Number(bytes) || 0;
+    if (b < 1024) return b + ' B';
+    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+    return (b / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+async function loadTestFiles() {
+    const container = document.getElementById('files-list');
+    if (!container) return;
+    container.innerHTML = '<p class="loading">Cargando archivos...</p>';
+    try {
+        const res = await listAll(storageRef(storage, TEST_FILES_DIR));
+        if (!res.items.length) {
+            container.innerHTML = '<p class="loading">Todavía no subiste archivos de prueba. Usá el botón de arriba para cargar DXF o STEP.</p>';
+            return;
+        }
+        const rows = await Promise.all(res.items.map(async (itemRef) => {
+            let meta = {}, url = '#';
+            try { meta = await getMetadata(itemRef); } catch (_) {}
+            try { url = await getDownloadURL(itemRef); } catch (_) {}
+            return {
+                name: itemRef.name,
+                url,
+                when: meta.timeCreated ? new Date(meta.timeCreated).toLocaleString('es-AR') : '—',
+                size: humanSize(meta.size),
+                created: meta.timeCreated || '',
+            };
+        }));
+        rows.sort((a, b) => String(b.created).localeCompare(String(a.created)));
+        const btn = 'padding:6px 12px;font-size:13px;width:auto;display:inline-block;';
+        let html = `<table class="diag-table" style="width:100%;border-collapse:collapse;">
+            <thead><tr style="text-align:left;"><th>Archivo</th><th>Tamaño</th><th>Subido</th><th style="min-width:260px;">Acciones</th></tr></thead><tbody>`;
+        for (const r of rows) {
+            html += `<tr>
+                <td>${escapeHtmlDiag(r.name)}</td>
+                <td>${r.size}</td>
+                <td>${escapeHtmlDiag(r.when)}</td>
+                <td>
+                    <a class="btn-primary" href="${r.url}" download="${escapeHtmlDiag(r.name)}" style="${btn}text-decoration:none;">Descargar</a>
+                    <button class="btn-secondary files-copy" data-url="${escapeHtmlDiag(r.url)}" style="${btn}">Copiar link</button>
+                    <button class="btn-danger files-del" data-name="${escapeHtmlDiag(r.name)}" style="${btn}">Borrar</button>
+                </td></tr>`;
+        }
+        html += '</tbody></table>';
+        container.innerHTML = html;
+        container.querySelectorAll('.files-del').forEach((b) => b.addEventListener('click', () => deleteTestFile(b.dataset.name)));
+        container.querySelectorAll('.files-copy').forEach((b) => b.addEventListener('click', () => {
+            navigator.clipboard.writeText(b.dataset.url).then(() => { const t = b.textContent; b.textContent = '¡Copiado!'; setTimeout(() => { b.textContent = t; }, 1500); });
+        }));
+    } catch (e) {
+        container.innerHTML = `<p class="loading" style="color:#ff8a8a;">No se pudieron listar los archivos: ${escapeHtmlDiag(e.message || e)}.<br>Si el error menciona permisos/unauthorized, hay que permitir la carpeta <b>test-files/</b> en las reglas de Storage de Firebase.</p>`;
+        console.error(e);
+    }
+}
+
+function uploadTestFiles(fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    const status = document.getElementById('files-upload-status');
+    const allowed = /\.(dxf|step|stp|stl|zip)$/i;
+    let done = 0;
+    const valid = files.filter((f) => allowed.test(f.name));
+    if (valid.length !== files.length && status) status.textContent = 'Se omitieron archivos que no son DXF/STEP/STL/ZIP.';
+    valid.forEach((file) => {
+        const r = storageRef(storage, `${TEST_FILES_DIR}/${file.name}`);
+        const task = uploadBytesResumable(r, file, { contentType: file.type || 'application/octet-stream' });
+        task.on('state_changed',
+            (snap) => { if (status) status.textContent = `Subiendo ${file.name}... ${Math.round(snap.bytesTransferred / snap.totalBytes * 100)}%`; },
+            (err) => { if (status) status.textContent = `Error al subir ${file.name}: ${err.message}`; console.error(err); },
+            () => { done++; if (status) status.textContent = `Subido ${file.name} (${done}/${valid.length}).`; loadTestFiles(); logAudit('test_file_upload', `Subió archivo de prueba: ${file.name}`); }
+        );
+    });
+}
+
+async function deleteTestFile(name) {
+    if (!confirm(`¿Borrar el archivo de prueba "${name}"?`)) return;
+    try {
+        await deleteObject(storageRef(storage, `${TEST_FILES_DIR}/${name}`));
+        logAudit('test_file_delete', `Borró archivo de prueba: ${name}`);
+        loadTestFiles();
+    } catch (e) {
+        alert('No se pudo borrar: ' + (e.message || e));
+    }
+}
+
+document.getElementById('files-upload-input')?.addEventListener('change', (e) => {
+    uploadTestFiles(e.target.files);
+    e.target.value = '';
+});
+document.getElementById('files-refresh-btn')?.addEventListener('click', loadTestFiles);
 
 // ============================================================
 //  AUDITORÍA — registro de acciones del panel
@@ -374,7 +484,7 @@ function buildSessions(items, runs) {
                 return s;
             }
         }
-        const s = { id: 'legacy_' + tmpSessions.length, machine, start: t, end: t, dxfs: [], runs: [], country: '' };
+        const s = { id: 'legacy_' + tmpSessions.length, sid: '', machine, start: t, end: t, dxfs: [], runs: [], country: '' };
         tmpSessions.push(s);
         return s;
     }
@@ -382,7 +492,7 @@ function buildSessions(items, runs) {
     const sidSessions = new Map();
     function placeSid(sid, machine, t) {
         let s = sidSessions.get(sid);
-        if (!s) { s = { id: sid, machine, start: t, end: t, dxfs: [], runs: [], country: '' }; sidSessions.set(sid, s); }
+        if (!s) { s = { id: sid, sid, machine, start: t, end: t, dxfs: [], runs: [], country: '' }; sidSessions.set(sid, s); }
         s.start = Math.min(s.start, t); s.end = Math.max(s.end, t);
         if (!s.machine || s.machine === '?') s.machine = machine;
         return s;
@@ -410,14 +520,50 @@ function buildSessions(items, runs) {
         if (!s.country && r.country) s.country = r.country;
     }
 
-    const all = [...sidSessions.values(), ...tmpSessions];
-    // Ordenar todo por hora dentro de cada sesion y las sesiones por inicio desc.
+    const grouped = [...sidSessions.values(), ...tmpSessions];
+
+    // El sessionId del programa es por-LANZAMIENTO, pero si el usuario deja el
+    // programa abierto varios dias, una sola "sesion" termina abarcando dias y
+    // mezcla cargas de fechas distintas (ej: archivos del 24 bajo una sesion del
+    // 22). Partimos cada sesion en SENTADAS reales: cortamos donde hay un hueco
+    // de mas de 30 min sin actividad (misma nocion que usa el resto del panel).
+    function splitByGaps(s) {
+        const ev = [];
+        s.dxfs.forEach((d) => ev.push({ t: d.createdAt ? new Date(d.createdAt).getTime() : 0, dxf: d }));
+        s.runs.forEach((r) => ev.push({ t: runTime(r), run: r }));
+        ev.sort((a, b) => a.t - b.t);
+        if (!ev.length) return [];
+        const parts = [];
+        let cur = null;
+        for (const e of ev) {
+            if (!cur || (e.t - cur.end) > SESSION_GAP_MS) {
+                cur = { sid: s.sid || '', machine: s.machine, country: s.country,
+                        start: e.t, end: e.t, dxfs: [], runs: [] };
+                parts.push(cur);
+            }
+            cur.end = e.t;
+            if (e.dxf) cur.dxfs.push(e.dxf); else cur.runs.push(e.run);
+        }
+        parts.forEach((g, k) => {
+            // id unico por sentada (para el DOM); sid conserva el id real de la
+            // sesion del programa, asi el Informe puede traer los eventos.
+            g.id = parts.length > 1 ? `${s.id}__p${k + 1}` : s.id;
+            g.part = parts.length > 1 ? (k + 1) : 0;
+            g.partsTotal = parts.length;
+            if (!g.country && s.country) g.country = s.country;
+        });
+        return parts;
+    }
+
+    let all = [];
+    grouped.forEach((s) => { all = all.concat(splitByGaps(s)); });
+    // Ordenar todo por hora dentro de cada sentada y las sentadas por inicio desc.
     all.forEach((s) => {
         s.dxfs.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
         s.runs.sort((a, b) => runTime(a) - runTime(b));
     });
     all.sort((a, b) => b.start - a.start);
-    // Este panel es de Diagnosticos DXF: solo mostramos sesiones que tengan al
+    // Este panel es de Diagnosticos DXF: solo mostramos sentadas que tengan al
     // menos un archivo. Las corridas sin DXF asociado (datos viejos previos al
     // diagnostico, subidas que fallaron, o re-corridas online sin archivos
     // nuevos) generaban banners vacios "0 DXF" que aca no aportan nada.
@@ -520,7 +666,7 @@ async function showSessionReport(s) {
             <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:10px;">
                 <span style="font-size:20px;">📋</span>
                 <div style="flex:1;">
-                    <div style="font-weight:700;font-size:15px;">Informe de sesión — ${flag} ${escapeHtmlDiag(s.machine)}</div>
+                    <div style="font-weight:700;font-size:15px;">Informe de sesión — ${flag} ${escapeHtmlDiag(s.machine)}${(s.partsTotal && s.partsTotal > 1) ? ` <span class="release-muted" style="font-weight:500;">· sentada ${s.part}/${s.partsTotal}</span>` : ''}</div>
                     <div class="release-muted" style="font-size:12px;">${fmt(s.start)} → ${fmt(s.end)} · ${mins} min · versión ${escapeHtmlDiag(ver)}</div>
                 </div>
                 <button id="session-report-close" class="btn-secondary" style="width:auto;padding:6px 12px;">Cerrar</button>
@@ -545,17 +691,25 @@ async function showSessionReport(s) {
     // Caja negra: si la sesion tiene eventos registrados (track_event), reconstruyo
     // el timeline COMPLETO (abrir, botones, cargas, cerrar) + las corridas. Las
     // sesiones viejas sin eventos siguen mostrando cargas + corridas como antes.
-    const isRealSession = s.id && !String(s.id).startsWith('legacy_');
-    if (!isRealSession) return;
+    // s.sid es el id REAL de la sesion del programa (vacio en datos legacy).
+    const realSid = s.sid || '';
+    if (!realSid) return;
     try {
-        const snap = await getDocs(query(collection(db, 'session_events'), where('sessionId', '==', s.id), limit(1000)));
+        const snap = await getDocs(query(collection(db, 'session_events'), where('sessionId', '==', realSid), limit(1000)));
         const evs = [];
         snap.forEach((d) => evs.push(d.data()));
         if (evs.length === 0) return;
 
         const evTime = (e) => (e.ts && e.ts.toDate) ? e.ts.toDate().getTime() : (e.serverISO ? new Date(e.serverISO).getTime() : 0);
+        // Si la sesion del programa se partio en varias sentadas (estuvo abierta
+        // dias), mostramos solo los eventos de la ventana de ESTA sentada.
+        const margin = 2 * 60 * 1000;
+        const inWindow = (s.partsTotal && s.partsTotal > 1)
+            ? (t) => t >= s.start - margin && t <= s.end + margin
+            : () => true;
         const merged = [];
-        evs.forEach((e) => merged.push({ t: evTime(e), txt: eventLabel(e.action, e.detail) }));
+        evs.forEach((e) => { const t = evTime(e); if (inWindow(t)) merged.push({ t, txt: eventLabel(e.action, e.detail) }); });
+        if (merged.length === 0 && s.runs.length === 0) return;
         // Las corridas (con métricas) vienen de solver_runs.
         s.runs.forEach((r) => {
             const util = (typeof r.final_utilization === 'number') ? r.final_utilization.toFixed(1) + '%' : '—';
@@ -612,23 +766,37 @@ async function loadDiagnostics() {
         const sessions = buildSessions(items, runs);
         lastDiagSessions = sessions;
 
+        // Aviso de "DXF nuevos": marcamos como nuevo todo lo subido despues de la
+        // ultima vez que el admin apreto "Marcar como visto" (guardado en este
+        // navegador). Un puntito naranja en cada archivo/sesion lo resalta.
+        const SEEN_KEY = 'foglesting_diag_seen_ts';
+        const seenTs = Number(localStorage.getItem(SEEN_KEY) || 0);
+        const NEW_DOT = '<span title="Nuevo" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#ff7a18;box-shadow:0 0 6px #ff7a18;margin-right:6px;vertical-align:middle;"></span>';
+        let newestTs = 0;
+        let totalNew = 0;
+
         const btnStyle = 'padding:6px 12px;font-size:13px;width:auto;display:inline-block;';
         let groupsHtml = '';
         sessions.forEach((s, si) => {
             let rows = '';
+            let sessionNew = 0;
             for (const it of s.dxfs) {
                 const m = it.meta || {};
                 const kb = (it.sizeBytes / 1024).toFixed(1);
                 const bbox = (m.bboxW && m.bboxH) ? `${Math.round(m.bboxW)} × ${Math.round(m.bboxH)} mm` : '—';
                 const date = it.createdAt ? new Date(it.createdAt).toLocaleString('es-AR') : '—';
+                const itTs = it.createdAt ? new Date(it.createdAt).getTime() : 0;
+                if (itTs > newestTs) newestTs = itTs;
+                const isNew = itTs > seenTs;
+                if (isNew) { sessionNew++; totalNew++; }
                 const dl = it.truncated
                     ? '<span class="release-muted">muy grande</span>'
                     : `<button class="btn-primary diag-dl" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" style="${btnStyle}">Descargar</button>`;
                 const del = `<button class="btn-danger diag-del" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" style="${btnStyle}margin-left:6px;">Borrar</button>`;
                 rows += `
-                    <tr>
+                    <tr${isNew ? ' style="background:rgba(255,122,24,0.06);"' : ''}>
                         <td style="text-align:center;"><input type="checkbox" class="diag-check" data-id="${escapeHtmlDiag(it.id)}" data-name="${escapeHtmlDiag(it.filename)}" data-truncated="${it.truncated ? '1' : '0'}"></td>
-                        <td>${escapeHtmlDiag(it.filename)}</td>
+                        <td>${isNew ? NEW_DOT : ''}${escapeHtmlDiag(it.filename)}</td>
                         <td>${bbox}</td>
                         <td>${kb} KB</td>
                         <td>${escapeHtmlDiag(date)}</td>
@@ -642,9 +810,10 @@ async function loadDiagnostics() {
             groupsHtml += `
                 <details class="session-group" style="margin-bottom:10px;border:1px solid var(--border, #2a2a2a);border-radius:10px;overflow:hidden;">
                     <summary style="cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:rgba(255,255,255,0.02);">
-                        <span class="audit-tag">${flag} ${escapeHtmlDiag(s.machine)}</span>
+                        ${sessionNew > 0 ? NEW_DOT : ''}<span class="audit-tag">${flag} ${escapeHtmlDiag(s.machine)}</span>
                         <span class="release-muted">${escapeHtmlDiag(started)}</span>
                         <span class="release-muted">· ${s.dxfs.length} DXF · ${s.runs.length} corrida(s) · ${durTxt}</span>
+                        ${sessionNew > 0 ? `<span style="background:#ff7a18;color:#1a1205;font-weight:700;font-size:11px;padding:2px 8px;border-radius:10px;">${sessionNew} nuevo${sessionNew > 1 ? 's' : ''}</span>` : ''}
                         <button class="btn-primary diag-report" data-si="${si}" type="button" style="${btnStyle}margin-left:auto;">📋 Informe</button>
                     </summary>
                     <div style="overflow-x:auto;padding:6px 10px 12px;">
@@ -667,9 +836,17 @@ async function loadDiagnostics() {
                 <button class="btn-danger" id="diag-delete-selected" type="button" style="width:auto;" disabled>
                     Borrar seleccionados (<span id="diag-selected-count">0</span>)
                 </button>
+                ${totalNew > 0 ? `<button class="btn-secondary" id="diag-mark-seen" type="button" style="width:auto;">✓ Marcar como visto</button>
+                <span style="background:#ff7a18;color:#1a1205;font-weight:700;font-size:12px;padding:3px 10px;border-radius:10px;">${totalNew} DXF nuevo${totalNew > 1 ? 's' : ''}</span>` : ''}
                 <span class="release-muted" id="diag-total-count">${items.length} archivo(s) · ${sessions.length} sesión(es)</span>
             </div>
             ${groupsHtml}`;
+
+        const markSeenBtn = document.getElementById('diag-mark-seen');
+        if (markSeenBtn) markSeenBtn.addEventListener('click', () => {
+            localStorage.setItem(SEEN_KEY, String(newestTs || Date.now()));
+            loadDiagnostics();
+        });
 
         container.querySelectorAll('.diag-dl').forEach((btn) => {
             btn.addEventListener('click', () => downloadDiagnostic(btn.dataset.id, btn.dataset.name));

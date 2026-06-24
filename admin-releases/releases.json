@@ -264,6 +264,18 @@
       "size_bytes": 4564522,
       "created_at": "2026-06-23",
       "notes": "CANDIDATA (no publica). Avisos mas claros al terminar el nesting: si se detiene el solver antes de ubicar piezas aparece un cartel 'Nesting detenido' (antes quedaba sin respuesta y el usuario no sabia si habia fallado o lo habia cancelado el), y se distingue de 'no entro ninguna pieza'. Avisa ademas cuando archivos DXF cargaron pero NO aportaron piezas (line-art/grabado, contornos abiertos). 'Llenar chapa' con varias piezas cargadas abre un selector para elegir con cual llenar. 'Agregar STEP' marcado como EXPERIMENTAL con icono 'i' y sus limitaciones. Ya no registra en las metricas las corridas vacias canceladas al instante (0/0/0). Igual a 5.2.16 en el resto."
+    },
+    {
+      "version": "5.2.19",
+      "name": "FOGLESTING V5.2.19",
+      "file": "foglesting_windows_v5_2_19.exe",
+      "download_url": "/admin-releases/foglesting_windows_v5_2_19.exe",
+      "source_path": "/admin-releases/foglesting_windows_v5_2_19.exe",
+      "public_listed": false,
+      "sha256": "6F825C358B92DF240769BDBA4DF36D6CB219C8D0946F8B0DE0541F802E0DB8DB",
+      "size_bytes": 24092160,
+      "created_at": "2026-06-24",
+      "notes": "CANDIDATA (no publica) - PARA PROBAR EN OTRA PC. Hito grande: el desplegado de STEP ahora es NATIVO en C++ (OpenCASCADE), NO requiere Python ni librerias - el motor va embebido en el .exe y se autoextrae solo la 1ra vez. Es UN SOLO .exe de 23MB sin instalador (por eso pesa mas que las versiones anteriores). Nuevo modulo 'Desplegado de chapa' (pestana aparte): cargar STEP, vista 3D wireframe rotable con zoom, lista de piezas, transformar a DXF con previsualizacion (zoom+pan), enviar al nesting. Seleccionar una pieza la resalta en el 3D Y en el desplegado a la vez. Click derecho: aislar una pieza (verla sola), quitar un DXF suelto. Corrige un bug del desplegado donde piezas con pliegues quedaban partidas en pedazos sueltos. En el nesting: la cota de tamano ahora se mide por chapa (antes media el espacio entre dos chapas). Y el programa ya no abre una consola negra detras."
     }
   ]
 }
