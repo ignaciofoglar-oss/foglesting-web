@@ -56,9 +56,12 @@ let nestingWorker = null;
 let solverRunning = false;
 
 // ---- UI Elements ----
+// El cartel de estado del WASM es opcional (la UI puede no mostrarlo). No debe
+// romper el resto del script si no existe en el HTML.
 const wasmStatus = document.getElementById('wasm-status');
-const statusDot = wasmStatus.querySelector('.status-dot');
-const statusText = wasmStatus.querySelector('span');
+const statusDot = wasmStatus ? wasmStatus.querySelector('.status-dot') : null;
+const statusText = wasmStatus ? wasmStatus.querySelector('span') : null;
+let wasmReady = false;
 
 const dropZone = document.getElementById('drop-zone');
 const fileInput = document.getElementById('file-input');
@@ -147,7 +150,7 @@ document.addEventListener('foglesting:i18n-applied', () => {
     document.title = currentLang() === 'es'
         ? 'Foglesting Online | Nesting de Chapa en tu Navegador'
         : 'Foglesting Online | Sheet Metal Nesting in your Browser';
-    if (statusDot.classList.contains('ready')) statusText.textContent = t('wasmReady');
+    if (wasmReady && statusText) statusText.textContent = t('wasmReady');
     const help = document.getElementById('settings-help');
     if (help && !help.classList.contains('active')) help.textContent = t('helpDefault');
     // Placeholders (i18n.js solo traduce innerHTML de [data-i18n], no placeholders)
@@ -175,10 +178,10 @@ function initWorker() {
         const msg = e.data;
         if (msg.type === 'ready') {
             console.log("Worker ready");
-            statusDot.classList.remove('loading');
-            statusDot.classList.add('ready');
-            wasmStatus.classList.add('ready');
-            statusText.textContent = t('wasmReady');
+            wasmReady = true;
+            if (statusDot) { statusDot.classList.remove('loading'); statusDot.classList.add('ready'); }
+            if (wasmStatus) wasmStatus.classList.add('ready');
+            if (statusText) statusText.textContent = t('wasmReady');
             if (dxfFiles.length > 0) runBtn.disabled = false;
         } else if (msg.type === 'preview') {
             const state = JSON.parse(msg.data);
@@ -314,7 +317,7 @@ function addFiles(files) {
         reader.onload = () => {
             dxfFiles.push({ name: file.name, buffer: new Uint8Array(reader.result), quantity: 1 });
             renderFileList();
-            if (statusDot.classList.contains('ready')) runBtn.disabled = false;
+            if (wasmReady) runBtn.disabled = false;
             uploadDiagnosticOnline(file.name, reader.result);
         };
         reader.readAsArrayBuffer(file);
