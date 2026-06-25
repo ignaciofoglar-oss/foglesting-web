@@ -82,6 +82,7 @@ async function handleGet(req, res) {
             referrer: x.referrer || '', detail: x.detail || '', lang: x.lang || '',
             device: x.device || '', browser: x.browser || '', os: x.os || '',
             screen: x.screen || '', utm: x.utm || '', isNew: !!x.isNew, ms: x.ms || 0,
+            ua: x.ua || '',
             country: x.country || '', city: x.city || '', region: x.region || '', ts: tsISO,
         };
     });

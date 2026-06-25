@@ -397,7 +397,7 @@ function buildWebVisits(events) {
         let v = map.get(sid);
         if (!v) {
             v = { sid, visitorId: e.visitorId || '', events: [], country: '', city: '',
-                  device: '', browser: '', os: '', lang: '', referrer: '', utm: '',
+                  device: '', browser: '', os: '', lang: '', referrer: '', utm: '', ua: '',
                   isNew: false, start: Infinity, end: -Infinity };
             map.set(sid, v);
         }
@@ -406,6 +406,7 @@ function buildWebVisits(events) {
         if (t) { v.start = Math.min(v.start, t); v.end = Math.max(v.end, t); }
         if (!v.country && e.country) { v.country = e.country; v.city = e.city; }
         if (!v.device && e.device) { v.device = e.device; v.browser = e.browser; v.os = e.os; }
+        if (!v.ua && e.ua) v.ua = e.ua;
         if (!v.lang && e.lang) v.lang = e.lang;
         if (!v.referrer && e.referrer) v.referrer = e.referrer;
         if (!v.utm && e.utm) v.utm = e.utm;
@@ -418,9 +419,20 @@ function buildWebVisits(events) {
         v.downloads = v.events.filter((e) => e.event === 'download').length;
         v.clicks = v.events.filter((e) => e.event === 'click').length;
         v.duration = (v.start !== Infinity && v.end > v.start) ? v.end - v.start : 0;
+        v.isBot = looksLikeBot(v);
     });
     visits.sort((a, b) => b.start - a.start);
     return visits;
+}
+
+// Heuristica de bot/monitor: user-agent conocido de bot, O navegador+SO desconocidos
+// con cero interaccion (no clickeo, no scrolleo, 0-1 pagina, casi 0 segundos).
+const WEB_BOT_RE = /bot|crawl|spider|slurp|headless|monitor|preview|facebookexternalhit|facebot|embedly|whatsapp|telegram|slackbot|discord|twitterbot|linkedinbot|bingpreview|curl|wget|python-requests|axios|node-fetch|http-client|go-http|java\/|okhttp|libwww|uptime|pingdom|lighthouse|gtmetrix|datadog|newrelic|phantom|puppeteer|playwright|selenium|scrapy|googlebot|applebot|yandex|baiduspider|duckduckbot|ahrefs|semrush|petalbot|amazonbot|gptbot|claudebot|ccbot|bytespider/i;
+function looksLikeBot(v) {
+    if (v.ua && WEB_BOT_RE.test(v.ua)) return true;
+    const unknownClient = (v.browser === 'Otro' || !v.browser) && (v.os === 'Otro' || !v.os);
+    const noEngagement = v.clicks === 0 && v.downloads === 0 && (v.pages.length <= 1) && v.duration < 2000;
+    return unknownClient && noEngagement;
 }
 
 function renderWebSummary(events, visits) {
@@ -474,11 +486,13 @@ async function loadWebTraffic() {
         }
         const visits = buildWebVisits(items);
         lastWebVisits = visits;
-        renderWebSummary(items, visits);
+        const realVisits = visits.filter((v) => !v.isBot);
+        const botVisits = visits.filter((v) => v.isBot);
+        const realEvents = realVisits.reduce((acc, v) => acc.concat(v.events), []);
+        // El resumen cuenta solo visitantes REALES (sin bots/monitores).
+        renderWebSummary(realEvents, realVisits);
 
-        const btnStyle = 'padding:6px 12px;font-size:13px;width:auto;display:inline-block;';
-        let html = '';
-        visits.forEach((v, vi) => {
+        const cardHtml = (v) => {
             const started = v.start !== Infinity ? new Date(v.start).toLocaleString('es-AR') : '—';
             const ref = v.referrer ? (() => { try { return new URL(v.referrer).hostname; } catch (e) { return v.referrer; } })() : 'directo';
             const dev = [v.device, v.browser, v.os].filter(Boolean).join(' · ');
@@ -488,11 +502,13 @@ async function loadWebTraffic() {
                     <span class="mono release-muted" style="white-space:nowrap;font-size:12px;">${hora}</span>
                     <span style="font-size:13px;">${webEventLabel(e)}</span></div>`;
             }).join('');
-            html += `
-                <details class="session-group" style="margin-bottom:10px;border:1px solid var(--border,#2a2a2a);border-radius:10px;overflow:hidden;">
+            const botTag = v.isBot ? '<span style="background:#5a3a18;color:#ffe;font-size:11px;padding:2px 8px;border-radius:10px;">🤖 bot/monitor</span>' : '';
+            return `
+                <details class="session-group" style="margin-bottom:10px;border:1px solid var(--border,#2a2a2a);border-radius:10px;overflow:hidden;${v.isBot ? 'opacity:0.7;' : ''}">
                     <summary style="cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:rgba(255,255,255,0.02);">
                         <span style="font-size:16px;">${flagEmoji(v.country)}</span>
                         <span class="audit-tag">${escapeHtmlDiag((v.city ? v.city + ', ' : '') + (v.country || '—'))}</span>
+                        ${botTag}
                         ${v.isNew ? '<span style="background:#2e6547;color:#dff;font-size:11px;padding:2px 8px;border-radius:10px;">nuevo</span>' : '<span class="release-muted" style="font-size:11px;">recurrente</span>'}
                         <span class="release-muted" style="font-size:12px;">${escapeHtmlDiag(dev || '—')}</span>
                         <span class="release-muted" style="font-size:12px;">· ${started}</span>
@@ -503,12 +519,30 @@ async function loadWebTraffic() {
                         <div class="release-muted" style="font-size:12px;margin-bottom:6px;">
                             Visitante <span class="mono">${escapeHtmlDiag(v.visitorId.slice(0, 12))}</span>
                             ${v.lang ? ' · idioma ' + escapeHtmlDiag(v.lang) : ''}${v.utm ? ' · ' + escapeHtmlDiag(v.utm) : ''}
+                            ${v.ua ? '<br>' + escapeHtmlDiag(v.ua.slice(0, 160)) : ''}
                         </div>
                         ${rows || '<span class="release-muted">Sin eventos.</span>'}
                     </div>
                 </details>`;
+        };
+
+        const realHtml = realVisits.map(cardHtml).join('');
+        const botHtml = botVisits.map(cardHtml).join('');
+        container.innerHTML = `
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                    <input type="checkbox" id="wt-hide-bots" checked> Ocultar bots / monitores
+                </label>
+                <span class="release-muted" style="font-size:12px;">${realVisits.length} visita(s) real(es)${botVisits.length ? ` · ${botVisits.length} bot(s)/monitor(es)` : ''}</span>
+            </div>
+            <div id="wt-real">${realHtml || '<p class="loading">Sin visitas reales todavía.</p>'}</div>
+            <div id="wt-bots" style="display:none;">${botHtml}</div>`;
+
+        const hideBots = document.getElementById('wt-hide-bots');
+        const botsBox = document.getElementById('wt-bots');
+        if (hideBots && botsBox) hideBots.addEventListener('change', () => {
+            botsBox.style.display = hideBots.checked ? 'none' : 'block';
         });
-        container.innerHTML = html;
     } catch (e) {
         container.innerHTML = `<p class="loading" style="color:#ff8a8a;">No se pudo cargar el tráfico: ${escapeHtmlDiag(e.message || e)}.</p>`;
         console.error(e);

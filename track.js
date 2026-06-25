@@ -11,6 +11,13 @@
   if (window.__fgTrackLoaded) return;
   window.__fgTrackLoaded = true;
 
+  // No registrar bots / crawlers / monitores / navegadores automatizados: meten
+  // ruido (entran 0s desde data centers como Ashburn). Los reales sí se registran.
+  var _ua = navigator.userAgent || '';
+  var _isBot = navigator.webdriver === true ||
+    /bot|crawl|spider|slurp|headless|monitor|preview|facebookexternalhit|facebot|embedly|whatsapp|telegram|slackbot|discord|twitterbot|linkedinbot|bingpreview|curl|wget|python-requests|axios|node-fetch|http-client|go-http|java\/|okhttp|libwww|uptime|pingdom|lighthouse|gtmetrix|datadog|newrelic|phantom|puppeteer|playwright|selenium|scrapy|googlebot|applebot|yandex|baiduspider|duckduckbot|ahrefs|semrush|petalbot|amazonbot|gptbot|claudebot|ccbot|bytespider/i.test(_ua);
+  if (_isBot) return;
+
   var ENDPOINT = '/api/web-telemetry';
   var KEY = 'fglstg_diag_K7m2Qx9pR4tZ8vL1nB6wY3'; // misma key pública que el resto de la telemetría
   var SESSION_GAP_MS = 30 * 60 * 1000;
