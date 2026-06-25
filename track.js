@@ -166,14 +166,18 @@
   }
   window.addEventListener('scroll', onScroll, { passive: true });
 
-  // --- tiempo en la página + cierre ---
+  // --- tiempo en la página + salida ---
+  // Una sola "salida" por página: la registramos cuando el usuario realmente deja
+  // la página (pagehide). El visibilitychange (cambiar de pestaña) NO es salir: ahi
+  // solo mandamos lo pendiente para no perder eventos. Asi no se duplica "Salió de".
   var start = Date.now();
+  var left = false;
   function leave() {
-    track('page_leave', '', { ms: Date.now() - start });
+    if (!left) { left = true; track('page_leave', '', { ms: Date.now() - start }); }
     flush(true);
   }
   document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'hidden') leave();
+    if (document.visibilityState === 'hidden') flush(true);
   });
   window.addEventListener('pagehide', leave);
 })();

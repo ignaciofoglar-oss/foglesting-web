@@ -362,15 +362,27 @@ function fmtDur(ms) {
     const m = Math.floor(s / 60);
     return m + 'm ' + (s % 60) + 's';
 }
+// Nombre legible de la página a partir del path ("/" = Inicio, etc.)
+function webPageName(path) {
+    const p = String(path || '').split('?')[0].replace(/\/$/, '') || '/';
+    if (p === '/' || p === '/index.html') return 'Inicio';
+    if (p.startsWith('/online')) return 'Nesting online';
+    if (p.startsWith('/manual')) return 'Manual';
+    if (p.startsWith('/auth')) return 'Login / Registro';
+    if (p.startsWith('/privacidad')) return 'Privacidad';
+    return p;
+}
 function webEventLabel(e) {
     const path = escapeHtmlDiag(e.path || '');
+    const name = escapeHtmlDiag(webPageName(e.path));
     const det = escapeHtmlDiag(e.detail || '');
+    const where = `<b>${name}</b> <span class="release-muted">(${path})</span>`;
     switch (e.event) {
-        case 'page_view': return `📄 Entró a <b>${path}</b>${e.title ? ' · ' + escapeHtmlDiag(e.title) : ''}`;
+        case 'page_view': return `📄 Entró a ${where}${e.title ? ' · ' + escapeHtmlDiag(e.title) : ''}`;
         case 'click': return `🖱️ Click: <b>${det}</b>`;
         case 'download': return `⬇️ <b>Descarga</b>: ${det}`;
         case 'scroll': return `📜 Scroll ${det}`;
-        case 'page_leave': return `🚪 Salió de ${path} <span class="release-muted">(${fmtDur(e.ms)} en la página)</span>`;
+        case 'page_leave': return `🚪 Salió de ${where} <span class="release-muted">· ${fmtDur(e.ms)} en la página</span>`;
         default: return `• ${escapeHtmlDiag(e.event)} ${det}`;
     }
 }
