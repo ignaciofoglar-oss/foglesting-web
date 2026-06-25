@@ -452,7 +452,7 @@ async function loadWebTraffic() {
     container.innerHTML = '<p class="loading">Cargando tráfico...</p>';
     try {
         const idToken = await auth.currentUser.getIdToken(true);
-        const resp = await fetch('/api/list-web-events?limit=4000', { headers: { Authorization: `Bearer ${idToken}` } });
+        const resp = await fetch('/api/web-telemetry?limit=4000', { headers: { Authorization: `Bearer ${idToken}` } });
         if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `HTTP ${resp.status}`); }
         const { items } = await resp.json();
         if (!items || items.length === 0) {
@@ -1154,7 +1154,7 @@ async function downloadManyDiagnostics(list) {
 async function downloadDiagnostic(id, filename) {
     try {
         const idToken = await auth.currentUser.getIdToken(true);
-        const resp = await fetch(`/api/get-diagnostic?id=${encodeURIComponent(id)}`, {
+        const resp = await fetch(`/api/list-diagnostics?id=${encodeURIComponent(id)}`, {
             headers: { Authorization: `Bearer ${idToken}` },
         });
         if (!resp.ok) { alert('No se pudo descargar el DXF.'); return; }

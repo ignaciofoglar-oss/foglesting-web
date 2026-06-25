@@ -11,7 +11,7 @@
   if (window.__fgTrackLoaded) return;
   window.__fgTrackLoaded = true;
 
-  var ENDPOINT = '/api/track-web';
+  var ENDPOINT = '/api/web-telemetry';
   var KEY = 'fglstg_diag_K7m2Qx9pR4tZ8vL1nB6wY3'; // misma key pública que el resto de la telemetría
   var SESSION_GAP_MS = 30 * 60 * 1000;
 
