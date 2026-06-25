@@ -62,6 +62,7 @@
                 <a href="#" class="nav-item" data-target="users">Usuarios & Licencias</a>
                 <a href="#" class="nav-item" data-target="releases">Versiones</a>
                 <a href="#" class="nav-item" data-target="diagnostics">Diagnósticos DXF</a>
+                <a href="#" class="nav-item" data-target="webtraffic">Tráfico web</a>
                 <a href="#" class="nav-item" data-target="files">Archivos</a>
                 <a href="#" class="nav-item" data-target="audit">Auditoría</a>
             </nav>
@@ -333,6 +334,24 @@
                 </div>
             </section>
 
+            <!-- Web Traffic View -->
+            <section id="view-webtraffic" class="view">
+                <header>
+                    <h1>Tráfico web</h1>
+                    <p class="view-subtitle">
+                        Telemetría de cada visitante del sitio: qué páginas ve, en qué hace click, cuánto baja (scroll),
+                        descargas y tiempo en la página. Agrupado por visita, con país, dispositivo y de dónde llegó.
+                    </p>
+                </header>
+                <div class="release-selector-row" style="margin-bottom:16px; gap:10px;">
+                    <button class="btn-primary" id="webtraffic-refresh-btn" type="button" style="width:auto;">Actualizar</button>
+                </div>
+                <div id="webtraffic-summary" style="margin-bottom:16px;"></div>
+                <div id="webtraffic-container">
+                    <p class="loading">Cargando tráfico...</p>
+                </div>
+            </section>
+
             <!-- Test Files View -->
             <section id="view-files" class="view">
                 <header>
@@ -372,7 +391,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="admin.js?v=14"></script>
+    <script type="module" src="admin.js?v=15"></script>
     <script>
         // Mobile hamburger menu logic
         (function() {

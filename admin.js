@@ -228,6 +228,7 @@ navItems.forEach(item => {
         document.getElementById(targetId).classList.add('active');
         if (item.dataset.target === 'audit') loadAudit();
         if (item.dataset.target === 'files') loadTestFiles();
+        if (item.dataset.target === 'webtraffic') loadWebTraffic();
     });
 });
 
@@ -346,6 +347,162 @@ document.getElementById('files-upload-input')?.addEventListener('change', (e) =>
     e.target.value = '';
 });
 document.getElementById('files-refresh-btn')?.addEventListener('click', loadTestFiles);
+
+// ============================================================
+//  TRÁFICO WEB — telemetría de cada visitante del sitio
+// ============================================================
+function flagEmoji(cc) {
+    return (cc && cc.length === 2)
+        ? cc.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)))
+        : '🌐';
+}
+function fmtDur(ms) {
+    const s = Math.round((ms || 0) / 1000);
+    if (s < 60) return s + 's';
+    const m = Math.floor(s / 60);
+    return m + 'm ' + (s % 60) + 's';
+}
+function webEventLabel(e) {
+    const path = escapeHtmlDiag(e.path || '');
+    const det = escapeHtmlDiag(e.detail || '');
+    switch (e.event) {
+        case 'page_view': return `📄 Entró a <b>${path}</b>${e.title ? ' · ' + escapeHtmlDiag(e.title) : ''}`;
+        case 'click': return `🖱️ Click: <b>${det}</b>`;
+        case 'download': return `⬇️ <b>Descarga</b>: ${det}`;
+        case 'scroll': return `📜 Scroll ${det}`;
+        case 'page_leave': return `🚪 Salió de ${path} <span class="release-muted">(${fmtDur(e.ms)} en la página)</span>`;
+        default: return `• ${escapeHtmlDiag(e.event)} ${det}`;
+    }
+}
+
+let lastWebVisits = [];
+
+function buildWebVisits(events) {
+    // events vienen ordenados desc por ts; agrupamos por sessionId.
+    const map = new Map();
+    for (const e of events) {
+        const sid = e.sessionId || ('?' + (e.visitorId || ''));
+        let v = map.get(sid);
+        if (!v) {
+            v = { sid, visitorId: e.visitorId || '', events: [], country: '', city: '',
+                  device: '', browser: '', os: '', lang: '', referrer: '', utm: '',
+                  isNew: false, start: Infinity, end: -Infinity };
+            map.set(sid, v);
+        }
+        v.events.push(e);
+        const t = e.ts ? new Date(e.ts).getTime() : 0;
+        if (t) { v.start = Math.min(v.start, t); v.end = Math.max(v.end, t); }
+        if (!v.country && e.country) { v.country = e.country; v.city = e.city; }
+        if (!v.device && e.device) { v.device = e.device; v.browser = e.browser; v.os = e.os; }
+        if (!v.lang && e.lang) v.lang = e.lang;
+        if (!v.referrer && e.referrer) v.referrer = e.referrer;
+        if (!v.utm && e.utm) v.utm = e.utm;
+        if (e.isNew) v.isNew = true;
+    }
+    const visits = [...map.values()];
+    visits.forEach((v) => {
+        v.events.sort((a, b) => new Date(a.ts) - new Date(b.ts));
+        v.pages = [...new Set(v.events.filter((e) => e.event === 'page_view').map((e) => e.path))];
+        v.downloads = v.events.filter((e) => e.event === 'download').length;
+        v.clicks = v.events.filter((e) => e.event === 'click').length;
+        v.duration = (v.start !== Infinity && v.end > v.start) ? v.end - v.start : 0;
+    });
+    visits.sort((a, b) => b.start - a.start);
+    return visits;
+}
+
+function renderWebSummary(events, visits) {
+    const visitors = new Set(events.map((e) => e.visitorId).filter(Boolean)).size;
+    const pageViews = events.filter((e) => e.event === 'page_view').length;
+    const downloads = events.filter((e) => e.event === 'download').length;
+    const newVisitors = visits.filter((v) => v.isNew).length;
+    const tally = (arr) => {
+        const m = {};
+        arr.forEach((k) => { if (k) m[k] = (m[k] || 0) + 1; });
+        return Object.entries(m).sort((a, b) => b[1] - a[1]);
+    };
+    const topCountries = tally(visits.map((v) => v.country)).slice(0, 5);
+    const devices = tally(visits.map((v) => v.device));
+    const topPages = tally(events.filter((e) => e.event === 'page_view').map((e) => e.path)).slice(0, 6);
+    const card = (label, val) => `<div style="background:rgba(255,255,255,0.03);border:1px solid var(--border,#2a2a2a);border-radius:10px;padding:12px 16px;min-width:130px;">
+        <div class="release-muted" style="font-size:11px;">${label}</div><div style="font-size:22px;font-weight:700;">${val}</div></div>`;
+    const list = (label, rows, fmt) => `<div style="background:rgba(255,255,255,0.03);border:1px solid var(--border,#2a2a2a);border-radius:10px;padding:12px 16px;flex:1;min-width:220px;">
+        <div class="release-muted" style="font-size:11px;margin-bottom:6px;">${label}</div>
+        ${rows.length ? rows.map(fmt).join('') : '<span class="release-muted">—</span>'}</div>`;
+    const el = document.getElementById('webtraffic-summary');
+    if (!el) return;
+    el.innerHTML = `
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+            ${card('Visitantes únicos', visitors)}
+            ${card('Visitas', visits.length)}
+            ${card('Nuevos', newVisitors)}
+            ${card('Páginas vistas', pageViews)}
+            ${card('Descargas', downloads)}
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            ${list('Países', topCountries, ([c, n]) => `<div style="font-size:13px;">${flagEmoji(c)} ${escapeHtmlDiag(c)} · <b>${n}</b></div>`)}
+            ${list('Dispositivos', devices, ([d, n]) => `<div style="font-size:13px;">${escapeHtmlDiag(d)} · <b>${n}</b></div>`)}
+            ${list('Páginas más vistas', topPages, ([p, n]) => `<div style="font-size:13px;">${escapeHtmlDiag(p)} · <b>${n}</b></div>`)}
+        </div>`;
+}
+
+async function loadWebTraffic() {
+    const container = document.getElementById('webtraffic-container');
+    if (!container) return;
+    container.innerHTML = '<p class="loading">Cargando tráfico...</p>';
+    try {
+        const idToken = await auth.currentUser.getIdToken(true);
+        const resp = await fetch('/api/list-web-events?limit=4000', { headers: { Authorization: `Bearer ${idToken}` } });
+        if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `HTTP ${resp.status}`); }
+        const { items } = await resp.json();
+        if (!items || items.length === 0) {
+            document.getElementById('webtraffic-summary').innerHTML = '';
+            container.innerHTML = '<p class="loading">Todavía no hay tráfico registrado. (Se empieza a registrar cuando los visitantes entren al sitio con el tracker ya publicado.)</p>';
+            return;
+        }
+        const visits = buildWebVisits(items);
+        lastWebVisits = visits;
+        renderWebSummary(items, visits);
+
+        const btnStyle = 'padding:6px 12px;font-size:13px;width:auto;display:inline-block;';
+        let html = '';
+        visits.forEach((v, vi) => {
+            const started = v.start !== Infinity ? new Date(v.start).toLocaleString('es-AR') : '—';
+            const ref = v.referrer ? (() => { try { return new URL(v.referrer).hostname; } catch (e) { return v.referrer; } })() : 'directo';
+            const dev = [v.device, v.browser, v.os].filter(Boolean).join(' · ');
+            const rows = v.events.map((e) => {
+                const hora = e.ts ? new Date(e.ts).toLocaleTimeString('es-AR') : '—';
+                return `<div style="display:flex;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <span class="mono release-muted" style="white-space:nowrap;font-size:12px;">${hora}</span>
+                    <span style="font-size:13px;">${webEventLabel(e)}</span></div>`;
+            }).join('');
+            html += `
+                <details class="session-group" style="margin-bottom:10px;border:1px solid var(--border,#2a2a2a);border-radius:10px;overflow:hidden;">
+                    <summary style="cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:rgba(255,255,255,0.02);">
+                        <span style="font-size:16px;">${flagEmoji(v.country)}</span>
+                        <span class="audit-tag">${escapeHtmlDiag((v.city ? v.city + ', ' : '') + (v.country || '—'))}</span>
+                        ${v.isNew ? '<span style="background:#2e6547;color:#dff;font-size:11px;padding:2px 8px;border-radius:10px;">nuevo</span>' : '<span class="release-muted" style="font-size:11px;">recurrente</span>'}
+                        <span class="release-muted" style="font-size:12px;">${escapeHtmlDiag(dev || '—')}</span>
+                        <span class="release-muted" style="font-size:12px;">· ${started}</span>
+                        <span class="release-muted" style="font-size:12px;">· ${v.pages.length} pág · ${v.events.length} eventos · ${fmtDur(v.duration)}${v.downloads ? ' · ⬇️' + v.downloads : ''}</span>
+                        <span class="release-muted" style="font-size:12px;margin-left:auto;">desde: ${escapeHtmlDiag(ref)}</span>
+                    </summary>
+                    <div style="padding:8px 16px 12px;">
+                        <div class="release-muted" style="font-size:12px;margin-bottom:6px;">
+                            Visitante <span class="mono">${escapeHtmlDiag(v.visitorId.slice(0, 12))}</span>
+                            ${v.lang ? ' · idioma ' + escapeHtmlDiag(v.lang) : ''}${v.utm ? ' · ' + escapeHtmlDiag(v.utm) : ''}
+                        </div>
+                        ${rows || '<span class="release-muted">Sin eventos.</span>'}
+                    </div>
+                </details>`;
+        });
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = `<p class="loading" style="color:#ff8a8a;">No se pudo cargar el tráfico: ${escapeHtmlDiag(e.message || e)}.</p>`;
+        console.error(e);
+    }
+}
+document.getElementById('webtraffic-refresh-btn')?.addEventListener('click', loadWebTraffic);
 
 // ============================================================
 //  AUDITORÍA — registro de acciones del panel
