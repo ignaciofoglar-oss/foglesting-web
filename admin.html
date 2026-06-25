@@ -91,16 +91,18 @@
                 </div>
 
                 <header style="margin-top: 40px;">
-                    <h2>Métricas de Uso del Solver Online</h2>
+                    <h2>Métricas de Uso del Solver (online + escritorio)</h2>
                 </header>
                 <div class="stats-grid">
                     <div class="stat-card">
                         <h3>Usos del Solver</h3>
                         <div class="stat-value" id="stat-solver-uses">0</div>
+                        <div class="stat-sub" id="stat-solver-uses-sub" style="font-size:12px;opacity:0.7;"></div>
                     </div>
                     <div class="stat-card">
                         <h3>Total DXFs Cargados</h3>
                         <div class="stat-value" id="stat-solver-dxfs">0</div>
+                        <div class="stat-sub" id="stat-solver-dxfs-sub" style="font-size:12px;opacity:0.7;">online + escritorio</div>
                     </div>
                     <div class="stat-card">
                         <h3>Promedio Mejor Solución</h3>
@@ -198,6 +200,11 @@
                         <h3>Usos Descargable</h3>
                         <div class="stat-value" id="stat-solver-desktop">0</div>
                         <p class="stat-sub">corridas desde el programa instalado</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Usos sin origen</h3>
+                        <div class="stat-value" id="stat-solver-legacy">0</div>
+                        <p class="stat-sub">corridas viejas (antes de etiquetar el origen)</p>
                     </div>
                     <div class="stat-card">
                         <h3>País Más Activo</h3>
@@ -391,7 +398,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="admin.js?v=15"></script>
+    <script type="module" src="admin.js?v=16"></script>
     <script>
         // Mobile hamburger menu logic
         (function() {

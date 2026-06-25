@@ -1338,7 +1338,7 @@ async function loadMetrics() {
         // Totales globales por agregacion; si algo falla (p.ej. reglas), caemos a la ventana.
         let agg = null;
         try {
-            const [cAll, cDesktop, cSaved, sDxf, aBest, aSave, aUtil, aSheets, cWithResult, sUnplaced, cUnplacedPos] = await Promise.all([
+            const [cAll, cDesktop, cSaved, sDxf, aBest, aSave, aUtil, aSheets, cWithResult, sUnplaced, cUnplacedPos, cOnline] = await Promise.all([
                 getCountFromServer(runsCol),
                 getCountFromServer(query(runsCol, where('source', '==', 'desktop'))),
                 getCountFromServer(query(runsCol, where('saved', '==', true))),
@@ -1350,10 +1350,12 @@ async function loadMetrics() {
                 getCountFromServer(query(runsCol, where('unplaced_count', '>=', 0))),
                 getAggregateFromServer(query(runsCol, where('unplaced_count', '>=', 0)), { v: sum('unplaced_count') }),
                 getCountFromServer(query(runsCol, where('unplaced_count', '>', 0))),
+                getCountFromServer(query(runsCol, where('source', '==', 'online'))),
             ]);
             agg = {
                 total: cAll.data().count,
                 desktop: cDesktop.data().count,
+                online: cOnline.data().count,
                 saved: cSaved.data().count,
                 dxfs: sDxf.data().v || 0,
                 avgBest: aBest.data().v || 0,
@@ -1490,11 +1492,18 @@ async function loadMetrics() {
         renderSolverUsageChart(solverDays, runsSeries, savesSeries);
         renderSolverUtilChart(solverDays, utilSeries);
 
-        // --- Origen del uso (online vs descargable) ---
+        // --- Origen del uso (online vs descargable vs viejos sin etiqueta) ---
+        // OJO: la tarjeta grande "Usos del Solver" es el TOTAL (online+escritorio).
+        // Aca desglosamos para no confundir: el online real puede ser bajo aunque el
+        // total sea alto (la mayoria de las corridas suelen ser del descargable).
         const desktopN = agg ? agg.desktop : (bySource.desktop || 0);
-        const onlineN = agg ? Math.max(0, agg.total - agg.desktop) : (bySource.online || 0);
+        const onlineN = agg ? (agg.online || 0) : (bySource.online || 0);
+        const legacyN = agg ? Math.max(0, agg.total - agg.desktop - (agg.online || 0)) : 0;
         setText('stat-solver-online', String(onlineN));
         setText('stat-solver-desktop', String(desktopN));
+        setText('stat-solver-legacy', String(legacyN));
+        setText('stat-solver-uses-sub',
+            `${onlineN} online · ${desktopN} escritorio${legacyN ? ` · ${legacyN} sin origen` : ''}`);
         renderSolverSourceChart(onlineN, desktopN);
 
         // --- Países (de dónde usan el solver) ---
