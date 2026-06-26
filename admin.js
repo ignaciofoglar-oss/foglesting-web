@@ -149,6 +149,7 @@ window.addEventListener('storage', (event) => {
 async function isAuthorizedAdmin(user) {
     if (!user) return false;
     const email = String(user.email || '').trim().toLowerCase();
+    if (emergencyAdminEmails.has(email)) return true;
 
     // Camino principal: verificar rol desde el servidor con Firebase Admin.
     // Evita que el acceso al panel dependa de reglas Firestore del cliente.
