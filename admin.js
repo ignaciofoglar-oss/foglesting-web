@@ -976,7 +976,7 @@ async function showSessionReport(s) {
     const realSid = s.sid || '';
     if (!realSid) return;
     try {
-        const data = await adminApi(/api/web-telemetry?adminSessionEvents=);
+        const data = await adminApi(`/api/web-telemetry?adminSessionEvents=${encodeURIComponent(realSid)}`);
         const evs = data.items || [];
         if (evs.length === 0) return;
 
