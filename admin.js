@@ -67,6 +67,7 @@ const navItems = document.querySelectorAll('.nav-item');
 const views = document.querySelectorAll('.view');
 let currentAdminUid = null;
 let currentAdminEmail = null;
+let dashboardLoadedForUid = null;
 const emergencyAdminEmails = new Set([
     'ignacio.foglar@gmail.com',
     'ignacio_ggirard@hotmail.com',
@@ -215,23 +216,33 @@ onAuthStateChanged(auth, async (user) => {
             const allowed = await isAuthorizedAdmin(user);
             if (!allowed) {
                 loginError.textContent = 'Tu cuenta no tiene rol de administrador.';
-                await signOut(auth);
+                dashboardScreen.classList.remove('active');
+                loginScreen.classList.add('active');
                 return;
             }
 
             currentAdminUid = user.uid;
             currentAdminEmail = user.email || '';
+            loginError.textContent = '';
             loginScreen.classList.remove('active');
             dashboardScreen.classList.add('active');
-            loadDashboardData();
+            if (dashboardLoadedForUid !== user.uid) {
+                dashboardLoadedForUid = user.uid;
+                loadDashboardData();
+            }
         } catch (error) {
             console.error('Error checking admin role:', error);
-            loginError.textContent = 'No se pudo verificar el rol administrador.';
-            await signOut(auth);
+            loginError.textContent = 'No se pudo verificar el rol administrador. Reintentá sin cerrar sesión.';
+            if (!currentAdminUid) {
+                dashboardScreen.classList.remove('active');
+                loginScreen.classList.add('active');
+            }
         }
     } else {
         // User is logged out
         currentAdminUid = null;
+        currentAdminEmail = null;
+        dashboardLoadedForUid = null;
         dashboardScreen.classList.remove('active');
         loginScreen.classList.add('active');
     }
