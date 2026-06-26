@@ -67,6 +67,11 @@ const navItems = document.querySelectorAll('.nav-item');
 const views = document.querySelectorAll('.view');
 let currentAdminUid = null;
 let currentAdminEmail = null;
+const emergencyAdminEmails = new Set([
+    'ignacio.foglar@gmail.com',
+    'ignacio_ggirard@hotmail.com',
+    'francisco.foglar@gmail.com'
+]);
 
 const adminTranslations = {
     es: {
@@ -143,6 +148,7 @@ window.addEventListener('storage', (event) => {
 
 async function isAuthorizedAdmin(user) {
     if (!user) return false;
+    const email = String(user.email || '').trim().toLowerCase();
 
     // Camino principal: verificar rol desde el servidor con Firebase Admin.
     // Evita que el acceso al panel dependa de reglas Firestore del cliente.
@@ -161,20 +167,25 @@ async function isAuthorizedAdmin(user) {
         console.warn('admin-check unavailable, using Firestore fallback:', error);
     }
 
-    const userRef = doc(db, 'users', user.uid);
-    const userSnap = await getDoc(userRef);
-    const userData = userSnap.exists() ? userSnap.data() : {};
-    if (userData.role === 'admin' || userData.isAdmin === true) return true;
+    try {
+        const userRef = doc(db, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.exists() ? userSnap.data() : {};
+        if (userData.role === 'admin' || userData.isAdmin === true) return true;
 
-    // Bootstrap de transicion: si todavia no hay ningun administrador marcado,
-    // dejamos entrar para que Ignacio pueda asignar el primer rol admin desde el panel.
-    const usersSnap = await getDocs(collection(db, 'users'));
-    let hasAnyAdmin = false;
-    usersSnap.forEach((docSnap) => {
-        const data = docSnap.data();
-        if (data.role === 'admin' || data.isAdmin === true) hasAnyAdmin = true;
-    });
-    return !hasAnyAdmin;
+        // Bootstrap de transicion: si todavia no hay ningun administrador marcado,
+        // dejamos entrar para que Ignacio pueda asignar el primer rol admin desde el panel.
+        const usersSnap = await getDocs(collection(db, 'users'));
+        let hasAnyAdmin = false;
+        usersSnap.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data.role === 'admin' || data.isAdmin === true) hasAnyAdmin = true;
+        });
+        return !hasAnyAdmin;
+    } catch (error) {
+        console.warn('Firestore admin fallback failed:', error);
+        return emergencyAdminEmails.has(email);
+    }
 }
 
 // 1. Authentication State Observer
