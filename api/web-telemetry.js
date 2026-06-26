@@ -394,6 +394,21 @@ async function handleGet(req, res) {
         });
     }
 
+    if (String(req.query.adminSessionEvents || '')) {
+        const sid = String(req.query.adminSessionEvents);
+        const snap = await db.collection('session_events').where('sessionId', '==', sid).limit(1000).get();
+        const items = snap.docs.map((d) => {
+            const x = d.data() || {};
+            return {
+                action: x.action || '',
+                detail: x.detail || '',
+                tsClientISO: x.tsClientISO || '',
+                serverISO: x.serverISO || isoFrom(x.ts) || ''
+            };
+        });
+        return json(res, 200, { ok: true, items });
+    }
+
     if (String(req.query.adminMetrics || '') === '1') {
         const [metricsSnap, runsSnap, webSnap] = await Promise.all([
             db.collection('metrics').get(),
