@@ -276,6 +276,18 @@
       "size_bytes": 24092160,
       "created_at": "2026-06-24",
       "notes": "CANDIDATA (no publica) - PARA PROBAR EN OTRA PC. Hito grande: el desplegado de STEP ahora es NATIVO en C++ (OpenCASCADE), NO requiere Python ni librerias - el motor va embebido en el .exe y se autoextrae solo la 1ra vez. Es UN SOLO .exe de 23MB sin instalador (por eso pesa mas que las versiones anteriores). Nuevo modulo 'Desplegado de chapa' (pestana aparte): cargar STEP, vista 3D wireframe rotable con zoom, lista de piezas, transformar a DXF con previsualizacion (zoom+pan), enviar al nesting. Seleccionar una pieza la resalta en el 3D Y en el desplegado a la vez. Click derecho: aislar una pieza (verla sola), quitar un DXF suelto. Corrige un bug del desplegado donde piezas con pliegues quedaban partidas en pedazos sueltos. En el nesting: la cota de tamano ahora se mide por chapa (antes media el espacio entre dos chapas). Y el programa ya no abre una consola negra detras."
+    },
+    {
+      "version": "5.2.20",
+      "name": "FOGLESTING V5.2.20",
+      "file": "foglesting_windows_v5_2_20.exe",
+      "download_url": "/admin-releases/foglesting_windows_v5_2_20.exe",
+      "source_path": "/admin-releases/foglesting_windows_v5_2_20.exe",
+      "public_listed": false,
+      "sha256": "BE6AAF32ADF3C8983B592AFC43EDBE1636CCF862F76E893709F63DA6518E8770",
+      "size_bytes": 24111616,
+      "created_at": "2026-06-26",
+      "notes": "CANDIDATA (no publica) - PARA PROBAR. Sobre 5.2.19: el modulo 'Desplegado de chapa' ahora valida el archivo - si cargas un DXF (u otro que no sea .step/.stp) avisa claro en vez de devolver '0 dxf' sin explicacion (paso con un usuario que metio un DXF en el modulo STEP). Y cuando el modulo esta vacio muestra una ANIMACION explicativa: un ensamble STEP 3D real girando arriba y todos sus DXF desplegados apareciendo abajo, para que se entienda de una para que sirve. Resto igual a 5.2.19 (STEP nativo en C++, un solo .exe sin instalador, sin consola)."
     }
   ]
 }
