@@ -144,6 +144,23 @@ window.addEventListener('storage', (event) => {
 async function isAuthorizedAdmin(user) {
     if (!user) return false;
 
+    // Camino principal: verificar rol desde el servidor con Firebase Admin.
+    // Evita que el acceso al panel dependa de reglas Firestore del cliente.
+    try {
+        const idToken = await user.getIdToken(true);
+        const response = await fetch('/api/admin-check', {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${idToken}` },
+            cache: 'no-store'
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (response.ok && payload.ok === true) return true;
+        if (response.status === 403) return false;
+        console.warn('admin-check fallback:', payload.error || response.statusText);
+    } catch (error) {
+        console.warn('admin-check unavailable, using Firestore fallback:', error);
+    }
+
     const userRef = doc(db, 'users', user.uid);
     const userSnap = await getDoc(userRef);
     const userData = userSnap.exists() ? userSnap.data() : {};
