@@ -976,9 +976,8 @@ async function showSessionReport(s) {
     const realSid = s.sid || '';
     if (!realSid) return;
     try {
-        const snap = await getDocs(query(collection(db, 'session_events'), where('sessionId', '==', realSid), limit(1000)));
-        const evs = [];
-        snap.forEach((d) => evs.push(d.data()));
+        const data = await adminApi(/api/web-telemetry?adminSessionEvents=);
+        const evs = data.items || [];
         if (evs.length === 0) return;
 
         const evTime = (e) => (e.ts && e.ts.toDate) ? e.ts.toDate().getTime() : (e.serverISO ? new Date(e.serverISO).getTime() : 0);
