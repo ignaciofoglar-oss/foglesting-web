@@ -86,7 +86,7 @@ function cleanAuditDoc(doc) {
     };
 }
 
-function buildMetricsResponse(metricsDocs, runDocs) {
+function buildMetricsResponse(metricsDocs, runDocs, webEventDocs = []) {
     const metricRows = metricsDocs
         .filter((d) => d.id !== 'general')
         .map((d) => ({ id: d.id, ...(d.data() || {}) }))
@@ -109,6 +109,35 @@ function buildMetricsResponse(metricsDocs, runDocs) {
         labels.push(row.id);
         viewsData.push(views);
         downloadsData.push(downloads);
+    }
+
+    if (totalViews === 0 && webEventDocs.length > 0) {
+        const byDay = {};
+        for (const doc of webEventDocs) {
+            const x = doc.data() || {};
+            const iso = x.serverISO || isoFrom(x.ts) || x.tsClientISO || '';
+            const day = iso ? iso.slice(0, 10) : '';
+            if (!day) continue;
+            if (!byDay[day]) byDay[day] = { page_views: 0, downloads: 0, time_spent: 0 };
+            if (x.event === 'page_view') byDay[day].page_views++;
+            if (x.event === 'download') byDay[day].downloads++;
+            if (x.event === 'page_leave') byDay[day].time_spent += Math.round(num(x.ms) / 1000);
+        }
+        labels.length = 0;
+        viewsData.length = 0;
+        downloadsData.length = 0;
+        totalViews = 0;
+        totalDownloads = 0;
+        totalTimeSpent = 0;
+        for (const day of Object.keys(byDay).sort()) {
+            const row = byDay[day];
+            labels.push(day);
+            viewsData.push(row.page_views);
+            downloadsData.push(row.downloads);
+            totalViews += row.page_views;
+            totalDownloads += row.downloads;
+            totalTimeSpent += row.time_spent;
+        }
     }
 
     const recentRuns = runDocs.map((d) => d.data() || {});
@@ -301,13 +330,14 @@ async function handleGet(req, res) {
     }
 
     if (String(req.query.adminMetrics || '') === '1') {
-        const [metricsSnap, runsSnap] = await Promise.all([
+        const [metricsSnap, runsSnap, webSnap] = await Promise.all([
             db.collection('metrics').get(),
-            db.collection('solver_runs').orderBy('timestamp', 'desc').limit(5000).get()
+            db.collection('solver_runs').orderBy('timestamp', 'desc').limit(5000).get(),
+            db.collection('web_events').orderBy('ts', 'desc').limit(5000).get()
         ]);
         return json(res, 200, {
             ok: true,
-            ...buildMetricsResponse(metricsSnap.docs, runsSnap.docs)
+            ...buildMetricsResponse(metricsSnap.docs, runsSnap.docs, webSnap.docs)
         });
     }
 

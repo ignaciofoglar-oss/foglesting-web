@@ -1366,8 +1366,93 @@ function renderSolverUtilChart(labels, util) {
     });
 }
 
+function renderMetricsFromServer(data) {
+    const m = data.metrics || {};
+    const s = data.solver || {};
+    document.getElementById('stat-views').textContent = m.totalViews || 0;
+    document.getElementById('stat-downloads').textContent = m.totalDownloads || 0;
+    const totalTimeSpent = Number(m.totalTimeSpent || 0);
+    const hours = Math.floor(totalTimeSpent / 3600);
+    const minutes = Math.floor((totalTimeSpent % 3600) / 60);
+    document.getElementById('stat-time').textContent = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    const pct = (num, den) => den > 0 ? Math.round((num / den) * 100) : 0;
+    const optLabel = (k) => k === 'compact-area' ? 'Área compacta' : (k === 'bounding-box' ? 'Bounding box' : k);
+    const flag = (cc) => cc && cc.length === 2 ? cc.replace(/./g, c => String.fromCodePoint(127397 + c.charCodeAt(0))) : '';
+
+    setText('stat-solver-uses', s.total || 0);
+    setText('stat-solver-dxfs', s.dxfs || 0);
+    setText('stat-solver-best-time', `${s.avgBest > 0 ? Number(s.avgBest).toFixed(1) : 0}s`);
+    setText('stat-solver-save-time', `${s.avgSave > 0 ? Number(s.avgSave).toFixed(1) : 0}s`);
+    setText('stat-solver-save-rate', `${pct(s.saved || 0, s.total || 0)}%`);
+    setText('stat-solver-save-rate-sub', `${s.saved || 0} de ${s.total || 0} corridas terminó en Guardar`);
+    setText('stat-solver-avg-util', s.avgUtil > 0 ? `${Number(s.avgUtil).toFixed(1)}%` : '—');
+    setText('stat-solver-avg-sheets', s.avgSheets > 0 ? Number(s.avgSheets).toFixed(1) : '—');
+    setText('stat-solver-avg-dxfs', s.total > 0 ? (Number(s.dxfs || 0) / Number(s.total)).toFixed(1) : '—');
+    setText('stat-solver-avg-unplaced', s.withResult > 0 ? (Number(s.unplacedSum || 0) / Number(s.withResult)).toFixed(1) : '—');
+    setText('stat-solver-fail-rate', s.withResult > 0 ? `${pct(s.withUnplaced || 0, s.withResult || 0)}%` : '—');
+
+    const optEntries = s.optEntries || [];
+    if (optEntries.length > 0) {
+        setText('stat-solver-top-opt', optLabel(optEntries[0][0]));
+        setText('stat-solver-opt-breakdown', optEntries.map(([k, v]) => `${optLabel(k)}: ${v}`).join('  ·  '));
+    }
+    if (s.topSheet) setText('stat-solver-top-sheet', `${s.topSheet} mm`);
+
+    setText('stat-solver-online', String(s.online || 0));
+    setText('stat-solver-desktop', String(s.desktop || 0));
+    setText('stat-solver-legacy', String(s.legacy || 0));
+    setText('stat-solver-uses-sub', `${s.online || 0} online · ${s.desktop || 0} escritorio${s.legacy ? ` · ${s.legacy} sin origen` : ''}`);
+
+    const countryLabels = (s.countryLabels || []).map((cc) => `${flag(cc)} ${cc}`);
+    if ((s.countryLabels || []).length > 0) {
+        const top = s.countryLabels[0];
+        setText('stat-solver-top-country', `${flag(top)} ${top}`);
+        setText('stat-solver-countries-count', `${s.countryCount || s.countryLabels.length} país(es)`);
+    } else {
+        setText('stat-solver-top-country', '—');
+        setText('stat-solver-countries-count', '—');
+    }
+
+    renderSolverUsageChart(s.solverDays || [], s.runsSeries || [], s.savesSeries || []);
+    renderSolverUtilChart(s.solverDays || [], s.utilSeries || []);
+    renderSolverSourceChart(s.online || 0, s.desktop || 0);
+    renderSolverCountryChart(countryLabels, s.countryCounts || []);
+
+    const ctx = document.getElementById('metricsChart').getContext('2d');
+    if (metricsChartInstance) metricsChartInstance.destroy();
+    metricsChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: m.labels || [],
+            datasets: [
+                { label: 'Visitas', data: m.viewsData || [], borderColor: '#e85b2e', backgroundColor: 'rgba(232, 91, 46, 0.1)', borderWidth: 2, tension: 0.3, fill: true },
+                { label: 'Descargas', data: m.downloadsData || [], borderColor: '#28a745', backgroundColor: 'rgba(40, 167, 69, 0.1)', borderWidth: 2, tension: 0.3, fill: true }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#333' }, ticks: { color: '#a0a8a3' } },
+                x: { grid: { color: '#333' }, ticks: { color: '#a0a8a3' } }
+            },
+            plugins: { legend: { labels: { color: '#f0f0f0' } } }
+        }
+    });
+}
+
 async function loadMetrics() {
     try {
+        try {
+            const serverMetrics = await adminApi('/api/web-telemetry?adminMetrics=1');
+            renderMetricsFromServer(serverMetrics);
+            return;
+        } catch (serverError) {
+            console.warn('Metricas por servidor no disponibles, usando fallback cliente:', serverError);
+        }
+
         const querySnapshot = await getDocs(query(collection(db, 'metrics')));
         
         let totalViews = 0;
@@ -1725,6 +1810,16 @@ async function loadMessages() {
 }
 
 async function deleteOldMessages(days) {
+    const result = await adminApi('/api/web-telemetry', {
+        method: 'POST',
+        body: JSON.stringify({ adminOp: 'deleteOldMessages', days })
+    });
+    const deleted = Number(result.deleted || 0);
+    if (deleted > 0) {
+        logAudit('Borrar mensajes', `BorrÃ³ ${deleted} mensaje(s) con mÃ¡s de ${days} dÃ­as.`);
+    }
+    return deleted;
+
     const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
     const snapshot = await getDocs(collection(db, 'messages'));
     const docsToDelete = [];

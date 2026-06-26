@@ -394,6 +394,21 @@ function init() {
             const msg = document.getElementById('fb-msg').value;
 
             try {
+                const resp = await fetch('/api/whatsapp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email: email || 'No especificado', type, message: msg })
+                });
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.error || 'No se pudo enviar el mensaje.');
+                }
+
+                feedbackForm.reset();
+                feedbackStatus.style.color = '#50c878';
+                feedbackStatus.textContent = 'Â¡Mensaje enviado con Ã©xito! Gracias por tu feedback.';
+                return;
+
                 await addDoc(collection(db, 'messages'), {
                     name: name,
                     email: email || 'No especificado',

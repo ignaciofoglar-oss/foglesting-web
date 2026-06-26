@@ -31,9 +31,18 @@ export default async function handler(req, res) {
             return res.status(429).json({ error: 'Esperá un minuto antes de enviar otro mensaje.' });
         }
         await ref.set({ lastMs: now, updatedAt: new Date().toISOString() });
+        await db.collection('messages').add({
+            name,
+            email: email || 'No especificado',
+            type,
+            message,
+            timestamp: new Date(),
+            dateISO: new Date().toISOString(),
+            source: 'web-form'
+        });
     } catch (rateErr) {
-        // Si Firestore falla, no bloqueamos el feedback legitimo.
-        console.error('rate-limit feedback:', rateErr);
+        console.error('feedback firestore:', rateErr);
+        return res.status(500).json({ error: 'No se pudo guardar el mensaje.' });
     }
 
     // Obtenemos las credenciales desde las variables de entorno de Vercel
@@ -42,7 +51,7 @@ export default async function handler(req, res) {
 
     if (!phone || !apikey) {
         console.error('Faltan variables de entorno en Vercel (CALLMEBOT_PHONE o CALLMEBOT_API_KEY).');
-        return res.status(500).json({ error: 'Falta configuración en el servidor' });
+        return res.status(200).json({ success: true, warning: 'Mensaje guardado. WhatsApp no configurado.' });
     }
 
     // Formateamos el mensaje para WhatsApp (con negritas)
