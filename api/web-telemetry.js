@@ -86,6 +86,23 @@ function cleanAuditDoc(doc) {
     };
 }
 
+function cleanUserDoc(doc) {
+    const x = doc.data() || {};
+    const license = x.licenses && x.licenses['Sheet Metal Nesting'] ? x.licenses['Sheet Metal Nesting'] : {};
+    return {
+        id: doc.id,
+        uid: doc.id,
+        name: x.name || '',
+        email: x.email || '',
+        role: x.role === 'admin' || x.isAdmin === true ? 'admin' : 'user',
+        isAdmin: x.role === 'admin' || x.isAdmin === true,
+        hasActiveLicense: license.status === 'active' || x.hasActiveLicense === true,
+        licenseStatus: license.status || (x.hasActiveLicense ? 'active' : 'inactive'),
+        createdAtISO: isoFrom(x.createdAt),
+        lastLoginISO: isoFrom(x.lastLogin)
+    };
+}
+
 function buildMetricsResponse(metricsDocs, runDocs, webEventDocs = []) {
     const metricRows = metricsDocs
         .filter((d) => d.id !== 'general')
@@ -272,6 +289,43 @@ async function handlePost(req, res) {
             return json(res, 200, { ok: true, deleted: refs.length });
         }
 
+        if (op === 'updateUserRole') {
+            const uid = String(body.uid || '').trim();
+            const role = String(body.role || '') === 'admin' ? 'admin' : 'user';
+            if (!uid) return json(res, 400, { error: 'Falta uid.' });
+            await db.collection('users').doc(uid).set({
+                role,
+                isAdmin: role === 'admin',
+                updatedAt: new Date()
+            }, { merge: true });
+            return json(res, 200, { ok: true, uid, role });
+        }
+
+        if (op === 'setUserLicense') {
+            const uid = String(body.uid || '').trim();
+            const status = String(body.status || '') === 'active' ? 'active' : 'inactive';
+            if (!uid) return json(res, 400, { error: 'Falta uid.' });
+            await db.collection('users').doc(uid).set({
+                licenses: {
+                    'Sheet Metal Nesting': {
+                        status,
+                        updatedAt: new Date()
+                    }
+                },
+                hasActiveLicense: status === 'active',
+                updatedAt: new Date()
+            }, { merge: true });
+            return json(res, 200, { ok: true, uid, status });
+        }
+
+        if (op === 'setAppConfig') {
+            await db.collection('settings').doc('app_config').set({
+                requireLicense: body.requireLicense === true,
+                updatedAt: new Date()
+            }, { merge: true });
+            return json(res, 200, { ok: true, requireLicense: body.requireLicense === true });
+        }
+
         return json(res, 400, { error: 'Operacion admin invalida.' });
     }
 
@@ -315,6 +369,17 @@ async function handleGet(req, res) {
     if (String(req.query.adminMessages || '') === '1') {
         const snap = await db.collection('messages').orderBy('timestamp', 'desc').limit(1000).get();
         return json(res, 200, { ok: true, items: snap.docs.map(cleanMessageDoc) });
+    }
+
+    if (String(req.query.adminUsers || '') === '1') {
+        const snap = await db.collection('users').orderBy('createdAt', 'desc').limit(2000).get();
+        return json(res, 200, { ok: true, items: snap.docs.map(cleanUserDoc) });
+    }
+
+    if (String(req.query.adminSettings || '') === '1') {
+        const snap = await db.collection('settings').doc('app_config').get();
+        const data = snap.exists ? snap.data() : {};
+        return json(res, 200, { ok: true, requireLicense: data.requireLicense === true });
     }
 
     if (String(req.query.adminAudit || '') === '1') {

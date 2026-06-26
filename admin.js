@@ -1878,20 +1878,19 @@ if (deleteOldMessagesBtn) {
 async function loadUsers() {
     const container = document.getElementById('users-container');
     try {
-        // Assume users collection exists
-        const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
+        const data = await adminApi('/api/web-telemetry?adminUsers=1');
+        const users = data.items || [];
         
-        if (querySnapshot.empty) {
+        if (users.length === 0) {
             container.innerHTML = '<tr><td colspan="7" class="loading">No hay usuarios registrados.</td></tr>';
             return;
         }
         
         container.innerHTML = '';
-        querySnapshot.forEach((docSnap) => {
-            const user = docSnap.data();
-            const date = user.createdAt ? (user.createdAt.toDate ? user.createdAt.toDate().toLocaleDateString('es-AR') : 'N/A') : 'N/A';
-            const lastLogin = user.lastLogin ? (user.lastLogin.toDate ? user.lastLogin.toDate().toLocaleString('es-AR') : 'N/A') : 'Nunca';
+        users.forEach((user) => {
+            const userId = user.id || user.uid;
+            const date = user.createdAtISO ? new Date(user.createdAtISO).toLocaleDateString('es-AR') : 'N/A';
+            const lastLogin = user.lastLoginISO ? new Date(user.lastLoginISO).toLocaleString('es-AR') : 'Nunca';
             const name = user.name ? user.name : '<span style="color:#777;font-style:italic;">Sin nombre</span>';
             const role = user.role === 'admin' || user.isAdmin === true ? 'admin' : 'user';
             
@@ -1913,11 +1912,11 @@ async function loadUsers() {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${name}</td>
-                <td class="mono">${user.email || docSnap.id}</td>
+                <td class="mono">${user.email || userId}</td>
                 <td>${date}</td>
                 <td>${lastLogin}</td>
                 <td>
-                    <select class="role-select" data-id="${docSnap.id}" ${docSnap.id === currentAdminUid && role === 'admin' ? 'title="Cuidado: esta es tu cuenta actual"' : ''}>
+                    <select class="role-select" data-id="${userId}" ${userId === currentAdminUid && role === 'admin' ? 'title="Cuidado: esta es tu cuenta actual"' : ''}>
                         <option value="user" ${role === 'user' ? 'selected' : ''}>Usuario</option>
                         <option value="admin" ${role === 'admin' ? 'selected' : ''}>Administrador</option>
                     </select>
@@ -1926,10 +1925,10 @@ async function loadUsers() {
                 <td>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
                         ${hasLicense 
-                            ? `<button class="btn-danger toggle-license-btn" data-id="${docSnap.id}" data-action="revoke" style="padding: 6px 12px; font-size: 13px;">Revocar</button>` 
-                            : `<button class="btn-primary toggle-license-btn" data-id="${docSnap.id}" data-action="grant" style="padding: 6px 12px; font-size: 13px;">Otorgar</button>`}
+                            ? `<button class="btn-danger toggle-license-btn" data-id="${userId}" data-action="revoke" style="padding: 6px 12px; font-size: 13px;">Revocar</button>` 
+                            : `<button class="btn-primary toggle-license-btn" data-id="${userId}" data-action="grant" style="padding: 6px 12px; font-size: 13px;">Otorgar</button>`}
                         <button class="btn-primary reset-pwd-btn" data-email="${user.email}" style="padding: 6px 12px; font-size: 13px; background: #444; border: 1px solid #555;">Reset Clave</button>
-                        <button class="btn-danger delete-user-btn" data-id="${docSnap.id}" data-email="${user.email || ''}" ${docSnap.id === currentAdminUid ? 'disabled title="No podes borrar tu propia cuenta desde esta sesion"' : ''} style="padding: 6px 12px; font-size: 13px;">Borrar</button>
+                        <button class="btn-danger delete-user-btn" data-id="${userId}" data-email="${user.email || ''}" ${userId === currentAdminUid ? 'disabled title="No podes borrar tu propia cuenta desde esta sesion"' : ''} style="padding: 6px 12px; font-size: 13px;">Borrar</button>
                     </div>
                 </td>
             `;
@@ -1949,9 +1948,9 @@ async function loadUsers() {
                 }
 
                 try {
-                    await updateDoc(doc(db, 'users', userId), {
-                        role: nextRole,
-                        isAdmin: nextRole === 'admin'
+                    await adminApi('/api/web-telemetry', {
+                        method: 'POST',
+                        body: JSON.stringify({ adminOp: 'updateUserRole', uid: userId, role: nextRole })
                     });
                     logAudit('Cambiar rol', `Cambió el rol del usuario ${userId} a ${label}.`);
                     loadUsers();
@@ -1969,13 +1968,18 @@ async function loadUsers() {
                 const action = e.target.dataset.action;
                 if(confirm(action === 'revoke' ? '¿Seguro que quieres revocar esta licencia?' : '¿Otorgar licencia a este usuario?')) {
                     const status = action === 'grant' ? 'active' : 'inactive';
-                    await updateDoc(doc(db, 'users', e.target.dataset.id), {
-                        'licenses.Sheet Metal Nesting.status': status,
-                        hasActiveLicense: action === 'grant' // Fallback flag kept in sync just in case
-                    });
-                    logAudit(action === 'grant' ? 'Otorgar licencia' : 'Revocar licencia',
-                        `${action === 'grant' ? 'Otorgó' : 'Revocó'} la licencia de Sheet Metal Nesting al usuario ${e.target.dataset.id}.`);
-                    loadUsers(); // Reload
+                    try {
+                        await adminApi('/api/web-telemetry', {
+                            method: 'POST',
+                            body: JSON.stringify({ adminOp: 'setUserLicense', uid: e.target.dataset.id, status })
+                        });
+                        logAudit(action === 'grant' ? 'Otorgar licencia' : 'Revocar licencia',
+                            `${action === 'grant' ? 'Otorgó' : 'Revocó'} la licencia de Sheet Metal Nesting al usuario ${e.target.dataset.id}.`);
+                        loadUsers();
+                    } catch (error) {
+                        console.error('Error updating license:', error);
+                        alert('No se pudo actualizar la licencia del usuario.');
+                    }
                 }
             });
         });
@@ -2050,28 +2054,30 @@ async function loadUsers() {
 // 5d. Load Global Settings
 async function loadGlobalSettings() {
     const toggle = document.getElementById('global-license-toggle');
+    if (!toggle) return;
     try {
-        const docSnap = await getDoc(doc(db, 'settings', 'app_config'));
-        if (docSnap.exists()) {
-            toggle.checked = docSnap.data().requireLicense === true;
-        } else {
-            toggle.checked = false;
-        }
+        const data = await adminApi('/api/web-telemetry?adminSettings=1');
+        toggle.checked = data.requireLicense === true;
     } catch(e) {
         console.error("Error loading settings", e);
     }
 
+    if (toggle.dataset.bound === '1') return;
+    toggle.dataset.bound = '1';
     toggle.addEventListener('change', async (e) => {
         try {
-            await setDoc(doc(db, 'settings', 'app_config'), { requireLicense: e.target.checked }, { merge: true });
+            await adminApi('/api/web-telemetry', {
+                method: 'POST',
+                body: JSON.stringify({ adminOp: 'setAppConfig', requireLicense: e.target.checked })
+            });
+            logAudit('Configurar licencia global', `Modo pago ${e.target.checked ? 'activado' : 'desactivado'}.`);
         } catch(err) {
             console.error("Error updating settings", err);
-            alert("Error al actualizar la configuración");
-            e.target.checked = !e.target.checked; // Revert
+            alert("Error al actualizar la configuracion");
+            e.target.checked = !e.target.checked;
         }
     });
 }
-
 // 5e. Load desktop release candidates
 async function loadReleaseCandidates() {
     const container = document.getElementById('release-candidates');
