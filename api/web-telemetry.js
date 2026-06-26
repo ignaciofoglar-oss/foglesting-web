@@ -68,8 +68,21 @@ async function handlePost(req, res) {
 }
 
 async function handleGet(req, res) {
-    await requireAdminUser(req);
+    const adminUser = await requireAdminUser(req);
     const { db } = getAdminServices();
+
+    if (String(req.query.adminCheck || '') === '1') {
+        const snap = await db.collection('users').doc(adminUser.uid).get();
+        const data = snap.exists ? snap.data() : {};
+        return json(res, 200, {
+            ok: true,
+            uid: adminUser.uid,
+            email: adminUser.email || data.email || '',
+            role: data.role || '',
+            isAdmin: data.isAdmin === true
+        });
+    }
+
     const lim = Math.min(Math.max(parseInt(req.query.limit, 10) || 3000, 1), 8000);
     const snap = await db.collection('web_events').orderBy('ts', 'desc').limit(lim).get();
     const items = snap.docs.map((d) => {

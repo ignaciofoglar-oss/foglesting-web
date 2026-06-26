@@ -154,7 +154,7 @@ async function isAuthorizedAdmin(user) {
     // Evita que el acceso al panel dependa de reglas Firestore del cliente.
     try {
         const idToken = await user.getIdToken(true);
-        const response = await fetch('/api/admin-check', {
+        const response = await fetch('/api/web-telemetry?adminCheck=1', {
             method: 'GET',
             headers: { Authorization: `Bearer ${idToken}` },
             cache: 'no-store'
