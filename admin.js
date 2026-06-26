@@ -4,7 +4,9 @@ import {
     signInWithEmailAndPassword, 
     onAuthStateChanged, 
     signOut,
-    sendPasswordResetEmail
+    sendPasswordResetEmail,
+    setPersistence,
+    browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { 
     getFirestore, 
@@ -54,6 +56,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+    console.warn('No se pudo fijar persistencia local de admin:', error);
+});
 
 // DOM Elements
 const loginScreen = document.getElementById('login-screen');
@@ -68,6 +73,7 @@ const views = document.querySelectorAll('.view');
 let currentAdminUid = null;
 let currentAdminEmail = null;
 let dashboardLoadedForUid = null;
+let manualLogoutInProgress = false;
 const emergencyAdminEmails = new Set([
     'ignacio.foglar@gmail.com',
     'ignacio_ggirard@hotmail.com',
@@ -155,7 +161,7 @@ async function isAuthorizedAdmin(user) {
     // Camino principal: verificar rol desde el servidor con Firebase Admin.
     // Evita que el acceso al panel dependa de reglas Firestore del cliente.
     try {
-        const idToken = await user.getIdToken(true);
+        const idToken = await user.getIdToken();
         const response = await fetch('/api/web-telemetry?adminCheck=1', {
             method: 'GET',
             headers: { Authorization: `Bearer ${idToken}` },
@@ -193,7 +199,7 @@ async function isAuthorizedAdmin(user) {
 async function adminApi(path, options = {}) {
     const user = auth.currentUser;
     if (!user) throw new Error('Sesion admin no disponible.');
-    const idToken = await user.getIdToken(true);
+    const idToken = await user.getIdToken();
     const headers = {
         ...(options.headers || {}),
         Authorization: `Bearer ${idToken}`,
@@ -212,6 +218,7 @@ async function adminApi(path, options = {}) {
 // 1. Authentication State Observer
 onAuthStateChanged(auth, async (user) => {
     if (user) {
+        manualLogoutInProgress = false;
         try {
             const allowed = await isAuthorizedAdmin(user);
             if (!allowed) {
@@ -239,7 +246,19 @@ onAuthStateChanged(auth, async (user) => {
             }
         }
     } else {
-        // User is logged out
+        // Firebase puede emitir un estado nulo momentaneo cuando refresca la sesion.
+        // No ocultamos el panel salvo que sea un logout real o el usuario siga ausente.
+        if (!manualLogoutInProgress && currentAdminUid) {
+            window.setTimeout(() => {
+                if (auth.currentUser) return;
+                currentAdminUid = null;
+                currentAdminEmail = null;
+                dashboardLoadedForUid = null;
+                dashboardScreen.classList.remove('active');
+                loginScreen.classList.add('active');
+            }, 2500);
+            return;
+        }
         currentAdminUid = null;
         currentAdminEmail = null;
         dashboardLoadedForUid = null;
@@ -269,6 +288,7 @@ loginForm.addEventListener('submit', async (e) => {
 
 // 3. Logout Handler
 logoutBtn.addEventListener('click', () => {
+    manualLogoutInProgress = true;
     signOut(auth);
 });
 
@@ -534,7 +554,7 @@ async function loadWebTraffic() {
     if (!container) return;
     container.innerHTML = '<p class="loading">Cargando tráfico...</p>';
     try {
-        const idToken = await auth.currentUser.getIdToken(true);
+        const idToken = await auth.currentUser.getIdToken();
         const resp = await fetch('/api/web-telemetry?limit=4000', { headers: { Authorization: `Bearer ${idToken}` } });
         if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `HTTP ${resp.status}`); }
         const { items } = await resp.json();
@@ -1003,7 +1023,7 @@ async function loadDiagnostics() {
     if (!container) return;
     container.innerHTML = '<p class="loading">Cargando diagnósticos...</p>';
     try {
-        const idToken = await auth.currentUser.getIdToken(true);
+        const idToken = await auth.currentUser.getIdToken();
         const resp = await fetch('/api/list-diagnostics', {
             headers: { Authorization: `Bearer ${idToken}` },
         });
@@ -1178,7 +1198,7 @@ async function loadDiagnostics() {
 async function deleteDiagnostic(id, filename) {
     if (!confirm(`¿Borrar el diagnóstico "${filename || id}"?`)) return;
     try {
-        const idToken = await auth.currentUser.getIdToken(true);
+        const idToken = await auth.currentUser.getIdToken();
         const resp = await fetch('/api/delete-diagnostic', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
@@ -1200,7 +1220,7 @@ async function deleteDiagnostic(id, filename) {
 async function deleteAllDiagnostics() {
     if (!confirm('¿Borrar TODOS los DXF de diagnóstico? Esta acción no se puede deshacer.')) return;
     try {
-        const idToken = await auth.currentUser.getIdToken(true);
+        const idToken = await auth.currentUser.getIdToken();
         const resp = await fetch('/api/delete-diagnostic', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
@@ -1223,7 +1243,7 @@ async function deleteSelectedDiagnostics(ids) {
     if (!ids || ids.length === 0) return;
     if (!confirm(`¿Borrar ${ids.length} DXF de diagnóstico seleccionado(s)? Esta acción no se puede deshacer.`)) return;
     try {
-        const idToken = await auth.currentUser.getIdToken(true);
+        const idToken = await auth.currentUser.getIdToken();
         const resp = await fetch('/api/delete-diagnostic', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
@@ -1257,7 +1277,7 @@ async function downloadManyDiagnostics(list) {
 
 async function downloadDiagnostic(id, filename) {
     try {
-        const idToken = await auth.currentUser.getIdToken(true);
+        const idToken = await auth.currentUser.getIdToken();
         const resp = await fetch(`/api/list-diagnostics?id=${encodeURIComponent(id)}`, {
             headers: { Authorization: `Bearer ${idToken}` },
         });
@@ -2032,7 +2052,7 @@ async function loadUsers() {
                     e.target.textContent = 'Borrando...';
                     const currentUser = auth.currentUser;
                     if (!currentUser) throw new Error('Sesion admin no disponible.');
-                    const idToken = await currentUser.getIdToken(true);
+                    const idToken = await currentUser.getIdToken();
                     const response = await fetch('/api/delete-user', {
                         method: 'POST',
                         headers: {
