@@ -188,6 +188,25 @@ async function isAuthorizedAdmin(user) {
     }
 }
 
+async function adminApi(path, options = {}) {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Sesion admin no disponible.');
+    const idToken = await user.getIdToken(true);
+    const headers = {
+        ...(options.headers || {}),
+        Authorization: `Bearer ${idToken}`,
+    };
+    if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
+    const response = await fetch(path, {
+        ...options,
+        headers,
+        cache: 'no-store',
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || response.statusText || `HTTP ${response.status}`);
+    return payload;
+}
+
 // 1. Authentication State Observer
 onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -583,13 +602,15 @@ document.getElementById('webtraffic-refresh-btn')?.addEventListener('click', loa
 // ============================================================
 async function logAudit(action, description, details = null) {
     try {
-        await addDoc(collection(db, 'audit_log'), {
-            ts: serverTimestamp(),
-            dateISO: new Date().toISOString(),
+        await adminApi('/api/web-telemetry', {
+            method: 'POST',
+            body: JSON.stringify({
+                adminOp: 'logAudit',
             action,
             description,
             admin: currentAdminEmail || '(desconocido)',
             details: details || null,
+            })
         });
     } catch (e) {
         // No bloquear la acción principal si falla el registro.
@@ -602,6 +623,7 @@ async function logAudit(action, description, details = null) {
 const AUDIT_PAGE = 300;
 let auditLastDoc = null;
 let auditShown = 0;
+let auditNextOffset = 0;
 
 function auditRowsHtml(rows) {
     let html = '';
@@ -627,17 +649,13 @@ async function loadAudit(append = false) {
         container.innerHTML = '<p class="loading">Cargando registro...</p>';
         auditLastDoc = null;
         auditShown = 0;
+        auditNextOffset = 0;
     }
     try {
-        const base = collection(db, 'audit_log');
-        const q = (append && auditLastDoc)
-            ? query(base, orderBy('ts', 'desc'), startAfter(auditLastDoc), limit(AUDIT_PAGE))
-            : query(base, orderBy('ts', 'desc'), limit(AUDIT_PAGE));
-        const snap = await getDocs(q);
-        const rows = [];
-        snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
-        if (snap.docs.length > 0) auditLastDoc = snap.docs[snap.docs.length - 1];
-        const hasMore = rows.length === AUDIT_PAGE;
+        const data = await adminApi(`/api/web-telemetry?adminAudit=1&limit=${AUDIT_PAGE}&offset=${append ? auditNextOffset : 0}`);
+        const rows = data.items || [];
+        auditNextOffset = data.nextOffset ?? 0;
+        const hasMore = data.nextOffset !== null && data.nextOffset !== undefined;
 
         if (!append && rows.length === 0) {
             container.innerHTML = '<p class="loading">Todavía no hay acciones registradas.</p>';
@@ -1650,27 +1668,26 @@ async function loadMetrics() {
 async function loadMessages() {
     const container = document.getElementById('messages-container');
     try {
-        const q = query(collection(db, 'messages'), orderBy('timestamp', 'desc'));
-        const querySnapshot = await getDocs(q);
+        const data = await adminApi('/api/web-telemetry?adminMessages=1');
+        const messages = data.items || [];
         
-        if (querySnapshot.empty) {
+        if (messages.length === 0) {
             container.innerHTML = `<p class="loading">${adminT('messages.empty')}</p>`;
             return;
         }
         
         let html = '';
-        querySnapshot.forEach((docSnap) => {
-            const msg = docSnap.data();
+        messages.forEach((msg) => {
             const dateLocale = getAdminLang() === 'en' ? 'en-US' : 'es-AR';
-            const date = msg.timestamp ? msg.timestamp.toDate().toLocaleString(dateLocale) : adminT('messages.unknownDate');
+            const date = msg.timestampISO ? new Date(msg.timestampISO).toLocaleString(dateLocale) : adminT('messages.unknownDate');
             html += `
-                <div class="message-card" data-id="${docSnap.id}">
+                <div class="message-card" data-id="${msg.id}">
                     <div class="message-header">
                         <div>
                             <span class="message-name">${msg.name || adminT('messages.noName')} (${msg.email || adminT('messages.noEmail')})</span>
                             <span class="message-date">${date}</span>
                         </div>
-                        <button class="btn-danger delete-message-btn" data-id="${docSnap.id}" style="padding: 6px 12px; font-size: 13px;">${adminT('messages.delete')}</button>
+                        <button class="btn-danger delete-message-btn" data-id="${msg.id}" style="padding: 6px 12px; font-size: 13px;">${adminT('messages.delete')}</button>
                     </div>
                     <div class="message-body">${msg.message || ''}</div>
                 </div>
@@ -1687,7 +1704,10 @@ async function loadMessages() {
                 try {
                     e.target.disabled = true;
                     e.target.textContent = adminT('messages.deleting');
-                    await deleteDoc(doc(db, 'messages', messageId));
+                    await adminApi('/api/web-telemetry', {
+                        method: 'POST',
+                        body: JSON.stringify({ adminOp: 'deleteMessage', id: messageId })
+                    });
                     logAudit('Borrar mensaje', `Borró un mensaje de contacto (id ${messageId}).`);
                     loadMessages();
                 } catch (error) {
