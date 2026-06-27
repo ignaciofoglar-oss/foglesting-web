@@ -46,7 +46,51 @@ export default async function handler(req, res) {
                 createdAt: x.createdAt || '',
             };
         });
-        res.status(200).json({ items });
+
+        // --- Corridas del solver (server-side: Admin SDK saltea las reglas de
+        // Firestore, que ahora bloquean la lectura desde el cliente). Se cruzan
+        // con las sesiones en el panel para mostrar "N corridas" por sesion. ---
+        let runs = [];
+        try {
+            const rsnap = await db
+                .collection('solver_runs')
+                .orderBy('timestamp', 'desc')
+                .limit(1500)
+                .get();
+            runs = rsnap.docs.map((d) => {
+                const x = d.data() || {};
+                let ts = '';
+                if (x.timestamp && typeof x.timestamp.toDate === 'function') {
+                    ts = x.timestamp.toDate().toISOString();
+                } else if (x.timestampISO) {
+                    ts = x.timestampISO;
+                }
+                return {
+                    sessionId: x.sessionId || '',
+                    machine: x.machine || '',
+                    source: x.source || '',
+                    country: x.country || '',
+                    date: x.date || '',
+                    timestampISO: ts,
+                    placed_count: x.placed_count,
+                    unplaced_count: x.unplaced_count,
+                    sheets_used: x.sheets_used,
+                    final_utilization: x.final_utilization,
+                    optimization_type: x.optimization_type || '',
+                    fill_sheet: !!x.fill_sheet,
+                    saved: !!x.saved,
+                    best_solution_time_sec: x.best_solution_time_sec,
+                    total_time_to_save_sec: x.total_time_to_save_sec,
+                    placed_pieces: x.placed_pieces,
+                    app_version: x.app_version || '',
+                    dxf_count: x.dxf_count,
+                };
+            });
+        } catch (e) {
+            console.warn('No se pudieron leer corridas del solver:', e && e.message);
+        }
+
+        res.status(200).json({ items, runs });
     } catch (e) {
         res.status(e.statusCode || 500).json({ error: e.message || 'Error interno.' });
     }

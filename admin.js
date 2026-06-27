@@ -1030,18 +1030,16 @@ async function loadDiagnostics() {
             const e = await resp.json().catch(() => ({}));
             throw new Error(e.error || `HTTP ${resp.status}`);
         }
-        const { items } = await resp.json();
+        const data = await resp.json();
+        const items = data.items || [];
+        // Las corridas del solver vienen del server (Admin SDK saltea las reglas
+        // de Firestore, que bloquean la lectura desde el cliente). Esto arregla el
+        // "0 corridas" que mostraban todas las sesiones.
+        const runs = data.runs || [];
         if (!items || items.length === 0) {
             container.innerHTML = '<p class="loading">Todavía no hay DXF cargados.</p>';
             return;
         }
-
-        // Traigo las corridas del solver para cruzarlas con cada sesion.
-        let runs = [];
-        try {
-            const rs = await getDocs(query(collection(db, 'solver_runs'), orderBy('timestamp', 'desc'), limit(1500)));
-            rs.forEach((d) => runs.push(d.data()));
-        } catch (e) { console.warn('No se pudieron leer corridas para las sesiones:', e); }
 
         const sessions = buildSessions(items, runs);
         lastDiagSessions = sessions;
