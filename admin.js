@@ -982,10 +982,26 @@ async function showSessionReport(s) {
 
         const evTime = (e) => (e.ts && e.ts.toDate) ? e.ts.toDate().getTime() : (e.serverISO ? new Date(e.serverISO).getTime() : 0);
         // Si la sesion del programa se partio en varias sentadas (estuvo abierta
-        // dias), mostramos solo los eventos de la ventana de ESTA sentada.
-        const margin = 2 * 60 * 1000;
+        // dias), mostramos solo los eventos de ESTA sentada. La ventana arranca en
+        // [s.start, s.end] (calculada con DXF + corridas) pero la AGRANDAMOS
+        // absorbiendo los eventos contiguos: cualquier evento a menos de 30 min del
+        // borde se suma y corre el borde. Asi el "abrió el programa" y el cierre
+        // entran aunque pasen unos minutos antes de la primera carga, sin volver a
+        // mezclar sentadas separadas por horas.
+        let winStart = s.start, winEnd = s.end;
+        if (s.partsTotal && s.partsTotal > 1) {
+            const ts = evs.map(evTime).filter((t) => t > 0).sort((a, b) => a - b);
+            let changed = true;
+            while (changed) {
+                changed = false;
+                for (const t of ts) {
+                    if (t < winStart && winStart - t <= SESSION_GAP_MS) { winStart = t; changed = true; }
+                    else if (t > winEnd && t - winEnd <= SESSION_GAP_MS) { winEnd = t; changed = true; }
+                }
+            }
+        }
         const inWindow = (s.partsTotal && s.partsTotal > 1)
-            ? (t) => t >= s.start - margin && t <= s.end + margin
+            ? (t) => t >= winStart - 1000 && t <= winEnd + 1000
             : () => true;
         const merged = [];
         evs.forEach((e) => { const t = evTime(e); if (inWindow(t)) merged.push({ t, txt: eventLabel(e.action, e.detail) }); });
