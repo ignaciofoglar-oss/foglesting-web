@@ -50,47 +50,65 @@ export default async function handler(req, res) {
         // --- Corridas del solver (server-side: Admin SDK saltea las reglas de
         // Firestore, que ahora bloquean la lectura desde el cliente). Se cruzan
         // con las sesiones en el panel para mostrar "N corridas" por sesion. ---
+        const mapRun = (d) => {
+            const x = d.data() || {};
+            let ts = '';
+            if (x.timestamp && typeof x.timestamp.toDate === 'function') {
+                ts = x.timestamp.toDate().toISOString();
+            } else if (x.timestampISO) {
+                ts = x.timestampISO;
+            }
+            return {
+                sessionId: x.sessionId || '',
+                machine: x.machine || '',
+                source: x.source || '',
+                country: x.country || '',
+                date: x.date || '',
+                timestampISO: ts,
+                placed_count: x.placed_count,
+                unplaced_count: x.unplaced_count,
+                sheets_used: x.sheets_used,
+                final_utilization: x.final_utilization,
+                optimization_type: x.optimization_type || '',
+                fill_sheet: !!x.fill_sheet,
+                saved: !!x.saved,
+                best_solution_time_sec: x.best_solution_time_sec,
+                total_time_to_save_sec: x.total_time_to_save_sec,
+                placed_pieces: x.placed_pieces,
+                app_version: x.app_version || '',
+                dxf_count: x.dxf_count,
+            };
+        };
+
         let runs = [];
+        let runsError = '';
+        let runsMode = 'ordered';
         try {
             const rsnap = await db
                 .collection('solver_runs')
                 .orderBy('timestamp', 'desc')
                 .limit(1500)
                 .get();
-            runs = rsnap.docs.map((d) => {
-                const x = d.data() || {};
-                let ts = '';
-                if (x.timestamp && typeof x.timestamp.toDate === 'function') {
-                    ts = x.timestamp.toDate().toISOString();
-                } else if (x.timestampISO) {
-                    ts = x.timestampISO;
-                }
-                return {
-                    sessionId: x.sessionId || '',
-                    machine: x.machine || '',
-                    source: x.source || '',
-                    country: x.country || '',
-                    date: x.date || '',
-                    timestampISO: ts,
-                    placed_count: x.placed_count,
-                    unplaced_count: x.unplaced_count,
-                    sheets_used: x.sheets_used,
-                    final_utilization: x.final_utilization,
-                    optimization_type: x.optimization_type || '',
-                    fill_sheet: !!x.fill_sheet,
-                    saved: !!x.saved,
-                    best_solution_time_sec: x.best_solution_time_sec,
-                    total_time_to_save_sec: x.total_time_to_save_sec,
-                    placed_pieces: x.placed_pieces,
-                    app_version: x.app_version || '',
-                    dxf_count: x.dxf_count,
-                };
-            });
+            runs = rsnap.docs.map(mapRun);
         } catch (e) {
-            console.warn('No se pudieron leer corridas del solver:', e && e.message);
+            runsError = (e && e.message) || String(e);
+            console.warn('orderBy(timestamp) fallo en solver_runs:', runsError);
+        }
+        // Blindaje: si el orden por timestamp no trajo nada (docs sin ese campo,
+        // exencion de indice, etc.) o fallo, reintentamos sin ordenar para no
+        // dejar las sesiones en "0 corridas".
+        if (runs.length === 0) {
+            try {
+                const rsnap2 = await db.collection('solver_runs').limit(1500).get();
+                runs = rsnap2.docs.map(mapRun);
+                runsMode = 'unordered';
+            } catch (e2) {
+                runsError = (e2 && e2.message) || String(e2);
+                console.warn('Lectura sin orden de solver_runs tambien fallo:', runsError);
+            }
         }
 
-        res.status(200).json({ items, runs });
+        res.status(200).json({ items, runs, _runsCount: runs.length, _runsMode: runsMode, _runsError: runsError });
     } catch (e) {
         res.status(e.statusCode || 500).json({ error: e.message || 'Error interno.' });
     }
