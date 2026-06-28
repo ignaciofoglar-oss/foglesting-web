@@ -1,5 +1,5 @@
 {
-  "active_public_version": "5.2.20",
+  "active_public_version": "5.2.21",
   "candidates": [
     {
       "version": "1.0.0",
@@ -293,9 +293,9 @@
       "version": "5.2.21",
       "name": "FOGLESTING V5.2.21",
       "file": "foglesting_windows_v5_2_21.exe",
-      "download_url": "/admin-releases/foglesting_windows_v5_2_21.exe",
-      "source_path": "/admin-releases/foglesting_windows_v5_2_21.exe",
-      "public_listed": false,
+      "download_url": "/downloads/foglesting_windows_v5_2_21.exe",
+      "source_path": "/downloads/foglesting_windows_v5_2_21.exe",
+      "public_listed": true,
       "sha256": "8279DE7D5ADF625C41766D8F89167E4C65C9E001B9066495C61CA16CDAE02228",
       "size_bytes": 24122368,
       "created_at": "2026-06-28",
