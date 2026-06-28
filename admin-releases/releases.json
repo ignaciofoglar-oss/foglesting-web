@@ -223,7 +223,7 @@
       "file": "foglesting_windows_v5_2_14.exe",
       "download_url": "/downloads/foglesting_windows_v5_2_14.exe",
       "source_path": "/downloads/foglesting_windows_v5_2_14.exe",
-      "public_listed": true,
+      "public_listed": false,
       "sha256": "6CB53F44BC8EAD53A76F7A3DF7190141854B36B4D43E3189E7C714B1BD01583B",
       "size_bytes": 4537328,
       "created_at": "2026-06-13",
