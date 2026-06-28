@@ -288,6 +288,18 @@
       "size_bytes": 24111616,
       "created_at": "2026-06-26",
       "notes": "CANDIDATA (no publica) - PARA PROBAR. Sobre 5.2.19: el modulo 'Desplegado de chapa' ahora valida el archivo - si cargas un DXF (u otro que no sea .step/.stp) avisa claro en vez de devolver '0 dxf' sin explicacion (paso con un usuario que metio un DXF en el modulo STEP). Y cuando el modulo esta vacio muestra una ANIMACION explicativa: un ensamble STEP 3D real girando arriba y todos sus DXF desplegados apareciendo abajo, para que se entienda de una para que sirve. Resto igual a 5.2.19 (STEP nativo en C++, un solo .exe sin instalador, sin consola)."
+    },
+    {
+      "version": "5.2.21",
+      "name": "FOGLESTING V5.2.21",
+      "file": "foglesting_windows_v5_2_21.exe",
+      "download_url": "/admin-releases/foglesting_windows_v5_2_21.exe",
+      "source_path": "/admin-releases/foglesting_windows_v5_2_21.exe",
+      "public_listed": false,
+      "sha256": "8279DE7D5ADF625C41766D8F89167E4C65C9E001B9066495C61CA16CDAE02228",
+      "size_bytes": 24122368,
+      "created_at": "2026-06-28",
+      "notes": "CANDIDATA (no publica) - PARA PROBAR. Nuevo: si un DXF trae un MARCO rectangular con varias piezas adentro, ahora pregunta si separarlas (antes cargaba una sola pieza gigante con agujeros que no entraba). Ajustes de interfaz: la animacion del modulo Desplegado va parada con los cajones para arriba; el logo FOGLESTING y el subtitulo usan la tipografia de marca (Boucherie Block); se corrigio un cartel que se superponia en el Desplegado; los botones del Desplegado (Cargar STEP / Transformar a DXF / Enviar al nesting) ahora se traducen al cambiar idioma; y se quito el cartel 'Cualquier lugar se vuelve hogar' que no se traducia. Resto igual a 5.2.20 (STEP nativo en C++, un solo .exe sin instalador, sin consola)."
     }
   ]
 }
