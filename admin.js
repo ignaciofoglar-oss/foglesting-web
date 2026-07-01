@@ -749,6 +749,22 @@ async function fgWaitLoad(w, path) {
     }
 }
 
+// Espera a que la intro/splash de la página termine (el home reproduce una
+// animación de ~5s en ventana nueva). Sin esto, la simulación empezaba a
+// scrollear/resaltar por encima de la intro todavía en curso.
+async function fgWaitSplash(w) {
+    for (let i = 0; i < 75; i++) {   // ~7.5s máx
+        if (w.closed) return;
+        try {
+            const sp = w.document.getElementById('splash-screen');
+            if (!sp) return;   // ya se removió del DOM (o no hay splash en esta página)
+            const st = w.getComputedStyle(sp);
+            if (st.display === 'none' || st.visibility === 'hidden' || parseFloat(st.opacity || '1') === 0) return;
+        } catch (e) { return; }
+        await fgSleep(100);
+    }
+}
+
 function fgInjectHud(w) {
     let doc;
     try { doc = w.document; } catch (e) { return; }
@@ -833,8 +849,10 @@ async function fgReplayRun(w, origin, v, pages) {
         try { await fgWaitLoad(w, p.path); } catch (e) { return; }
         fgInjectHud(w);
         step++;
+        fgUpdateHud(w, 'Abrió ' + p.path + ' — esperando la intro…', step, total);
+        await fgWaitSplash(w);   // esperar la intro/splash antes de replicar acciones
         fgUpdateHud(w, 'Abrió ' + p.path, step, total);
-        await fgSleep(1100);
+        await fgSleep(700);
         for (const a of p.actions) {
             if (w.closed) return;
             step++;
