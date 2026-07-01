@@ -216,30 +216,23 @@ function init() {
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
-    // --- Download button click tracking ---
+    // --- Download button ---
+    // El conteo de descargas se hace del lado del servidor en /api/download
+    // (el href del boton apunta ahi via releaseDownloadUrl y redirige al .exe).
+    // Ya no escribimos a Firestore desde el cliente: las reglas lo bloquean.
     const downloadBtn = document.getElementById('download-btn');
-    if (downloadBtn) {
-        downloadBtn.addEventListener('click', async () => {
-            console.log('Download button clicked');
-            try {
-                const today = getTodayString();
-                const metricsRef = doc(db, 'metrics', today);
-                const docSnap = await getDoc(metricsRef);
-                if (docSnap.exists()) {
-                    await updateDoc(metricsRef, { downloads: increment(1) });
-                } else {
-                    await setDoc(metricsRef, { page_views: 0, downloads: 1, time_spent: 0, date: today });
-                }
-            } catch(e) { console.error(e); }
-        });
-    }
 
     // --- Public release history controlled from admin ---
     let currentActiveRelease = null;
 
     function releaseDownloadUrl(release) {
         if (!release) return '';
-        return release.download_url || (release.file ? `/downloads/${release.file}` : '');
+        const direct = release.download_url || (release.file ? `/downloads/${release.file}` : '');
+        // Las descargas publicas (/downloads/*.exe) pasan por /api/download para
+        // contarlas del lado del servidor (las reglas de Firestore bloquean la
+        // escritura del cliente). Los .exe de admin-releases quedan directos.
+        const m = /\/downloads\/([A-Za-z0-9._-]+\.exe)$/.exec(direct);
+        return m ? `/api/download?f=${encodeURIComponent(m[1])}` : direct;
     }
 
     function releaseVersionText(release) {
@@ -333,18 +326,16 @@ function init() {
 
     loadPublicReleases();
 
-    // --- Page View Tracking ---
+    // --- Page View Tracking (server-side) ---
     async function trackPageView() {
         if (!sessionStorage.getItem('page_viewed')) {
             try {
-                const today = getTodayString();
-                const metricsRef = doc(db, 'metrics', today);
-                const docSnap = await getDoc(metricsRef);
-                if (docSnap.exists()) {
-                    await updateDoc(metricsRef, { page_views: increment(1) });
-                } else {
-                    await setDoc(metricsRef, { page_views: 1, downloads: 0, time_spent: 0, date: today });
-                }
+                await fetch('/api/track-metric', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'page_view' }),
+                    keepalive: true,
+                });
                 sessionStorage.setItem('page_viewed', 'true');
             } catch(e) { console.error(e); }
         }
@@ -360,16 +351,14 @@ function init() {
         if (document.visibilityState === 'hidden' && !timeLogged) {
             const timeSpentSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
             if (timeSpentSeconds > 5) { // solo registramos si estuvo más de 5 segundos
-                const today = getTodayString();
-                const metricsRef = doc(db, 'metrics', today);
-                // Fire and forget, no await because page is closing
-                getDoc(metricsRef).then(docSnap => {
-                    if (docSnap.exists()) {
-                        updateDoc(metricsRef, { time_spent: increment(timeSpentSeconds) });
-                    } else {
-                        setDoc(metricsRef, { page_views: 1, downloads: 0, time_spent: timeSpentSeconds, date: today });
-                    }
-                });
+                // sendBeacon sobrevive al cierre de la pagina; se cuenta en el server.
+                try {
+                    const blob = new Blob(
+                        [JSON.stringify({ type: 'time_spent', seconds: timeSpentSeconds })],
+                        { type: 'application/json' }
+                    );
+                    navigator.sendBeacon('/api/track-metric', blob);
+                } catch (e) { /* nada */ }
             }
             // timeLogged = true; // Si vuelve, queremos contar el nuevo tiempo? Mejor dejarlo acumular.
         }
