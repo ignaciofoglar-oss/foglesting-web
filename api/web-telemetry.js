@@ -1,13 +1,69 @@
+import admin from 'firebase-admin';
 import { getAdminServices, requireAdminUser } from '../lib/firebase-admin.js';
 
 // Telemetría web (un solo endpoint para no pasar el limite de funciones de Vercel):
 //   POST  -> recibe eventos del tracker del sitio (track.js), agrega geo por IP
 //            y los guarda en Firestore (coleccion web_events). Auth: x-fogl-key
 //            (header) o body.k = DIAGNOSTIC_UPLOAD_KEY.
+//         -> tambien: POST {metric:'page_view'|'time_spent'} para contar visitas
+//            del lado del servidor (las reglas de Firestore bloquean el cliente).
 //   GET   -> lista los ultimos eventos para el panel admin (solo admin).
+//         -> tambien: GET ?download=<archivo.exe> cuenta la descarga y redirige
+//            al .exe (lo usan el boton de la web y el cartel de actualizacion).
 
 function json(res, status, payload) { res.status(status).json(payload); }
 function decode(v) { try { return decodeURIComponent(String(v || '')); } catch { return String(v || ''); } }
+
+function metricDayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+// Solo permitimos redirigir a un .exe dentro de /downloads (evita open-redirect).
+function safeExe(f) {
+    const name = String(f || '').trim();
+    return /^[A-Za-z0-9._-]+\.exe$/.test(name) ? name : '';
+}
+async function incMetric(fields) {
+    const { db } = getAdminServices();
+    await db.collection('metrics').doc(metricDayStr()).set(
+        { ...fields, date: metricDayStr() },
+        { merge: true }
+    );
+}
+
+// GET ?download=<archivo.exe>: cuenta la descarga (Admin SDK, ignora las reglas
+// que bloquean la escritura del cliente) y redirige al .exe real. Publico.
+async function handleDownloadRedirect(req, res) {
+    const file = safeExe(req.query.download);
+    const target = file ? `/downloads/${file}` : '/#descargar';
+    try {
+        await incMetric({ downloads: admin.firestore.FieldValue.increment(1) });
+    } catch (e) {
+        // Ignorado a proposito: la descarga tiene que funcionar igual.
+    }
+    res.setHeader('Cache-Control', 'no-store');
+    res.redirect(302, target);
+}
+
+// POST {metric:'page_view'|'time_spent'|'download', seconds?}: metrica publica de
+// la web contada del lado del servidor. Reemplaza las escrituras del cliente.
+async function handleMetricPost(res, body) {
+    const type = String(body.metric || '');
+    const seconds = Math.max(0, Math.min(86400, parseInt(body.seconds, 10) || 0));
+    const inc = {};
+    if (type === 'page_view') inc.page_views = admin.firestore.FieldValue.increment(1);
+    else if (type === 'download') inc.downloads = admin.firestore.FieldValue.increment(1);
+    else if (type === 'time_spent') {
+        if (seconds <= 0) return json(res, 200, { ok: true, skipped: true });
+        inc.time_spent = admin.firestore.FieldValue.increment(seconds);
+    } else return json(res, 400, { error: 'metric invalido' });
+    try {
+        await incMetric(inc);
+        return json(res, 200, { ok: true });
+    } catch (e) {
+        return json(res, e.statusCode || 500, { error: e.message || 'Error interno.' });
+    }
+}
 
 function geoFrom(req) {
     return {
@@ -246,6 +302,10 @@ function buildMetricsResponse(metricsDocs, runDocs, webEventDocs = []) {
 
 async function handlePost(req, res) {
     const body = req.body || {};
+    // Metrica publica de la web (page_view / time_spent), sin auth.
+    if (body.metric) {
+        return handleMetricPost(res, body);
+    }
     const authHeader = req.headers.authorization || '';
     if (authHeader) {
         const adminUser = await requireAdminUser(req);
@@ -351,6 +411,10 @@ async function handlePost(req, res) {
 }
 
 async function handleGet(req, res) {
+    // Descarga publica contada (antes de exigir admin).
+    if (req.query.download) {
+        return handleDownloadRedirect(req, res);
+    }
     const adminUser = await requireAdminUser(req);
     const { db } = getAdminServices();
 

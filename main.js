@@ -232,7 +232,7 @@ function init() {
         // contarlas del lado del servidor (las reglas de Firestore bloquean la
         // escritura del cliente). Los .exe de admin-releases quedan directos.
         const m = /\/downloads\/([A-Za-z0-9._-]+\.exe)$/.exec(direct);
-        return m ? `/api/download?f=${encodeURIComponent(m[1])}` : direct;
+        return m ? `/api/web-telemetry?download=${encodeURIComponent(m[1])}` : direct;
     }
 
     function releaseVersionText(release) {
@@ -330,10 +330,10 @@ function init() {
     async function trackPageView() {
         if (!sessionStorage.getItem('page_viewed')) {
             try {
-                await fetch('/api/track-metric', {
+                await fetch('/api/web-telemetry', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type: 'page_view' }),
+                    body: JSON.stringify({ metric: 'page_view' }),
                     keepalive: true,
                 });
                 sessionStorage.setItem('page_viewed', 'true');
@@ -354,10 +354,10 @@ function init() {
                 // sendBeacon sobrevive al cierre de la pagina; se cuenta en el server.
                 try {
                     const blob = new Blob(
-                        [JSON.stringify({ type: 'time_spent', seconds: timeSpentSeconds })],
+                        [JSON.stringify({ metric: 'time_spent', seconds: timeSpentSeconds })],
                         { type: 'application/json' }
                     );
-                    navigator.sendBeacon('/api/track-metric', blob);
+                    navigator.sendBeacon('/api/web-telemetry', blob);
                 } catch (e) { /* nada */ }
             }
             // timeLogged = true; // Si vuelve, queremos contar el nuevo tiempo? Mejor dejarlo acumular.
