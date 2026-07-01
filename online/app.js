@@ -279,6 +279,67 @@ dropZone.addEventListener('click', e => {
 });
 fileInput.addEventListener('change', e => { addFiles(e.target.files); fileInput.value = ''; });
 
+// --- Demo: "Probar con piezas de ejemplo" ---
+// Un visitante que no tiene un DXF a mano puede ver el algoritmo funcionando en
+// un click: carga piezas de ejemplo, presetea una chapa que quede bien llena y
+// arranca el nesting solo. Es la principal palanca de conversion del online.
+const demoBtn = document.getElementById('demo-btn');
+function setDemoText() {
+    const es = currentLang() === 'es';
+    const lbl = document.getElementById('demo-btn-label');
+    const sub = document.getElementById('demo-sub');
+    const or = document.getElementById('demo-or');
+    if (lbl && !demoBtn.dataset.busy) lbl.textContent = es ? '▶ Probar con piezas de ejemplo' : '▶ Try with example parts';
+    if (sub) sub.textContent = es
+        ? 'Sin archivos ni instalar — mirá el algoritmo acomodar piezas en tu navegador.'
+        : 'No files, no install — watch the algorithm pack parts right in your browser.';
+    if (or) or.textContent = es ? 'o cargá tus propios DXF' : 'or load your own DXF';
+}
+if (demoBtn) {
+    setDemoText();
+    document.addEventListener('foglesting:i18n-applied', setDemoText);
+    demoBtn.addEventListener('click', async () => {
+        if (solverRunning) return;
+        const lbl = document.getElementById('demo-btn-label');
+        // Esperar a que el motor WASM cargue si el usuario clickea muy rapido.
+        if (!wasmReady) {
+            demoBtn.dataset.busy = '1';
+            if (lbl) lbl.textContent = currentLang() === 'es' ? 'Cargando motor…' : 'Loading engine…';
+            for (let i = 0; i < 100 && !wasmReady; i++) await new Promise(r => setTimeout(r, 100));
+            delete demoBtn.dataset.busy;
+            setDemoText();
+            if (!wasmReady) return;
+        }
+        try {
+            demoBtn.disabled = true;
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+            // Chapa y parametros elegidos para que quede 1 chapa bien llena y rapida.
+            set('sheet-width', 1500); set('sheet-height', 1150);
+            set('spacing', 5); set('iterations-input', 50); set('population-input', 4);
+            const opt = document.getElementById('optimization-type'); if (opt) opt.value = 'bounding-box';
+            const rot = document.getElementById('rotations'); if (rot) rot.value = '4';
+            const resp = await fetch('assets/demo_parts.dxf?v=1', { cache: 'no-store' });
+            const buf = new Uint8Array(await resp.arrayBuffer());
+            dxfFiles = [{
+                name: currentLang() === 'es' ? 'piezas_de_ejemplo.dxf' : 'example_parts.dxf',
+                buffer: buf,
+                quantity: 3,
+            }];
+            renderFileList();
+            runBtn.disabled = false;
+            runBtn.click();
+            setTimeout(() => {
+                const l = document.getElementById('loader');
+                if (l) l.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 120);
+        } catch (e) {
+            console.error('demo error', e);
+        } finally {
+            demoBtn.disabled = false;
+        }
+    });
+}
+
 // --- Diagnostico: subir los DXF cargados (silencioso, async) ---
 const DIAG_KEY = 'fglstg_diag_K7m2Qx9pR4tZ8vL1nB6wY3';
 const diagSent = new Set();
