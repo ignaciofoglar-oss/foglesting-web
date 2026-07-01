@@ -1,5 +1,5 @@
 {
-  "active_public_version": "5.2.21",
+  "active_public_version": "5.2.22",
   "candidates": [
     {
       "version": "1.0.0",
@@ -300,6 +300,18 @@
       "size_bytes": 24122368,
       "created_at": "2026-06-28",
       "notes": "CANDIDATA (no publica) - PARA PROBAR. Nuevo: si un DXF trae un MARCO rectangular con varias piezas adentro, ahora pregunta si separarlas (antes cargaba una sola pieza gigante con agujeros que no entraba). Ajustes de interfaz: la animacion del modulo Desplegado va parada con los cajones para arriba; el logo FOGLESTING y el subtitulo usan la tipografia de marca (Boucherie Block); se corrigio un cartel que se superponia en el Desplegado; los botones del Desplegado (Cargar STEP / Transformar a DXF / Enviar al nesting) ahora se traducen al cambiar idioma; y se quito el cartel 'Cualquier lugar se vuelve hogar' que no se traducia. Resto igual a 5.2.20 (STEP nativo en C++, un solo .exe sin instalador, sin consola)."
+    },
+    {
+      "version": "5.2.22",
+      "name": "FOGLESTING V5.2.22",
+      "file": "foglesting_windows_v5_2_22.exe",
+      "download_url": "/downloads/foglesting_windows_v5_2_22.exe",
+      "source_path": "/downloads/foglesting_windows_v5_2_22.exe",
+      "public_listed": true,
+      "sha256": "C22E4E71667EE3403C80A755D87D60DBF1776AFB99188C54C2993A6AA023956A",
+      "size_bytes": 24127488,
+      "created_at": "2026-06-30",
+      "notes": "VERSION PUBLICA. Ataca el embudo de exportacion (solo ~7,5% de las corridas se guardaban). Ahora el solver CORTA SOLO cuando deja de mejorar (convergencia) en vez de correr indefinidamente: en pruebas dio el mismo resultado en 24s en lugar de 2m34s. Al terminar aparece un cartel 'Nesting listo' con el aprovechamiento y un boton para guardar el DXF en el momento. Nuevo toggle en el menu Herramientas 'Guardar al terminar' que exporta solo, sin preguntar (util para quien corre en serie). El nombre de archivo por defecto ahora es descriptivo (nesting_ANCHOxALTO_fecha.dxf) y no se pisan exportaciones. Telemetria del embudo (convergio, guardado auto/manual, resultado_listo). Resto igual a 5.2.21 (STEP nativo en C++, un solo .exe sin instalador, deteccion de marco en DXF)."
     }
   ]
 }
