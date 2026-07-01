@@ -654,6 +654,8 @@ async function loadWebTraffic() {
                         <span class="release-muted" style="font-size:12px;">· ${started}</span>
                         <span class="release-muted" style="font-size:12px;">· ${v.pages.length} pág · ${v.events.length} eventos · ${fmtDur(v.duration)}${v.downloads ? ' · ⬇️' + v.downloads : ''}</span>
                         <span class="release-muted" style="font-size:12px;margin-left:auto;">desde: ${escapeHtmlDiag(ref)}</span>
+                        <button type="button" data-sim="${escapeHtmlDiag(v.sid)}" title="Reproducir la sesión: abre las páginas que vio, en orden, resaltando sus clicks y scrolls"
+                            style="font-size:12px;padding:4px 10px;border-radius:8px;border:1px solid var(--fire,#e85b2e);background:rgba(232,91,46,0.12);color:var(--fire,#e85b2e);cursor:pointer;white-space:nowrap;">▶ Simular</button>
                     </summary>
                     <div style="padding:8px 16px 12px;">
                         <div class="release-muted" style="font-size:12px;margin-bottom:6px;">
@@ -683,12 +685,174 @@ async function loadWebTraffic() {
         if (hideBots && botsBox) hideBots.addEventListener('change', () => {
             botsBox.style.display = hideBots.checked ? 'none' : 'block';
         });
+
+        // Boton "Simular" en cada sesion: reproduce la visita en una ventana aparte.
+        container.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-sim]');
+            if (!btn) return;
+            e.preventDefault();      // no togglear el <details>
+            e.stopPropagation();
+            const sid = btn.getAttribute('data-sim');
+            const visit = (lastWebVisits || []).find((x) => x.sid === sid);
+            if (visit) simulateVisit(visit);
+        });
     } catch (e) {
         container.innerHTML = `<p class="loading" style="color:#ff8a8a;">No se pudo cargar el tráfico: ${escapeHtmlDiag(e.message || e)}.</p>`;
         console.error(e);
     }
 }
 document.getElementById('webtraffic-refresh-btn')?.addEventListener('click', loadWebTraffic);
+
+// ============================================================
+//  SIMULAR SESIÓN — reproduce la visita de un usuario en una ventana aparte.
+//  Reconstruye lo que hizo a partir de los eventos registrados: abre las páginas
+//  que vio en orden, scrollea hasta donde scrolleó y resalta los botones/links
+//  que tocó (con un cursor y un HUD). No es una grabación pixel a pixel del mouse
+//  —eso no se guarda—, es una repro fiel de sus acciones página por página.
+// ============================================================
+function fgSleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+function simulateVisit(v) {
+    if (!v || !v.events || !v.events.length) return;
+    const origin = location.origin;
+    const evs = v.events.slice().sort((a, b) => new Date(a.ts) - new Date(b.ts));
+    // Agrupar por página: cada page_view abre una página; scroll/click siguientes
+    // pertenecen a esa página hasta el próximo page_view.
+    const pages = [];
+    let cur = null;
+    for (const e of evs) {
+        if (e.event === 'page_view' || !cur) {
+            cur = { path: e.path || '/', title: e.title || '', actions: [] };
+            pages.push(cur);
+            if (e.event !== 'page_view') cur.actions.push(e);
+        } else {
+            cur.actions.push(e);
+        }
+    }
+    if (!pages.length) return;
+    // window.open debe llamarse SINCRÓNICO en el click para no ser bloqueado.
+    const firstUrl = origin + pages[0].path + (pages[0].path.includes('?') ? '&' : '?') + 'fgnotrack=1';
+    const w = window.open(firstUrl, 'fgreplay_' + v.sid, 'width=1180,height=820');
+    if (!w) { alert('El navegador bloqueó la ventana emergente. Permití pop-ups para este sitio y volvé a apretar Simular.'); return; }
+    fgReplayRun(w, origin, v, pages).catch((err) => console.warn('replay error', err));
+}
+
+async function fgWaitLoad(w, path) {
+    const want = path.split('?')[0];
+    for (let i = 0; i < 130; i++) {   // ~13s máx
+        if (w.closed) throw new Error('ventana cerrada');
+        try {
+            const here = w.location.pathname;
+            if (w.document && w.document.readyState === 'complete' && here.indexOf(want) === 0) return;
+        } catch (e) { /* durante la navegación el acceso puede tirar; reintentar */ }
+        await fgSleep(100);
+    }
+}
+
+function fgInjectHud(w) {
+    let doc;
+    try { doc = w.document; } catch (e) { return; }
+    if (!doc || !doc.body || doc.getElementById('__fg_hud')) return;
+    const hud = doc.createElement('div');
+    hud.id = '__fg_hud';
+    hud.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:2147483647;background:#0e0e10;color:#fff;font:13px/1.4 system-ui,Segoe UI,sans-serif;border-top:2px solid #e85b2e;padding:10px 16px;display:flex;align-items:center;gap:14px;box-shadow:0 -6px 20px rgba(0,0,0,.5);';
+    hud.innerHTML = '<span style="color:#e85b2e;font-weight:700;white-space:nowrap;">▶ Simulación</span>' +
+        '<span id="__fg_hud_step" style="flex:1;"></span>' +
+        '<span id="__fg_hud_prog" style="opacity:.7;white-space:nowrap;"></span>';
+    doc.body.appendChild(hud);
+    const cur = doc.createElement('div');
+    cur.id = '__fg_cursor';
+    cur.style.cssText = 'position:fixed;z-index:2147483646;width:22px;height:22px;border-radius:50%;border:2px solid #e85b2e;background:rgba(232,91,46,.25);pointer-events:none;transform:translate(-50%,-50%);transition:left .5s ease,top .5s ease;left:50%;top:50%;box-shadow:0 0 0 5px rgba(232,91,46,.15);';
+    doc.body.appendChild(cur);
+}
+
+function fgUpdateHud(w, text, step, total, done) {
+    try {
+        const doc = w.document;
+        const s = doc.getElementById('__fg_hud_step');
+        const p = doc.getElementById('__fg_hud_prog');
+        if (s) s.textContent = text;
+        if (p) p.textContent = (done ? '✓ ' : '') + 'paso ' + step + '/' + total;
+    } catch (e) {}
+}
+
+async function fgReplayScroll(w, pct) {
+    try {
+        const h = w.document.documentElement;
+        const max = h.scrollHeight - h.clientHeight;
+        w.scrollTo({ top: Math.max(0, max * pct / 100), behavior: 'smooth' });
+    } catch (e) {}
+}
+
+function fgFindTarget(w, detail) {
+    try {
+        const doc = w.document;
+        const parts = String(detail || '').split(' → ');   // "label → href"
+        const label = (parts[0] || '').trim().toLowerCase();
+        const href = (parts[1] || '').trim();
+        const cands = Array.from(doc.querySelectorAll('a,button,[role=button],.btn'));
+        if (href) {
+            const byHref = cands.find((el) => { const h = el.getAttribute('href') || ''; return h && (h === href || h.endsWith(href) || href.endsWith(h)); });
+            if (byHref) return byHref;
+        }
+        if (label) {
+            return cands.find((el) => (el.innerText || el.textContent || '').trim().toLowerCase() === label)
+                || cands.find((el) => (el.innerText || el.textContent || '').trim().toLowerCase().indexOf(label) >= 0)
+                || null;
+        }
+    } catch (e) {}
+    return null;
+}
+
+function fgHighlight(w, el) {
+    try {
+        const doc = w.document;
+        const prev = doc.querySelector('[data-fg-hl]');
+        if (prev) { prev.style.outline = ''; prev.removeAttribute('data-fg-hl'); }
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.outline = '3px solid #e85b2e';
+        el.style.outlineOffset = '2px';
+        el.setAttribute('data-fg-hl', '1');
+        const r = el.getBoundingClientRect();
+        const cur = doc.getElementById('__fg_cursor');
+        if (cur) { cur.style.left = (r.left + r.width / 2) + 'px'; cur.style.top = (r.top + r.height / 2) + 'px'; }
+    } catch (e) {}
+}
+
+async function fgReplayRun(w, origin, v, pages) {
+    const total = pages.reduce((a, p) => a + 1 + p.actions.length, 0);
+    let step = 0;
+    for (let pi = 0; pi < pages.length; pi++) {
+        if (w.closed) return;
+        const p = pages[pi];
+        if (pi > 0) {
+            const url = origin + p.path + (p.path.includes('?') ? '&' : '?') + 'fgnotrack=1';
+            try { w.location.href = url; } catch (e) {}
+        }
+        try { await fgWaitLoad(w, p.path); } catch (e) { return; }
+        fgInjectHud(w);
+        step++;
+        fgUpdateHud(w, 'Abrió ' + p.path, step, total);
+        await fgSleep(1100);
+        for (const a of p.actions) {
+            if (w.closed) return;
+            step++;
+            const hora = a.ts ? new Date(a.ts).toLocaleTimeString('es-AR') : '';
+            if (a.event === 'scroll') {
+                const pct = parseInt(a.detail) || 0;
+                await fgReplayScroll(w, pct);
+                fgUpdateHud(w, hora + ' — scrolleó hasta ' + pct + '%', step, total);
+            } else if (a.event === 'click' || a.event === 'download') {
+                fgHighlight(w, fgFindTarget(w, a.detail));
+                const verb = a.event === 'download' ? 'descargó' : 'clickeó';
+                fgUpdateHud(w, hora + ' — ' + verb + ': ' + (a.detail || ''), step, total);
+            }
+            await fgSleep(1000);
+        }
+    }
+    if (!w.closed) fgUpdateHud(w, 'Fin de la simulación — reprodujo ' + pages.length + ' página(s).', total, total, true);
+}
 
 // ============================================================
 //  AUDITORÍA — registro de acciones del panel

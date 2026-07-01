@@ -11,6 +11,10 @@
   if (window.__fgTrackLoaded) return;
   window.__fgTrackLoaded = true;
 
+  // No registrar cuando se esta SIMULANDO una sesion desde el admin (?fgnotrack=1):
+  // la reproduccion no debe generar eventos nuevos ni ensuciar las metricas.
+  try { if (/[?&]fgnotrack=1/.test(location.search)) return; } catch (e) {}
+
   // No registrar bots / crawlers / monitores / navegadores automatizados: meten
   // ruido (entran 0s desde data centers como Ashburn). Los reales sí se registran.
   var _ua = navigator.userAgent || '';
