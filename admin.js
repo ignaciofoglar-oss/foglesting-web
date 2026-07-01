@@ -2470,12 +2470,12 @@ async function toggleReleaseVisibility(release, button) {
     const action = nextListed ? 'mostrar en el historial publico' : 'quitar del historial publico';
     if (!confirm(`¿Querés ${action} ${release.name}?`)) return;
 
-    let releaseSecret = sessionStorage.getItem('foglesting_release_secret') || '';
-    if (!releaseSecret) {
-        releaseSecret = prompt('Clave privada de release:') || '';
-        if (!releaseSecret) return;
-        sessionStorage.setItem('foglesting_release_secret', releaseSecret);
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+        alert('Tenes que iniciar sesion como administrador.');
+        return;
     }
+    const idToken = await currentUser.getIdToken();
 
     const previousText = button.textContent;
     button.disabled = true;
@@ -2486,7 +2486,7 @@ async function toggleReleaseVisibility(release, button) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-release-secret': releaseSecret
+                'Authorization': `Bearer ${idToken}`
             },
             body: JSON.stringify({
                 version: release.version,
@@ -2520,12 +2520,12 @@ async function promoteRelease(release, button) {
     );
     if (!ok) return;
 
-    let releaseSecret = sessionStorage.getItem('foglesting_release_secret') || '';
-    if (!releaseSecret) {
-        releaseSecret = prompt('Clave privada de release:') || '';
-        if (!releaseSecret) return;
-        sessionStorage.setItem('foglesting_release_secret', releaseSecret);
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+        alert('Tenes que iniciar sesion como administrador.');
+        return;
     }
+    const idToken = await currentUser.getIdToken();
 
     const previousText = button.textContent;
     button.disabled = true;
@@ -2536,7 +2536,7 @@ async function promoteRelease(release, button) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-release-secret': releaseSecret
+                'Authorization': `Bearer ${idToken}`
             },
             body: JSON.stringify({
                 version,

@@ -1,4 +1,5 @@
-import { getGithubFile, putGithubFile, requireReleaseAuth } from '../lib/github-content.js';
+import { getGithubFile, putGithubFile } from '../lib/github-content.js';
+import { requireAdminUser } from '../lib/firebase-admin.js';
 
 // Dominio publico de las descargas (el mismo que usamos al publicar a mano).
 const DEFAULT_PUBLIC_BASE_URL = 'https://foglesting.com';
@@ -29,7 +30,14 @@ export default async function handler(req, res) {
         return json(res, 405, { error: 'Method Not Allowed' });
     }
 
-    if (!requireReleaseAuth(req, res)) return;
+    try {
+        await requireAdminUser(req);
+    } catch (error) {
+        return json(res, error.statusCode || 401, { error: error.message || 'No autorizado.' });
+    }
+    if (!process.env.GITHUB_TOKEN) {
+        return json(res, 500, { error: 'Falta GITHUB_TOKEN en Vercel.' });
+    }
 
     const publicBaseUrl = (process.env.PUBLIC_BASE_URL || DEFAULT_PUBLIC_BASE_URL).replace(/\/$/, '');
     const { version, name, sourceFile, sourcePath, publicFile, notes } = req.body || {};
