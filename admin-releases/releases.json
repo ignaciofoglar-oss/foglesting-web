@@ -1,5 +1,5 @@
 {
-  "active_public_version": "5.2.22",
+  "active_public_version": "5.2.23",
   "candidates": [
     {
       "version": "1.0.0",
@@ -312,6 +312,18 @@
       "size_bytes": 24127488,
       "created_at": "2026-06-30",
       "notes": "VERSION PUBLICA. Ataca el embudo de exportacion (solo ~7,5% de las corridas se guardaban). Ahora el solver CORTA SOLO cuando deja de mejorar (convergencia) en vez de correr indefinidamente: en pruebas dio el mismo resultado en 24s en lugar de 2m34s. Al terminar aparece un cartel 'Nesting listo' con el aprovechamiento y un boton para guardar el DXF en el momento. Nuevo toggle en el menu Herramientas 'Guardar al terminar' que exporta solo, sin preguntar (util para quien corre en serie). El nombre de archivo por defecto ahora es descriptivo (nesting_ANCHOxALTO_fecha.dxf) y no se pisan exportaciones. Telemetria del embudo (convergio, guardado auto/manual, resultado_listo). Resto igual a 5.2.21 (STEP nativo en C++, un solo .exe sin instalador, deteccion de marco en DXF)."
+    },
+    {
+      "version": "5.2.23",
+      "name": "FOGLESTING V5.2.23",
+      "file": "foglesting_windows_v5_2_23.exe",
+      "download_url": "/downloads/foglesting_windows_v5_2_23.exe",
+      "source_path": "/downloads/foglesting_windows_v5_2_23.exe",
+      "public_listed": true,
+      "sha256": "9B519C31E0EDE892F8239E53936F2619886F7FCFB4993C33E31EA17C473D1069",
+      "size_bytes": 24132608,
+      "created_at": "2026-06-30",
+      "notes": "VERSION PUBLICA. Fix: los cartelitos de info (icono 'i' de cada parametro: Separacion, Rotaciones, Iteraciones, etc.) ahora se traducen al ingles al cambiar el idioma; antes quedaban siempre en espanol. Tambien el tooltip experimental de 'Agregar STEP'. Resto igual a 5.2.22 (corte por convergencia, cartel 'Nesting listo' con boton guardar, 'Guardar al terminar' automatico, nombre de archivo descriptivo)."
     }
   ]
 }
