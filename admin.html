@@ -91,6 +91,34 @@
                 </div>
 
                 <header style="margin-top: 40px;">
+                    <h2>Tráfico Web</h2>
+                    <p class="stat-sub" style="opacity:0.7;">Visitantes reales del sitio (excluye bots/monitores). Fuente: eventos de la web.</p>
+                </header>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Visitantes Únicos</h3>
+                        <div class="stat-value" id="stat-web-visitors">0</div>
+                        <p class="stat-sub" id="stat-web-visits-sub">visitas</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Nuevos</h3>
+                        <div class="stat-value" id="stat-web-new">0%</div>
+                        <p class="stat-sub" id="stat-web-new-sub">del resto, recurrentes</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Desde Móvil</h3>
+                        <div class="stat-value" id="stat-web-mobile">0%</div>
+                        <p class="stat-sub">de las visitas fueron desde celular</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Fuente Principal</h3>
+                        <div class="stat-value" id="stat-web-top-source" style="font-size: 22px;">—</div>
+                        <p class="stat-sub" id="stat-web-top-source-sub">de dónde llegan</p>
+                    </div>
+                </div>
+                <div id="web-breakdowns" style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;"></div>
+
+                <header style="margin-top: 40px;">
                     <h2>Métricas de Uso del Solver (online + escritorio)</h2>
                 </header>
                 <div class="stats-grid">
@@ -398,7 +426,7 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="admin.js?v=30-timeline-window"></script>
+    <script type="module" src="admin.js?v=31-webtraffic-metrics"></script>
     <script>
         // Mobile hamburger menu logic
         (function() {

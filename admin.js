@@ -549,6 +549,67 @@ function renderWebSummary(events, visits) {
         </div>`;
 }
 
+// Hostname legible de un referrer (para agrupar fuentes: reddit, chatgpt, etc.).
+function refHost(referrer) {
+    if (!referrer) return 'directo';
+    try {
+        const h = new URL(referrer).hostname.replace(/^www\./, '');
+        return /(^|\.)foglesting\.com$/i.test(h) ? 'interno' : h;
+    } catch (e) { return referrer; }
+}
+
+// Métricas de tráfico web para la sección Métricas: desglose por sistema
+// operativo, dispositivo, navegador, fuente (referrer) y descargas por SO.
+// Fuente: eventos de la web (web_events), excluyendo bots/monitores.
+async function loadWebTrafficMetrics() {
+    const bd = document.getElementById('web-breakdowns');
+    if (!bd) return;
+    try {
+        const data = await adminApi('/api/web-telemetry?limit=8000');
+        const items = data.items || [];
+        const visits = buildWebVisits(items).filter((v) => !v.isBot);
+        const events = visits.reduce((a, v) => a.concat(v.events), []);
+        const visitors = new Set(events.map((e) => e.visitorId).filter(Boolean)).size;
+        const newCount = visits.filter((v) => v.isNew).length;
+        const mobileCount = visits.filter((v) => v.device === 'mobile').length;
+        const pct = (n, tot) => (tot ? Math.round((n / tot) * 100) : 0);
+        const tally = (arr) => {
+            const m = {};
+            arr.forEach((k) => { if (k) m[k] = (m[k] || 0) + 1; });
+            return Object.entries(m).sort((a, b) => b[1] - a[1]);
+        };
+        const byOS = tally(visits.map((v) => v.os || 'Otro'));
+        const byDevice = tally(visits.map((v) => v.device || 'Otro'));
+        const byBrowser = tally(visits.map((v) => v.browser || 'Otro'));
+        const bySource = tally(visits.map((v) => refHost(v.referrer))).filter(([k]) => k !== 'interno');
+        const dlByOS = {};
+        visits.forEach((v) => { if (v.downloads) dlByOS[v.os || 'Otro'] = (dlByOS[v.os || 'Otro'] || 0) + v.downloads; });
+        const dlOS = Object.entries(dlByOS).sort((a, b) => b[1] - a[1]);
+
+        const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        setTxt('stat-web-visitors', visitors);
+        setTxt('stat-web-visits-sub', `${visits.length} visita${visits.length === 1 ? '' : 's'}`);
+        setTxt('stat-web-new', pct(newCount, visits.length) + '%');
+        setTxt('stat-web-new-sub', `${visits.length - newCount} recurrentes`);
+        setTxt('stat-web-mobile', pct(mobileCount, visits.length) + '%');
+        const topSrc = bySource[0];
+        setTxt('stat-web-top-source', topSrc ? topSrc[0] : '—');
+        setTxt('stat-web-top-source-sub', topSrc ? `${topSrc[1]} visita${topSrc[1] === 1 ? '' : 's'}` : 'de dónde llegan');
+
+        const list = (label, rows) => `<div style="background:rgba(255,255,255,0.03);border:1px solid var(--border,#2a2a2a);border-radius:10px;padding:12px 16px;flex:1;min-width:200px;">
+            <div class="release-muted" style="font-size:11px;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.04em;">${label}</div>
+            ${rows.length ? rows.map(([k, n]) => `<div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:3px 0;"><span>${escapeHtmlDiag(k)}</span><b>${n}</b></div>`).join('') : '<span class="release-muted">—</span>'}</div>`;
+        bd.innerHTML =
+            list('Sistema operativo', byOS) +
+            list('Dispositivo', byDevice) +
+            list('Navegador', byBrowser) +
+            list('Fuentes (de dónde llegan)', bySource.slice(0, 8)) +
+            list('Descargas por SO', dlOS);
+    } catch (e) {
+        bd.innerHTML = `<p class="loading">No se pudo cargar el tráfico web: ${escapeHtmlDiag(String(e.message || e))}</p>`;
+    }
+}
+
 async function loadWebTraffic() {
     const container = document.getElementById('webtraffic-container');
     if (!container) return;
@@ -1493,6 +1554,7 @@ async function loadMetrics() {
         try {
             const serverMetrics = await adminApi('/api/web-telemetry?adminMetrics=1');
             renderMetricsFromServer(serverMetrics);
+            loadWebTrafficMetrics();  // desglose de tráfico web (async, no bloquea)
             return;
         } catch (serverError) {
             console.warn('Metricas por servidor no disponibles, usando fallback cliente:', serverError);
